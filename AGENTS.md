@@ -3,6 +3,16 @@
 Out of Frame is an AI agent that checks a Berlin address for what a flat listing leaves out.
 See [README.md](README.md).
 
+## Read first
+
+Before any change larger than a typo fix, read:
+
+- [docs/vision.md](docs/vision.md): what the agent is for and what is out of scope;
+- [docs/architecture.md](docs/architecture.md): how a run works and who decides what.
+
+Do not change these two documents on your own. If a change conflicts with them, stop and ask.
+Continue only if the user approves.
+
 ## Git
 
 Never commit or push without a direct request from the user. When a change is ready, list the
