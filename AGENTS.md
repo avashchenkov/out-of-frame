@@ -1,6 +1,6 @@
 # Agent instructions
 
-Out of Frame is an LLM agent that checks a Berlin address for what a flat listing leaves out.
+Out of Frame is an AI agent that checks a Berlin address for what a flat listing leaves out.
 See [README.md](README.md).
 
 ## Git
@@ -15,3 +15,5 @@ co-author trailers.
 ## Conventions
 
 - English everywhere in the repository: code, comments, docs and commit messages.
+- Write plain international English: short sentences, common words, no idioms. Many readers
+  are not native speakers. Keep prose brief.
