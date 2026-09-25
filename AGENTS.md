@@ -8,10 +8,14 @@ See [README.md](README.md).
 Before any change larger than a typo fix, read:
 
 - [docs/vision.md](docs/vision.md): what the agent is for and what is out of scope;
-- [docs/architecture.md](docs/architecture.md): how a run works and who decides what.
+- [docs/architecture.md](docs/architecture.md): how a run works and who decides what;
+- [docs/roadmap.md](docs/roadmap.md): the implementation steps and which are done.
 
-Do not change these two documents on your own. If a change conflicts with them, stop and ask.
-Continue only if the user approves.
+Do not change vision.md or architecture.md on your own. If a change conflicts with them, stop
+and ask. Continue only if the user approves.
+
+When a step is committed, mark it done in the roadmap with ✅. If the plan changes, propose
+an update to the roadmap.
 
 ## Git
 
@@ -27,6 +31,7 @@ co-author trailers.
 - English everywhere in the repository: code, comments, docs and commit messages.
 - Write plain international English: short sentences, common words, no idioms. Many readers
   are not native speakers. Keep prose brief.
+- The README describes only what already exists.
 
 ## Development
 
