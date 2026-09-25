@@ -27,3 +27,7 @@ co-author trailers.
 - English everywhere in the repository: code, comments, docs and commit messages.
 - Write plain international English: short sentences, common words, no idioms. Many readers
   are not native speakers. Keep prose brief.
+
+## Development
+
+Python 3.14 with uv. Add dependencies with `uv add` and run commands with `uv run`. Do not use pip.
