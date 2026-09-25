@@ -5,16 +5,11 @@ The implementation steps, in order.
 1. ✅ **Repository setup.**
 2. ✅ **Checklist.** Each checked class with its radius, its source and why it matters. Kept as
    data.
-3. **Spike.** Exploratory scripts in `spikes/` call the sources at a few addresses, one
-   folder per question. A dated note next to each script records the findings. The questions:
-   - How many objects of each class does Overpass return, and how many have no name? This
-     sets the investigation cap per class. Answered:
-     [findings](../spikes/overpass-counts/findings-2026-09-25.md).
-   - Which search words find out what an unnamed object is: its OSM tags (such as
-     `operator`), the nearest street or the district?
-
-   The findings may change the checklist. The scripts stay outside the checks and are never
-   extended.
+3. ✅ **Spike.** How many objects of each class does Overpass return, and how many have no
+   name? This sets the investigation cap per class. Exploratory scripts live in `spikes/`, one
+   folder per question, each with a dated note of its findings:
+   [overpass-counts](../spikes/overpass-counts/findings-2026-09-25.md). The findings may change
+   the checklist. The scripts stay outside the checks and are never extended.
 4. **Evals.** `docs/eval-architecture.md`: how each step of the run is measured. Then the
    tasks with truth labels, committed before any agent code. Labels come from real-world
    evidence, not from the map data. Tests never read them.
