@@ -6,7 +6,7 @@ queries. Web search is the model's only tool (see [architecture.md](architecture
 | Source | What it gives | Called by | Key |
 |---|---|---|---|
 | Nominatim | coordinates of an address | code | none |
-| Overpass | map objects near a point | code | none |
+| Overpass | map elements near a point | code | none |
 | Berlin B-Plan WFS | development plans near a point | code | none |
 | Transitous | public transport journeys | code | none |
 | Tavily | web search results | the model | required |
@@ -21,9 +21,15 @@ with their coordinates.
 
 A query service over OpenStreetMap data. Public instance at
 `https://overpass-api.de/api/interpreter`. A call takes a query in Overpass QL and returns the
-matching objects with their tags. The default response is XML; `[out:json]` gives JSON. The
+matching elements with their tags. The default response is XML; `[out:json]` gives JSON. The
 `around:` filter gives each checklist class its own radius, in metres. The main OSM API is
 for map editing and cannot filter by tag or distance.
+
+A response lists OSM elements, not objects: one site can be several elements, and a road or
+a railway is many segments. The elements are not sorted by distance, and `out tags` returns
+no geometry. The public instance is often busy and answers 429 or 504. After a timeout it can
+return a cut-off result with a `remark` field, which code must treat as a failure. See the
+[Overpass spike](../spikes/overpass-counts/findings-2026-09-25.md).
 
 ## Berlin B-Plan WFS
 

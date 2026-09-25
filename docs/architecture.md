@@ -121,16 +121,17 @@ Nothing is kept for the next run.
    request. The model finds the addresses and answers in the message. Code geocodes each new
    address, saves it in the state and checks what is still missing or unclear. The model then
    asks the user for it. If an address is ambiguous, the user gets a question. The flat must
-   be in Berlin; a place the user travels to may be outside it. After intake, the property is stored as one point (latitude and longitude). The
-   code that calls each source converts this point to the format that source needs; the
-   Berlin WFS, for example, needs a bounding box around it. Coordinates are converted only in
-   code.
+   be in Berlin; a place the user travels to may be outside it. After intake, the property is
+   stored as one point (latitude and longitude). The code that calls each source converts
+   this point to the format that source needs; the Berlin WFS, for example, needs a bounding
+   box around it. Coordinates are converted only in code.
 2. **Research** runs in parallel branches after the input is complete.
-   - *Surroundings:* one Overpass query returns the nearest objects of each checklist class,
-     up to a fixed number per class, each class within its own radius. The model marks each
-     object as clear or unclear. Clear objects go into the state as they are. Unclear objects
-     are investigated, nearest first, up to a fixed number per class; the rest are listed in
-     the report as not investigated.
+   - *Surroundings:* one Overpass query returns the map elements of each checklist class,
+     each class within its own radius. Code groups the elements into objects (one site or one
+     road can be several elements), measures the distance to each object and keeps the
+     nearest, up to a fixed number per class. The model marks each object as clear or unclear.
+     Clear objects go into the state as they are. Unclear objects are investigated, nearest
+     first, at most five per class; the rest are listed in the report as not investigated.
    - *Planned development:* one query to the Berlin B-Plan WFS. Plans with an unclear status
      are investigated in the same way as unclear map objects.
    - *Commute:* only if the user named places they travel to regularly. Each place has its
