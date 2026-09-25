@@ -120,8 +120,8 @@ Nothing is kept for the next run.
 1. **Intake** is one loop for any first message: a greeting, an address alone or a full
    request. The model finds the addresses and answers in the message. Code geocodes each new
    address, saves it in the state and checks what is still missing or unclear. The model then
-   asks the user for it. If an address is ambiguous or outside Berlin, the user gets a
-   question. After intake, the property is stored as one point (latitude and longitude). The
+   asks the user for it. If an address is ambiguous, the user gets a question. The flat must
+   be in Berlin; a place the user travels to may be outside it. After intake, the property is stored as one point (latitude and longitude). The
    code that calls each source converts this point to the format that source needs; the
    Berlin WFS, for example, needs a bounding box around it. Coordinates are converted only in
    code.
@@ -136,8 +136,8 @@ Nothing is kept for the next run.
    - *Commute:* only if the user named places they travel to regularly. Each place has its
      own times, so two people with different schedules give two entries. For each place, code
      asks Transitous for two journeys on a normal weekday: there, at the time the user usually
-     leaves, and back, at the time they usually return. Each journey is the average of the
-     next three connections.
+     leaves home, and back, at the time they usually leave the place. Each journey is the
+     average of the next three connections.
 3. **Report.** The model writes the report from the state, with its own prompt. Objects that
    could not be identified are listed at the end of the report. They are not removed.
 

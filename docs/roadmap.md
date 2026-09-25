@@ -3,8 +3,8 @@
 The implementation steps, in order.
 
 1. ✅ **Repository setup.**
-2. **Checklist and intake questions.** Each checked class with its radius, its source and why
-   it matters; the questions the agent asks the user. Kept as data.
+2. ✅ **Checklist.** Each checked class with its radius, its source and why it matters. Kept as
+   data.
 3. **Spike.** One script in `spikes/` calls each source once at a few addresses. It checks:
    - How many objects of each class does Overpass return, and how many have no name? This
      sets the investigation cap per class.
