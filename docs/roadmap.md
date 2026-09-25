@@ -8,7 +8,6 @@ The implementation steps, in order.
 3. **Spike.** One script in `spikes/` calls each source once at a few addresses. It checks:
    - How many objects of each class does Overpass return, and how many have no name? This
      sets the investigation cap per class.
-   - Does each B-Plan in the WFS have a usable status (in force or in progress)?
    - Which search words find out what an unnamed object is: its OSM tags (such as
      `operator`), the nearest street or the district?
 
