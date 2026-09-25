@@ -123,8 +123,8 @@ Nothing is kept for the next run.
    asks the user for it. If an address is ambiguous or outside Berlin, the user gets a
    question. After intake, the property is stored as one point (latitude and longitude). The
    code that calls each source converts this point to the format that source needs; the
-   Berlin WFS, for example, uses a different coordinate system. Coordinates are converted
-   only in code.
+   Berlin WFS, for example, needs a bounding box around it. Coordinates are converted only in
+   code.
 2. **Research** runs in parallel branches after the input is complete.
    - *Surroundings:* one Overpass query returns the nearest objects of each checklist class,
      up to a fixed number per class, each class within its own radius. The model marks each
