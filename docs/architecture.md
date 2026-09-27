@@ -8,12 +8,12 @@ flowchart TD
         direction LR
         START((" ")):::start
         U(["User<br/><i>an LLM simulator in evals</i>"]):::human
-        M["Read the message<br/>pick out addresses and answers"]:::model
+        M["Extract addresses<br/>and answers"]:::model
         G["Geocode new addresses"]:::code
         NOM[["Nominatim<br/>geocoding API"]]:::ext
         PR[("Property location<br/>Commute destinations")]:::data
         C{"Anything missing<br/>or unclear?"}:::code
-        A["Ask for it"]:::model
+        A["Ask for what is missing"]:::model
         DONE(["Input complete"]):::milestone
         START --> U
         U -->|"any message"| M
