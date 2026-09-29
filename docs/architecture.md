@@ -33,9 +33,8 @@ flowchart TD
             T["Triage<br/>which objects are unclear<br/>capped in number"]:::model
         end
         subgraph PLN["Branch: planned development"]
-            PL["B-Plans in the radius<br/>and their status"]:::code
+            PL["B-Plans in the radius<br/>and their legal status"]:::code
             WFS[["Berlin B-Plan WFS<br/>city planning data"]]:::ext
-            PS{"Status clear?"}:::code
         end
         subgraph COM["Branch: commute"]
             TR["Journeys there and back<br/>per destination, averaged"]:::code
@@ -55,19 +54,17 @@ flowchart TD
         OV --> T
         OV --- OVP
         T -->|"per unclear object"| S
-        PL --> PS
+        PL -->|"every plan, nearest first<br/>capped in number"| S
         PL --- WFS
-        PS -->|"unclear"| S
         S --> D
         S --- TAV
         D -->|"search again"| S
         D -->|"stop"| F
         T -->|"clear from the data"| FS
-        PS -->|"clear"| FS
         F -->|"finding only, not the transcript"| FS
         TR --> FS
         FS --> JN
-        TR ~~~ PS
+        TR ~~~ PL
         TR --- TRA
     end
 
@@ -132,8 +129,12 @@ Nothing is kept for the next run.
      nearest, up to a fixed number per class. The model marks each object as clear or unclear.
      Clear objects go into the state as they are. Unclear objects are investigated, nearest
      first, at most five per class; the rest are listed in the report as not investigated.
-   - *Planned development:* one query to the Berlin B-Plan WFS. Plans with an unclear status
-     are investigated in the same way as unclear map objects.
+   - *Planned development:* one query to the Berlin B-Plan WFS. It gives each plan's legal
+     status and, for plans in force, the permitted use of the land. It never shows whether
+     building has started, so there is no triage here: code marks every plan as unclear.
+     Plans are investigated like unclear map objects, nearest first, at most five; the rest
+     are listed in the report as not investigated. The age of a plan does not exclude it: an
+     old plan can still cover land that is not built.
    - *Commute:* only if the user named places they travel to regularly. Each place has its
      own times, so two people with different schedules give two entries. For each place, code
      asks Transitous for two journeys on a normal weekday: there, at the time the user usually
@@ -165,7 +166,7 @@ tasks start from use this model.
 | `destinations` | list of Destination | The places the user travels to, with times | Intake | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Every source response and search result | Every step that calls a source | Merge by ID |
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Surroundings, planned development, triage | Merge by ID |
-| `findings` | list of Finding | One per clear or investigated object | Triage and the plan status check for clear objects; the investigation for unclear ones | Merge by object ID |
+| `findings` | list of Finding | One per clear or investigated object | Triage for clear map objects; the investigation for unclear objects | Merge by object ID |
 | `journeys` | list of Journey | Two per destination: there and back | Commute | Append |
 | `branches` | list of BranchResult | The result of each research branch | Each research branch | Merge by branch |
 | `report` | text | The report | Report | Replace |
@@ -252,6 +253,11 @@ The model decides:
 - in triage: which map objects are unclear;
 - in an investigation: what to search for, whether to search again, and what the finding is;
 - in the report: what to highlight and how to say it.
+
+Triage covers map objects only. Map names and tags are free text, and reading them needs
+judgement. B-Plan fields are fixed values and dates, and none of them shows whether building
+has started. A model would see nothing more than code does and could only guess from its
+memory. So code sends every B-Plan to investigation.
 
 Code decides what runs next. It reads the state and follows fixed rules: it asks the user
 when something is missing, starts one investigation per unclear object, and plans journeys
