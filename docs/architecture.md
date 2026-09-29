@@ -76,7 +76,10 @@ flowchart TD
         REF["Fill in the references<br/>from the evidence"]:::code
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
-        RS --> W --> REF --> OUT --> STOP
+        RS --> W --> REF
+        REF -.->|"all IDs found"| OUT
+        REF -.->|"unknown ID:<br/>write again"| W
+        OUT --> STOP
     end
 
     INPUT --> RESEARCH
@@ -245,6 +248,7 @@ classDiagram
         evidence_ids: list of ID
     }
     class Journey {
+        id: ID
         destination_id: ID
         direction: there | back
         minutes: number, mean of three connections
@@ -285,7 +289,7 @@ it and writes only the fields listed for it.
 | Research | Investigate one object | model | one entry of `objects`, `run_date` | `findings`, `sources` |
 | Research | Plan journeys | code | `property`, `destinations`, `run_date` | `journeys`, `sources`, `branches` |
 | Report | Write the report | model | `run_date`, `destinations`, `objects`, `findings`, `journeys`, `branches` | `report` |
-| Report | Fill in the references | code | `report`, `findings`, `sources` | `report` |
+| Report | Fill in the references | code | `report`, `findings`, `journeys`, `sources` | `report` |
 
 ## Who decides
 
@@ -326,8 +330,12 @@ result an ID and stores it. A finding cites the IDs it uses and its key facts (a
 a status), written exactly as in the source. When a finding is written, code checks that each
 ID exists and that each fact appears in the stored text. If the check fails, the finding is
 rejected. The agent then searches more, within the object's search limit, or marks the object
-as unidentified. Code fills in the references in the report from the evidence, so the model
-cannot invent one.
+as unidentified.
+
+In the report, the model cites a finding by its object ID, or a journey by its ID. It never
+writes a link. Code checks that each cited ID exists in the state and replaces it with the
+sources behind it: the link, the title and the date. If an ID is unknown, the report is
+rejected and written again. So the model cannot invent a reference.
 
 ## Prompt injection
 
