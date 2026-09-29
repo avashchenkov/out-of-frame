@@ -124,12 +124,14 @@ Nothing is kept for the next run.
    address. A place is resolved when it has coordinates. Then code, not the model, checks
    whether the input is complete: the property is resolved and in Berlin, the user has said
    where they travel, and each place is resolved and has both departure times. A vague time
-   such as "in the morning" is not written, so the model asks for a clock time. The model
-   asks for anything missing or unclear, for example which of several matching addresses is
-   meant. A place the user travels to may be outside Berlin. After the input phase, the
-   property is stored as one point (latitude and longitude). The code that calls each source
-   converts this point to the format that source needs; the Berlin WFS, for example, needs a
-   bounding box around it. Coordinates are converted only in code.
+   such as "in the morning" is not written, so the model asks for a clock time. A place the
+   user announces but does not describe yet ("I will send the second one later") is written
+   as a destination with a name only, so the input stays incomplete. The model asks for
+   anything missing or unclear, for example which of several matching addresses is meant. A
+   place the user travels to may be outside Berlin. After the input phase, the property is
+   stored as one point (latitude and longitude). The code that calls each source converts
+   this point to the format that source needs; the Berlin WFS, for example, needs a bounding
+   box around it. Coordinates are converted only in code.
 2. **Research** runs in parallel branches after the input is complete.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class,
      each class within its own radius. Code groups the elements into objects (one site or one
