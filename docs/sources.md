@@ -6,8 +6,8 @@ queries. Web search is the model's only tool (see [architecture.md](architecture
 | Source | What it gives | Called by | Key |
 |---|---|---|---|
 | Nominatim | coordinates of an address | code | none |
-| Overpass | map elements near a point | code | none |
-| Berlin B-Plan WFS | development plans near a point | code | none |
+| Overpass | map elements in a circle around a point | code | none |
+| Berlin B-Plan WFS | development plans in a rectangle | code | none |
 | Transitous | public transport journeys | code | none |
 | Tavily | web search results | the model | required |
 
@@ -22,8 +22,8 @@ with their coordinates.
 A query service over OpenStreetMap data. Public instance at
 `https://overpass-api.de/api/interpreter`. A call takes a query in Overpass QL and returns the
 matching elements with their tags. The default response is XML; `[out:json]` gives JSON. The
-`around:` filter gives each checklist class its own radius, in metres. The main OSM API is
-for map editing and cannot filter by tag or distance.
+`around:` filter selects a circle: each checklist class gets its own radius, in metres. The
+main OSM API is for map editing and cannot filter by tag or distance.
 
 A response lists OSM elements, not objects: one site can be several elements, and a road or
 a railway is many segments. The elements are not sorted by distance, and `out tags` returns
@@ -37,9 +37,9 @@ Berlin's development plans (B-Plan, from Bebauungsplan) as an OGC Web Feature Se
 `https://gdi.berlin.de/services/wfs/bplan`. It has one feature type per procedure status:
 `bplan:a_bp_iv` (in procedure), `bplan:b_bp_fs` (in force) and `bplan:c_bp_ak` (no longer in
 force). A `GetFeature` call with a bounding box returns plan areas with their attributes,
-such as `bp_rechtsstand`, the status. The default response is GML;
-`outputFormat=application/json` gives GeoJSON. The default coordinate system is EPSG:25833;
-EPSG:4326 is also accepted.
+such as `bp_rechtsstand`, the status. It filters only by this rectangle, so code drops the
+plans outside the class's circle. The default response is GML; `outputFormat=application/json`
+gives GeoJSON. The default coordinate system is EPSG:25833; EPSG:4326 is also accepted.
 
 A B-Plan sets the permitted use of land. It does not show whether building has started or
 finished; that is a question for the investigation.

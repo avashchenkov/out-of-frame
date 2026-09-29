@@ -133,23 +133,25 @@ flowchart does not show the state; the table
      and a destination announced but not described ("I will send the second one later") gets
      a name only. The model asks for what is missing or unclear, for example which of several
      matching addresses is meant.
-   - Code converts coordinates to the format each source needs, for example a bounding box
-     around the property.
 2. **Research** starts when the input is complete. An object is one thing near the property
    in one checklist class: a site from the map, or a planned development from a B-Plan
-   (*Bebauungsplan*, a binding development plan). Unclear objects are investigated nearest
-   first, at most five per class; the rest are listed in the report as not investigated. Every
-   branch runs to its end, even with nothing to do; its result is then empty.
+   (*Bebauungsplan*, a binding development plan). Each class is searched in a circle around
+   the property, with the class's own radius. An object is in the circle if its nearest edge
+   is; distances are always measured to the nearest edge. Unclear objects are investigated
+   nearest first, at most five per class; the rest are listed in the report as not
+   investigated. Every branch runs to its end, even with nothing to do; its result is then
+   empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
-     within the class's radius. Code groups them into objects (one site or one road can be
+     within the class's circle. Code groups them into objects (one site or one road can be
      several elements) and keeps the nearest N per class. Map names and tags are free text, so
      the model triages them: clear objects become findings as they are, unclear ones are
      investigated.
-   - *Planned development:* one query to the Berlin B-Plan WFS, the city's planning API, gives
-     each plan's legal status and, for plans in force, the permitted land use. These are fixed
-     values and dates, and none shows whether building has started, so a model could only
-     guess. There is no triage: code marks every plan as unclear. An old plan is not excluded:
-     it can still cover land that is not built.
+   - *Planned development:* the Berlin B-Plan WFS, the city's planning API, filters only by a
+     rectangle. Code asks for the square around the circle and drops the plans outside the
+     circle. The WFS gives each plan's legal status and, for plans in force, the permitted
+     land use. These are fixed values and dates, and none shows whether building has started,
+     so a model could only guess. There is no triage: code marks every plan as unclear. An old
+     plan is not excluded: it can still cover land that is not built.
    - *Commute:* for each destination, code asks Transitous for two journeys on a normal
      weekday: there, when the user leaves home, and back, when they leave the destination.
      Each journey is the mean of the next three connections. Each destination has its own
