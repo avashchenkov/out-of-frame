@@ -142,6 +142,107 @@ Nothing is kept for the next run.
 3. **Report.** The model writes the report from the state, with its own prompt. Objects that
    could not be identified are listed at the end of the report. They are not removed.
 
+## The state
+
+The state is the record of one run. It is described here as a logical data model: records,
+fields and plain types, not the classes of a language or a framework. The run states that eval
+tasks start from use this model.
+
+- **Updates.** A step reads the state and returns only the fields it changes. The research
+  branches run in parallel and can change the same field, so each field has a merge rule.
+- **Saved after each step.** A run can stop to ask the user and continue later, so the state
+  holds only data.
+- **No derived values.** Code computes them from the state when it needs them: for example,
+  what is still missing in intake, or which unclear objects were not investigated.
+- **Sources are kept in the state.** Code decides which part of the state each model step
+  gets. No model step gets the whole state.
+
+| Field | Type | Contents | Written by | Merge rule |
+|---|---|---|---|---|
+| `run_date` | date | The date of the run; the agent has no clock | Run input | Replace |
+| `messages` | list of Message | The intake conversation | Intake | Append |
+| `property` | Place | The flat, in Berlin | Intake | Replace |
+| `destinations` | list of Destination | The places the user travels to, with times | Intake | Replace the whole list, so a correction wins |
+| `sources` | list of Source | Every source response and search result | Every step that calls a source | Merge by ID |
+| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Surroundings, planned development, triage | Merge by ID |
+| `findings` | list of Finding | One per clear or investigated object | Triage and the plan status check for clear objects; the investigation for unclear ones | Merge by object ID |
+| `journeys` | list of Journey | Two per destination: there and back | Commute | Append |
+| `branches` | list of BranchResult | The result of each research branch | Each research branch | Merge by branch |
+| `report` | text | The report | Report | Replace |
+
+*Replace* keeps the newest value. *Append* adds to the list. *Merge by ID* adds new entries
+and replaces an entry with the same ID.
+
+```mermaid
+classDiagram
+    direction LR
+    class Message {
+        role: user | agent
+        text: text
+    }
+    class Place {
+        address: text
+        lat: number
+        lon: number
+    }
+    class Destination {
+        id: ID
+        name: text
+        place: Place
+        leave_home: time
+        leave_place: time
+    }
+    class Source {
+        id: ID
+        kind: geocoding | map | plans | transit | web search
+        request: text
+        url: text
+        retrieved_at: date and time
+        content: text
+    }
+    class NearbyObject {
+        id: ID
+        class: checklist class ID
+        name: text, optional
+        details: map tags or plan fields
+        lat: number
+        lon: number
+        distance_m: number
+        triage: clear | unclear
+        source_id: ID
+    }
+    class Finding {
+        object_id: ID
+        class: checklist class ID
+        outcome: identified | unidentified
+        type: from the class's list, or unknown
+        status: from a fixed list, or unknown
+        why_it_matters: text
+        key_facts: list of text
+        evidence_ids: list of ID
+    }
+    class Journey {
+        destination_id: ID
+        direction: there | back
+        minutes: number, mean of three connections
+        source_id: ID
+    }
+    class BranchResult {
+        branch: surroundings | planned development | commute
+        result: ok | empty | failed
+    }
+    Destination *-- Place
+    NearbyObject --> Source : source_id
+    Finding --> NearbyObject : object_id
+    Finding --> Source : evidence_ids
+    Journey --> Destination : destination_id
+    Journey --> Source : source_id
+```
+
+An investigation has its own state: the object, the searches so far and their results. This
+state is not part of the run state. When the investigation ends, only the finding and the
+sources it cites go into the run state.
+
 ## Who decides
 
 The model decides:
