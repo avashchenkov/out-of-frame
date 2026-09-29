@@ -35,7 +35,7 @@ flowchart TD
             T["Triage<br/>which objects are unclear"]:::model
         end
         subgraph PLN["Branch: planned development"]
-            PL["Get B-Plans in the radius<br/>with their legal status"]:::code
+            PL["Get B-Plans in the radius<br/>with their legal status<br/>one object per plan"]:::code
             WFS[["Berlin B-Plan WFS<br/>city planning API"]]:::ext
         end
         subgraph COM["Branch: commute"]
@@ -55,7 +55,7 @@ flowchart TD
         OV --> T
         OV --- OVP
         T -.->|"per unclear object<br/>nearest first, capped in number"| S
-        PL -.->|"per plan<br/>nearest first, capped in number"| S
+        PL -.->|"per object<br/>nearest first, capped in number"| S
         PL --- WFS
         S --> D
         S --- TAV
@@ -135,9 +135,11 @@ Nothing is kept for the next run.
    stored as one point (latitude and longitude). The code that calls each source converts
    this point to the format that source needs; the Berlin WFS, for example, needs a bounding
    box around it. Coordinates are converted only in code.
-2. **Research** runs in parallel branches after the input is complete. Every branch always
-   runs to its end, even with nothing to do; its result is then empty. Research is complete
-   when every branch and every investigation has ended.
+2. **Research** runs in parallel branches after the input is complete. An object is one
+   thing near the property in one checklist class: a site from the map, or a planned
+   development from a B-Plan. Every branch always runs to its end, even with nothing to do;
+   its result is then empty. Research is complete when every branch and every investigation
+   has ended.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class,
      each class within its own radius. Code groups the elements into objects (one site or one
      road can be several elements), measures the distance to each object and keeps the
