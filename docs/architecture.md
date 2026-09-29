@@ -13,17 +13,14 @@ flowchart TD
         M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
         G["Geocode new addresses"]:::code
         NOM[["Nominatim<br/>geocoding API"]]:::ext
-        PR[("Property location<br/>Commute destinations<br/>Departure times")]:::data
         C{"Anything missing<br/>or unclear?"}:::code
         A["Ask for what is missing"]:::model
         DONE(["Input complete"]):::milestone
         START --> U
         U -->|"any message"| M
-        M --> G --> C
-        G --- NOM
-        M -.->|"writes what changed"| PR
-        G -.->|"writes coordinates"| PR
-        PR -.->|"reads"| C
+        M -->|"changed fields"| G
+        G --> C
+        G ---|"only for new addresses"| NOM
         C -->|"yes"| A
         A -->|"question"| U
         C -->|"no"| DONE
@@ -51,7 +48,6 @@ flowchart TD
             D{"Enough?<br/>or cap reached"}:::model
             F["Finding<br/>class, type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
         end
-        FS[("Findings, plans, journeys<br/>each with its evidence")]:::data
         JN(["Research complete"]):::milestone
         J --> OV
         J --> PL
@@ -65,10 +61,9 @@ flowchart TD
         S --- TAV
         D -->|"search again"| S
         D -->|"stop"| F
-        T -->|"clear from the data"| FS
-        F -->|"finding only, not the transcript"| FS
-        TR --> FS
-        FS --> JN
+        T -->|"clear from the data"| JN
+        F -->|"the finding only,<br/>not the transcript"| JN
+        TR --> JN
         TR ~~~ PL
         TR --- TRA
     end
@@ -77,9 +72,10 @@ flowchart TD
         direction TB
         RS(["Report starts"]):::milestone
         W["Write the report<br/>from the state, with its own prompt<br/>unidentified objects in the footer"]:::model
+        REF["Fill in the references<br/>from the evidence"]:::code
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
-        RS --> W --> OUT --> STOP
+        RS --> W --> REF --> OUT --> STOP
     end
 
     INPUT --> RESEARCH
@@ -91,15 +87,13 @@ flowchart TD
         k2["Model decides<br/><i>Claude, Anthropic API</i>"]:::model
         k3["Code decides"]:::code
         k5[["External API"]]:::ext
-        k4[("State and data")]:::data
-        k1 ~~~ k2 ~~~ k3 ~~~ k5 ~~~ k4
+        k1 ~~~ k2 ~~~ k3 ~~~ k5
     end
     REPORT ~~~ KEY
 
     classDef human fill:#fcd34d,stroke:#92400e,color:#111827
     classDef model fill:#c4b5fd,stroke:#5b21b6,stroke-width:2px,color:#111827
     classDef code fill:#ffffff,stroke:#475569,stroke-width:1.5px,color:#111827
-    classDef data fill:#e5e7eb,stroke:#6b7280,color:#111827
     classDef ext fill:#bbf7d0,stroke:#15803d,stroke-width:1.5px,color:#111827
     classDef milestone fill:#f1f5f9,stroke:#475569,color:#111827
     classDef start fill:#1f2937,stroke:#1f2937,color:#1f2937
@@ -114,22 +108,26 @@ flowchart TD
     style KEY fill:#f8fafc,stroke:#94a3b8
 ```
 
+The state is not drawn. Each step reads it and returns only the fields it changes;
+[What each step reads and writes](#what-each-step-reads-and-writes) lists the fields.
+
 A run has three phases and one state. Only the state passes from one phase to the next.
 Nothing is kept for the next run.
 
 1. **Input** is one loop for any first message: a greeting, an address alone or a full
    request. The model finds the property address, the places the user travels to and the
    departure times in the message. It writes to the state only what changed. "I travel
-   nowhere" is written too: it is an answer, not a missing value. Code geocodes new
-   addresses. Then code, not the model, checks whether the input is complete: the property
+   nowhere" is written too: it is an answer, not a missing value. Code then geocodes the new
+   addresses and calls Nominatim only if there are any. A place is resolved when it has
+   coordinates. Then code, not the model, checks whether the input is complete: the property
    is resolved and in Berlin, the user has said where they travel, and each place is
    resolved and has both departure times. A vague time such as "in the morning" is not
    written, so the model asks for a clock time. The model asks for anything missing or
    unclear, for example which of several matching addresses is meant. A place the user
    travels to may be outside Berlin. After the input phase, the property is stored as one
-   point (latitude and longitude). The code that calls each source converts
-   this point to the format that source needs; the Berlin WFS, for example, needs a bounding
-   box around it. Coordinates are converted only in code.
+   point (latitude and longitude). The code that calls each source converts this point to
+   the format that source needs; the Berlin WFS, for example, needs a bounding box around
+   it. Coordinates are converted only in code.
 2. **Research** runs in parallel branches after the input is complete.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class,
      each class within its own radius. Code groups the elements into objects (one site or one
@@ -149,7 +147,8 @@ Nothing is kept for the next run.
      leaves home, and back, at the time they usually leave the place. Each journey is the
      average of the next three connections.
 3. **Report.** The model writes the report from the state, with its own prompt. Objects that
-   could not be identified are listed at the end of the report. They are not removed.
+   could not be identified are listed at the end of the report. They are not removed. Code
+   then fills in the references from the evidence (see [Grounding](#grounding)).
 
 ## The state
 
@@ -166,18 +165,18 @@ tasks start from use this model.
 - **Sources are kept in the state.** Code decides which part of the state each model step
   gets. No model step gets the whole state.
 
-| Field | Type | Contents | Written by | Merge rule |
-|---|---|---|---|---|
-| `run_date` | date | The date of the run; the agent has no clock | Set when the run starts | Replace |
-| `messages` | list of Message | The conversation in the input phase | Input | Append |
-| `property` | Place, or null | The property, in Berlin; null until its address is resolved | Input | Replace |
-| `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Input | Replace the whole list, so a correction wins |
-| `sources` | list of Source | Every source response and search result | Every step that calls a source | Merge by ID |
-| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Surroundings, planned development, triage | Merge by ID |
-| `findings` | list of Finding | One per clear or investigated object | Triage for clear map objects; the investigation for unclear objects | Merge by object ID |
-| `journeys` | list of Journey | Two per destination: there and back | Commute | Append |
-| `branches` | list of BranchResult | The result of each research branch | Each research branch | Merge by branch |
-| `report` | text | The report | Report | Replace |
+| Field | Type | Contents | Merge rule |
+|---|---|---|---|
+| `run_date` | date | The date of the run; the agent has no clock | Replace |
+| `messages` | list of Message | The conversation in the input phase | Append |
+| `property` | Place, or null | The property, in Berlin; null until the user gives its address | Replace |
+| `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
+| `sources` | list of Source | Every source response and search result | Merge by ID |
+| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Merge by ID |
+| `findings` | list of Finding | One per clear or investigated object | Merge by object ID |
+| `journeys` | list of Journey | Two per destination: there and back | Append |
+| `branches` | list of BranchResult | The result of each research branch | Merge by branch |
+| `report` | text | The report | Replace |
 
 *Replace* keeps the newest value. *Append* adds to the list. *Merge by ID* adds new entries
 and replaces an entry with the same ID. *Null* means not known yet, and an *optional* field
@@ -192,8 +191,8 @@ classDiagram
     }
     class Place {
         address: text
-        lat: number
-        lon: number
+        lat: number, optional
+        lon: number, optional
     }
     class Destination {
         id: ID
@@ -252,6 +251,27 @@ classDiagram
 An investigation has its own state: the object, the searches so far and their results. This
 state is not part of the run state. When the investigation ends, only the finding and the
 sources it cites go into the run state.
+
+### What each step reads and writes
+
+The steps are listed in the order of the flowchart. A step reads only the fields listed for
+it and writes only the fields listed for it.
+
+| Phase | Step | Who | Reads | Writes |
+|---|---|---|---|---|
+| Start | Start the run | code | nothing | `run_date` |
+| Input | The user's message | user | nothing | `messages` |
+| Input | Extract the property address, destinations and departure times | model | `messages`, `property`, `destinations` | `property`, `destinations` |
+| Input | Geocode new addresses | code | `property`, `destinations` | `property`, `destinations`, `sources` |
+| Input | Anything missing or unclear? | code | `property`, `destinations` | nothing |
+| Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages` |
+| Research | Map objects | code | `property` | `objects`, `sources`, `branches` |
+| Research | Triage | model | `objects` (map objects) | `objects`, `findings` |
+| Research | B-Plans in the radius | code | `property` | `objects`, `sources`, `branches` |
+| Research | Investigate one object | model | one entry of `objects`, `run_date` | `findings`, `sources` |
+| Research | Journeys | code | `property`, `destinations`, `run_date` | `journeys`, `sources`, `branches` |
+| Report | Write the report | model | `run_date`, `destinations`, `objects`, `findings`, `journeys`, `branches` | `report` |
+| Report | Fill in the references | code | `report`, `findings`, `sources` | `report` |
 
 ## Who decides
 
