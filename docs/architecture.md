@@ -1,6 +1,7 @@
 # Architecture
 
-How the agent is built: the flow of a run, the state it keeps and the rules it follows.
+How the agent is built: the flow of a run, the state it keeps and the rules it follows. What
+the agent is for: [vision.md](vision.md). Each data source: [sources.md](sources.md).
 
 ## One run
 
@@ -11,7 +12,7 @@ flowchart TD
         START((" ")):::start
         U(["User"]):::human
         M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
-        G["Geocode addresses<br/>without coordinates"]:::code
+        G["Geocode every address"]:::code
         NOM[["Nominatim<br/>geocoding API"]]:::ext
         C{"Anything missing<br/>or unclear?"}:::code
         A["Ask for what is missing"]:::model
@@ -114,16 +115,17 @@ flowchart TD
     style KEY fill:#f8fafc,stroke:#94a3b8
 ```
 
-A run has three phases and one state. Only the state passes between phases, and nothing is
-kept for the next run. The state is not drawn:
-[What each step reads and writes](#what-each-step-reads-and-writes) lists the fields.
+A run has three phases. All steps share one state: each step reads it and writes its result
+to it. Only the state passes between phases, and nothing is kept for the next run. The
+flowchart does not show the state; the table
+[What each step reads and writes](#what-each-step-reads-and-writes) does.
 
 1. **Input** is one loop for any first message: a greeting, an address alone or a full
    request.
-   - The model writes only what changed. It never writes coordinates: a new or corrected
-     address is written without them, and code keeps the coordinates of an unchanged one.
-   - Code geocodes each address without coordinates and never changes an address. A place is
-     resolved when it has coordinates.
+   - The model writes only what the user added or corrected in this message, and never
+     coordinates.
+   - Code then geocodes every address and never changes an address. A place is resolved when
+     it has coordinates.
    - Code, not the model, checks that the input is complete: the property is resolved and in
      Berlin, the user has said where they travel, and each destination is resolved and has
      both departure times. A destination may be outside Berlin.
@@ -132,22 +134,22 @@ kept for the next run. The state is not drawn:
      a name only. The model asks for what is missing or unclear, for example which of several
      matching addresses is meant.
    - Code converts coordinates to the format each source needs, for example a bounding box
-     for the WFS.
+     around the property.
 2. **Research** starts when the input is complete. An object is one thing near the property
-   in one checklist class: a site from the map, or a planned development from a B-Plan.
-   Unclear objects are investigated nearest first, at most five per class; the rest are listed
-   in the report as not investigated. Every branch runs to its end, even with nothing to do;
-   its result is then empty.
+   in one checklist class: a site from the map, or a planned development from a B-Plan
+   (*Bebauungsplan*, a binding development plan). Unclear objects are investigated nearest
+   first, at most five per class; the rest are listed in the report as not investigated. Every
+   branch runs to its end, even with nothing to do; its result is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
      within the class's radius. Code groups them into objects (one site or one road can be
      several elements) and keeps the nearest N per class. Map names and tags are free text, so
      the model triages them: clear objects become findings as they are, unclear ones are
      investigated.
-   - *Planned development:* one query to the Berlin B-Plan WFS gives each plan's legal status
-     and, for plans in force, the permitted land use. These are fixed values and dates, and
-     none shows whether building has started, so a model could only guess. There is no
-     triage: code marks every plan as unclear. An old plan is not excluded: it can still cover
-     land that is not built.
+   - *Planned development:* one query to the Berlin B-Plan WFS, the city's planning API, gives
+     each plan's legal status and, for plans in force, the permitted land use. These are fixed
+     values and dates, and none shows whether building has started, so a model could only
+     guess. There is no triage: code marks every plan as unclear. An old plan is not excluded:
+     it can still cover land that is not built.
    - *Commute:* for each destination, code asks Transitous for two journeys on a normal
      weekday: there, when the user leaves home, and back, when they leave the destination.
      Each journey is the mean of the next three connections. Each destination has its own
@@ -264,7 +266,7 @@ the whole state.
 | Start | Start the run | code | nothing | `run_date` |
 | Input | The user's message | user | nothing | `messages` |
 | Input | Extract the property address, destinations and departure times | model | `messages`, `property`, `destinations` | `property`, `destinations` |
-| Input | Geocode addresses without coordinates | code | `property`, `destinations` | `property`, `destinations`, `sources` |
+| Input | Geocode every address | code | `property`, `destinations` | `property`, `destinations`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations` | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages` |
 | Research | Get map objects | code | `property` | `objects`, `sources`, `branches` |
