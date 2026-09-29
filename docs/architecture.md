@@ -20,52 +20,53 @@ flowchart TD
         U -->|"any message"| M
         M --> G
         G --> C
-        G ---|"only if there are any"| NOM
-        C -->|"yes"| A
+        G -.-|"only if there are any"| NOM
+        C -.->|"yes"| A
         A -->|"question"| U
-        C -->|"no"| DONE
+        C -.->|"no"| DONE
     end
 
-    subgraph RESEARCH["Phase 2: Research, branches in parallel"]
+    subgraph RESEARCH["Phase 2: Research"]
         direction TB
-        J(["Research starts"]):::milestone
+        J(["Research starts<br/><i>branches run in parallel</i>"]):::milestone
         subgraph SUR["Branch: surroundings"]
-            OV["Map objects<br/>nearest N per checklist class"]:::code
+            OV["Get map objects in the radius<br/>nearest N per checklist class"]:::code
             OVP[["Overpass API<br/>OpenStreetMap data"]]:::ext
-            T["Triage<br/>which objects are unclear<br/>capped in number"]:::model
+            T["Triage<br/>which objects are unclear"]:::model
         end
         subgraph PLN["Branch: planned development"]
-            PL["B-Plans in the radius<br/>and their legal status"]:::code
-            WFS[["Berlin B-Plan WFS<br/>city planning data"]]:::ext
+            PL["Get B-Plans in the radius<br/>with their legal status"]:::code
+            WFS[["Berlin B-Plan WFS<br/>city planning API"]]:::ext
         end
         subgraph COM["Branch: commute"]
-            TR["Journeys there and back<br/>per destination, averaged"]:::code
+            TR["Plan journeys there and back<br/>per destination, averaged"]:::code
             TRA[["Transitous<br/>journey planner API"]]:::ext
         end
-        subgraph INV["Investigate one object: shared by the branches, its own context"]
+        subgraph INV["Investigate each object: one run per object, in parallel, each in its own context"]
             S["Search the web<br/>the model writes the query"]:::model
             TAV[["Tavily<br/>web search API"]]:::ext
             D{"Enough?<br/>or cap reached"}:::model
-            F["Finding<br/>class, type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
+            F["Write the finding<br/>class, type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
         end
-        JN(["Research complete"]):::milestone
+        JN(["Research complete<br/><i>when every branch and<br/>every investigation has ended</i>"]):::milestone
         J --> OV
         J --> PL
-        J -->|"if any destinations"| TR
+        J --> TR
         OV --> T
         OV --- OVP
-        T -->|"per unclear object"| S
-        PL -->|"every plan, nearest first<br/>capped in number"| S
+        T -.->|"per unclear object<br/>nearest first, capped in number"| S
+        PL -.->|"per plan<br/>nearest first, capped in number"| S
         PL --- WFS
         S --> D
         S --- TAV
-        D -->|"search again"| S
-        D -->|"stop"| F
-        T -->|"clear from the data"| JN
-        F -->|"the finding only,<br/>not the transcript"| JN
+        D -.->|"search again"| S
+        D -.->|"stop"| F
+        T --> JN
+        PL --> JN
+        F --> JN
         TR --> JN
         TR ~~~ PL
-        TR --- TRA
+        TR -.-|"only if there are destinations"| TRA
     end
 
     subgraph REPORT["Phase 3: Report"]
@@ -81,13 +82,14 @@ flowchart TD
     INPUT --> RESEARCH
     RESEARCH --> REPORT
 
-    subgraph KEY["Who does what"]
+    subgraph KEY["Key"]
         direction LR
         k1(["User"]):::human
         k2["Model decides<br/><i>Claude, Anthropic API</i>"]:::model
         k3["Code decides"]:::code
         k5[["External API"]]:::ext
-        k1 ~~~ k2 ~~~ k3 ~~~ k5
+        k6[" "]:::keyedge -.->|"only when its<br/>condition holds"| k7[" "]:::keyedge
+        k1 ~~~ k2 ~~~ k3 ~~~ k5 ~~~ k6
     end
     REPORT ~~~ KEY
 
@@ -98,6 +100,7 @@ flowchart TD
     classDef milestone fill:#f1f5f9,stroke:#475569,color:#111827
     classDef start fill:#1f2937,stroke:#1f2937,color:#1f2937
     classDef stop fill:#ffffff,stroke:#1f2937,stroke-width:2px,color:#1f2937
+    classDef keyedge fill:none,stroke:none
     style INPUT fill:#f8fafc,stroke:#64748b
     style RESEARCH fill:#f8fafc,stroke:#64748b
     style REPORT fill:#f8fafc,stroke:#64748b
@@ -132,22 +135,27 @@ Nothing is kept for the next run.
    stored as one point (latitude and longitude). The code that calls each source converts
    this point to the format that source needs; the Berlin WFS, for example, needs a bounding
    box around it. Coordinates are converted only in code.
-2. **Research** runs in parallel branches after the input is complete.
+2. **Research** runs in parallel branches after the input is complete. Every branch always
+   runs to its end, even with nothing to do; its result is then empty. Research is complete
+   when every branch and every investigation has ended.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class,
      each class within its own radius. Code groups the elements into objects (one site or one
      road can be several elements), measures the distance to each object and keeps the
      nearest, up to a fixed number per class. The model marks each object as clear or unclear.
      Clear objects go into the state as they are. Unclear objects are investigated, nearest
      first, at most five per class; the rest are listed in the report as not investigated.
+     With no map objects in the radius, there is nothing to triage.
    - *Planned development:* one query to the Berlin B-Plan WFS. It gives each plan's legal
      status and, for plans in force, the permitted use of the land. It never shows whether
      building has started, so there is no triage here: code marks every plan as unclear.
      Plans are investigated like unclear map objects, nearest first, at most five; the rest
      are listed in the report as not investigated. The age of a plan does not exclude it: an
-     old plan can still cover land that is not built.
-   - *Commute:* only if the user named places they travel to regularly. Each place has its
-     own times, so two people with different schedules give two entries. For each place, code
-     asks Transitous for two journeys on a normal weekday: there, at the time the user usually
+     old plan can still cover land that is not built. With no plans in the radius, nothing is
+     investigated.
+   - *Commute:* for the places the user travels to regularly. If there are none, code calls
+     Transitous for nothing and the branch returns no journeys. Each place has its own times,
+     so two people with different schedules give two entries. For each place, code asks
+     Transitous for two journeys on a normal weekday: there, at the time the user usually
      leaves home, and back, at the time they usually leave the place. Each journey is the
      average of the next three connections.
 3. **Report.** The model writes the report from the state, with its own prompt. Objects that
@@ -269,11 +277,11 @@ it and writes only the fields listed for it.
 | Input | Geocode addresses without coordinates | code | `property`, `destinations` | `property`, `destinations`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations` | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages` |
-| Research | Map objects | code | `property` | `objects`, `sources`, `branches` |
+| Research | Get map objects | code | `property` | `objects`, `sources`, `branches` |
 | Research | Triage | model | `objects` (map objects) | `objects`, `findings` |
-| Research | B-Plans in the radius | code | `property` | `objects`, `sources`, `branches` |
+| Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `branches` |
 | Research | Investigate one object | model | one entry of `objects`, `run_date` | `findings`, `sources` |
-| Research | Journeys | code | `property`, `destinations`, `run_date` | `journeys`, `sources`, `branches` |
+| Research | Plan journeys | code | `property`, `destinations`, `run_date` | `journeys`, `sources`, `branches` |
 | Report | Write the report | model | `run_date`, `destinations`, `objects`, `findings`, `journeys`, `branches` | `report` |
 | Report | Fill in the references | code | `report`, `findings`, `sources` | `report` |
 
