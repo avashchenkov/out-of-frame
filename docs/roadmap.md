@@ -18,12 +18,12 @@ The implementation steps, in order.
 6. **Eval harness.** It runs the tasks from step 4 and grades them. Each code grader has its
    own tests. The first run covers the tasks the first slice can already run. From here on,
    every step ends with a run of the tasks that can run by then.
-7. **The graph** ([ADR 1](adr/0001-langgraph.md)): intake questions and the investigation
+7. **The graph** ([ADR 1](adr/0001-langgraph.md)): input questions and the investigation
    loop. The loop is tested on the search results saved with the step 4 tasks. The run
    states in `evals/states/` follow the [state model](architecture.md#the-state), not
    LangGraph classes; this step adds the code that loads them into the graph state.
 8. **Remaining sources,** one at a time: Transitous, the B-Plan WFS and web search. With web
-   search come the prompt injection guards in code. The injection tasks in the intake and
+   search come the prompt injection guards in code. The injection tasks in the input and
    investigation suites measure how often the model is still misled.
 9. **Judge calibration, then the full eval run.** Each LLM judge is checked against human
    grades; until then, only code-graded scores are quoted. The full run covers all tasks,

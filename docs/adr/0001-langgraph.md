@@ -31,7 +31,7 @@ the nodes.
   The flow needs orchestration either way, and it needs no more flexibility than LangGraph
   gives.
 - **Claude Agent SDK, OpenAI Agents SDK:** built around a loop in which the model chooses the
-  tools and the next step. That fits the investigation loop only. Intake, the research
+  tools and the next step. That fits the investigation loop only. The input phase, the research
   branches and the report are fixed by code, so they would be written by hand around the
   SDK, as in the first alternative.
 - **pydantic-graph, with PydanticAI for model calls:** typed state, nodes and edges. A

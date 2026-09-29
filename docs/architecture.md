@@ -6,21 +6,24 @@ How the agent is built: the flow of a run, the state it keeps and the rules it f
 
 ```mermaid
 flowchart TD
-    subgraph INTAKE["Phase 1: Intake, a conversation until the input is complete"]
+    subgraph INPUT["Phase 1: Input"]
         direction LR
         START((" ")):::start
-        U(["User<br/><i>an LLM simulator in evals</i>"]):::human
+        U(["User"]):::human
         M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
         G["Geocode new addresses"]:::code
         NOM[["Nominatim<br/>geocoding API"]]:::ext
-        PR[("Property location<br/>Commute destinations")]:::data
+        PR[("Property location<br/>Commute destinations<br/>Departure times")]:::data
         C{"Anything missing<br/>or unclear?"}:::code
         A["Ask for what is missing"]:::model
         DONE(["Input complete"]):::milestone
         START --> U
         U -->|"any message"| M
-        M --> G --> PR --> C
+        M --> G --> C
         G --- NOM
+        M -.->|"writes what changed"| PR
+        G -.->|"writes coordinates"| PR
+        PR -.->|"reads"| C
         C -->|"yes"| A
         A -->|"question"| U
         C -->|"no"| DONE
@@ -79,7 +82,7 @@ flowchart TD
         RS --> W --> OUT --> STOP
     end
 
-    INTAKE --> RESEARCH
+    INPUT --> RESEARCH
     RESEARCH --> REPORT
 
     subgraph KEY["Who does what"]
@@ -101,7 +104,7 @@ flowchart TD
     classDef milestone fill:#f1f5f9,stroke:#475569,color:#111827
     classDef start fill:#1f2937,stroke:#1f2937,color:#1f2937
     classDef stop fill:#ffffff,stroke:#1f2937,stroke-width:2px,color:#1f2937
-    style INTAKE fill:#f8fafc,stroke:#64748b
+    style INPUT fill:#f8fafc,stroke:#64748b
     style RESEARCH fill:#f8fafc,stroke:#64748b
     style REPORT fill:#f8fafc,stroke:#64748b
     style SUR fill:#e2e8f0,stroke:#94a3b8
@@ -114,13 +117,17 @@ flowchart TD
 A run has three phases and one state. Only the state passes from one phase to the next.
 Nothing is kept for the next run.
 
-1. **Intake** is one loop for any first message: a greeting, an address alone or a full
+1. **Input** is one loop for any first message: a greeting, an address alone or a full
    request. The model finds the property address, the places the user travels to and the
-   departure times in the message. Code geocodes each new address, saves it in the state and
-   checks what is still missing or unclear. The model then asks the user for it. If an
-   address is ambiguous, the user gets a question. The property must be in Berlin; a place
-   the user travels to may be outside it. After intake, the property is
-   stored as one point (latitude and longitude). The code that calls each source converts
+   departure times in the message. It writes to the state only what changed. "I travel
+   nowhere" is written too: it is an answer, not a missing value. Code geocodes new
+   addresses. Then code, not the model, checks whether the input is complete: the property
+   is resolved and in Berlin, the user has said where they travel, and each place is
+   resolved and has both departure times. A vague time such as "in the morning" is not
+   written, so the model asks for a clock time. The model asks for anything missing or
+   unclear, for example which of several matching addresses is meant. A place the user
+   travels to may be outside Berlin. After the input phase, the property is stored as one
+   point (latitude and longitude). The code that calls each source converts
    this point to the format that source needs; the Berlin WFS, for example, needs a bounding
    box around it. Coordinates are converted only in code.
 2. **Research** runs in parallel branches after the input is complete.
@@ -155,16 +162,16 @@ tasks start from use this model.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
   holds only data.
 - **No derived values.** Code computes them from the state when it needs them: for example,
-  what is still missing in intake, or which unclear objects were not investigated.
+  what is still missing in the input phase, or which unclear objects were not investigated.
 - **Sources are kept in the state.** Code decides which part of the state each model step
   gets. No model step gets the whole state.
 
 | Field | Type | Contents | Written by | Merge rule |
 |---|---|---|---|---|
-| `run_date` | date | The date of the run; the agent has no clock | Run input | Replace |
-| `messages` | list of Message | The intake conversation | Intake | Append |
-| `property` | Place | The property, in Berlin | Intake | Replace |
-| `destinations` | list of Destination | The places the user travels to, with departure times | Intake | Replace the whole list, so a correction wins |
+| `run_date` | date | The date of the run; the agent has no clock | Set when the run starts | Replace |
+| `messages` | list of Message | The conversation in the input phase | Input | Append |
+| `property` | Place, or null | The property, in Berlin; null until its address is resolved | Input | Replace |
+| `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Input | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Every source response and search result | Every step that calls a source | Merge by ID |
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Surroundings, planned development, triage | Merge by ID |
 | `findings` | list of Finding | One per clear or investigated object | Triage for clear map objects; the investigation for unclear objects | Merge by object ID |
@@ -173,7 +180,8 @@ tasks start from use this model.
 | `report` | text | The report | Report | Replace |
 
 *Replace* keeps the newest value. *Append* adds to the list. *Merge by ID* adds new entries
-and replaces an entry with the same ID.
+and replaces an entry with the same ID. *Null* means not known yet, and an *optional* field
+can be null. An empty list is not null: it is an answer.
 
 ```mermaid
 classDiagram
@@ -190,9 +198,9 @@ classDiagram
     class Destination {
         id: ID
         name: text
-        place: Place
-        leave_home: time
-        leave_place: time
+        place: Place, optional
+        leave_home: time, optional
+        leave_place: time, optional
     }
     class Source {
         id: ID
@@ -249,8 +257,8 @@ sources it cites go into the run state.
 
 The model decides:
 
-- in intake: what the message contains (addresses, places, times) and how to ask for what is
-  missing;
+- in the input phase: what the message contains (addresses, places, times) and how to ask
+  for what is missing;
 - in triage: which map objects are unclear;
 - in an investigation: what to search for, whether to search again, and what the finding is;
 - in the report: what to highlight and how to say it.
