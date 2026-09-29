@@ -11,16 +11,16 @@ flowchart TD
         START((" ")):::start
         U(["User"]):::human
         M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
-        G["Geocode new addresses"]:::code
+        G["Geocode addresses<br/>without coordinates"]:::code
         NOM[["Nominatim<br/>geocoding API"]]:::ext
         C{"Anything missing<br/>or unclear?"}:::code
         A["Ask for what is missing"]:::model
         DONE(["Input complete"]):::milestone
         START --> U
         U -->|"any message"| M
-        M -->|"changed fields"| G
+        M --> G
         G --> C
-        G ---|"only for new addresses"| NOM
+        G ---|"only if there are any"| NOM
         C -->|"yes"| A
         A -->|"question"| U
         C -->|"no"| DONE
@@ -117,17 +117,19 @@ Nothing is kept for the next run.
 1. **Input** is one loop for any first message: a greeting, an address alone or a full
    request. The model finds the property address, the places the user travels to and the
    departure times in the message. It writes to the state only what changed. "I travel
-   nowhere" is written too: it is an answer, not a missing value. Code then geocodes the new
-   addresses and calls Nominatim only if there are any. A place is resolved when it has
-   coordinates. Then code, not the model, checks whether the input is complete: the property
-   is resolved and in Berlin, the user has said where they travel, and each place is
-   resolved and has both departure times. A vague time such as "in the morning" is not
-   written, so the model asks for a clock time. The model asks for anything missing or
-   unclear, for example which of several matching addresses is meant. A place the user
-   travels to may be outside Berlin. After the input phase, the property is stored as one
-   point (latitude and longitude). The code that calls each source converts this point to
-   the format that source needs; the Berlin WFS, for example, needs a bounding box around
-   it. Coordinates are converted only in code.
+   nowhere" is written too: it is an answer, not a missing value. The model never writes
+   coordinates: a new or corrected address is written without them, and code keeps the
+   coordinates of a place whose address did not change. Code then geocodes each address
+   that has no coordinates and calls Nominatim only if there is one. It never changes an
+   address. A place is resolved when it has coordinates. Then code, not the model, checks
+   whether the input is complete: the property is resolved and in Berlin, the user has said
+   where they travel, and each place is resolved and has both departure times. A vague time
+   such as "in the morning" is not written, so the model asks for a clock time. The model
+   asks for anything missing or unclear, for example which of several matching addresses is
+   meant. A place the user travels to may be outside Berlin. After the input phase, the
+   property is stored as one point (latitude and longitude). The code that calls each source
+   converts this point to the format that source needs; the Berlin WFS, for example, needs a
+   bounding box around it. Coordinates are converted only in code.
 2. **Research** runs in parallel branches after the input is complete.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class,
      each class within its own radius. Code groups the elements into objects (one site or one
@@ -262,7 +264,7 @@ it and writes only the fields listed for it.
 | Start | Start the run | code | nothing | `run_date` |
 | Input | The user's message | user | nothing | `messages` |
 | Input | Extract the property address, destinations and departure times | model | `messages`, `property`, `destinations` | `property`, `destinations` |
-| Input | Geocode new addresses | code | `property`, `destinations` | `property`, `destinations`, `sources` |
+| Input | Geocode addresses without coordinates | code | `property`, `destinations` | `property`, `destinations`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations` | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages` |
 | Research | Map objects | code | `property` | `objects`, `sources`, `branches` |
