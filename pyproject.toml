@@ -1,7 +1,7 @@
 [project]
 name = "out-of-frame"
 version = "0.1.0"
-description = "An AI agent that checks a Berlin address for what a flat listing leaves out."
+description = "An AI agent that checks a Berlin address for what a property listing leaves out."
 readme = "README.md"
 authors = [
     { name = "Artur Vashchenkov", email = "washenkov@gmail.com" }

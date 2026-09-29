@@ -2,15 +2,15 @@
 
 ## The problem
 
-A flat listing shows what the seller or landlord wants you to see. Problems that cost a buyer
-or a tenant later are often outside the photo: a wastewater treatment plant behind a new
-building, an industrial site that is never in the news, a motorway that is planned but not
-built yet. Nobody who sells or rents out the flat has to tell you about them, and the person
-moving in rarely knows what to check or where to look.
+A property listing shows what the seller or landlord wants you to see. Problems that cost a
+buyer or a tenant later are often outside the photo: a wastewater treatment plant behind a
+new building, an industrial site that is never in the news, a motorway that is planned but
+not built yet. Nobody who sells or rents out the property has to tell you about them, and the
+person moving in rarely knows what to check or where to look.
 
 ## The solution
 
-Out of Frame is an AI agent that checks the area around a flat for such problems. The user
+Out of Frame is an AI agent that checks the area around a property for such problems. The user
 pastes a listing or an address. The agent asks where they travel regularly and at what times.
 Then it returns a report: what is nearby, what it is, why it matters to someone living there,
 and the source of each fact. Objects it could not identify are listed too.
@@ -28,9 +28,9 @@ back at the user's usual times.
 
 ## Out of scope
 
-It reports facts and gives no advice: it does not say whether to take the flat, gives no
-overall score and does not look at prices or rents. It covers Berlin only. It is not a
-product or a public service.
+It reports facts and gives no advice: it does not say whether to buy or rent the property,
+gives no overall score and does not look at prices or rents. It covers Berlin only. It is not
+a product or a public service.
 
 ## Why an agent
 

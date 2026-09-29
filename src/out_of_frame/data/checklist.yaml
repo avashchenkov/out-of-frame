@@ -1,5 +1,5 @@
 # The classes the agent checks around an address. Each class is searched within its own
-# radius, measured from the flat to the nearest edge of the object. A radius says where the
+# radius, measured from the property to the nearest edge of the object. A radius says where the
 # agent looks. It is not a legal limit. Sources: docs/sources.md.
 #
 # osm_tags: an object matches if it has all the tags of one entry. A list of values means

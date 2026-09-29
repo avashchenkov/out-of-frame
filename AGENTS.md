@@ -1,6 +1,6 @@
 # Agent instructions
 
-Out of Frame is an AI agent that checks a Berlin address for what a flat listing leaves out.
+Out of Frame is an AI agent that checks a Berlin address for what a property listing leaves out.
 See [README.md](README.md).
 
 ## Read first
