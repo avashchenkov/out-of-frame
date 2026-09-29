@@ -111,16 +111,15 @@ flowchart TD
     style KEY fill:#f8fafc,stroke:#94a3b8
 ```
 
-## One run
-
 A run has three phases and one state. Only the state passes from one phase to the next.
 Nothing is kept for the next run.
 
 1. **Intake** is one loop for any first message: a greeting, an address alone or a full
-   request. The model finds the addresses and answers in the message. Code geocodes each new
-   address, saves it in the state and checks what is still missing or unclear. The model then
-   asks the user for it. If an address is ambiguous, the user gets a question. The flat must
-   be in Berlin; a place the user travels to may be outside it. After intake, the property is
+   request. The model finds the property address, the places the user travels to and the
+   departure times in the message. Code geocodes each new address, saves it in the state and
+   checks what is still missing or unclear. The model then asks the user for it. If an
+   address is ambiguous, the user gets a question. The property must be in Berlin; a place
+   the user travels to may be outside it. After intake, the property is
    stored as one point (latitude and longitude). The code that calls each source converts
    this point to the format that source needs; the Berlin WFS, for example, needs a bounding
    box around it. Coordinates are converted only in code.
@@ -164,8 +163,8 @@ tasks start from use this model.
 |---|---|---|---|---|
 | `run_date` | date | The date of the run; the agent has no clock | Run input | Replace |
 | `messages` | list of Message | The intake conversation | Intake | Append |
-| `property` | Place | The flat, in Berlin | Intake | Replace |
-| `destinations` | list of Destination | The places the user travels to, with times | Intake | Replace the whole list, so a correction wins |
+| `property` | Place | The property, in Berlin | Intake | Replace |
+| `destinations` | list of Destination | The places the user travels to, with departure times | Intake | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Every source response and search result | Every step that calls a source | Merge by ID |
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Surroundings, planned development, triage | Merge by ID |
 | `findings` | list of Finding | One per clear or investigated object | Triage for clear map objects; the investigation for unclear objects | Merge by object ID |
