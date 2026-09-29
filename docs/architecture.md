@@ -10,7 +10,7 @@ flowchart TD
         direction LR
         START((" ")):::start
         U(["User<br/><i>an LLM simulator in evals</i>"]):::human
-        M["Extract addresses<br/>and answers"]:::model
+        M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
         G["Geocode new addresses"]:::code
         NOM[["Nominatim<br/>geocoding API"]]:::ext
         PR[("Property location<br/>Commute destinations")]:::data
