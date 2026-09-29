@@ -1,6 +1,8 @@
 # Architecture
 
-How one run works, who decides at each step, and where text from the web enters.
+How the agent is built: the flow of a run, the state it keeps and the rules it follows.
+
+## One run
 
 ```mermaid
 flowchart TD
