@@ -45,7 +45,7 @@ flowchart TD
             S["Search the web<br/>the model writes the query"]:::model
             TAV[["Tavily<br/>web search API"]]:::ext
             D{"Enough?<br/>or cap reached"}:::model
-            F["Finding<br/>class, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
+            F["Finding<br/>class, type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
         end
         FS[("Findings, plans, journeys<br/>each with its evidence")]:::data
         JN(["Research complete"]):::milestone
