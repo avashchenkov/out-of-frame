@@ -18,10 +18,9 @@ Geocoding over OpenStreetMap data. Public instance at
 with their coordinates.
 
 [Search](https://nominatim.org/release-docs/latest/api/Search/) returns a list of matches,
-which can be empty. Results can describe a building, a street or a broader area; coordinates
-alone do not establish that the requested address was resolved. Several results may describe
-different possible locations. An empty result is a successful search with no match, not a
-service outage.
+which can be empty. A match can be a building, a street or a whole district, so coordinates
+alone do not mean the address was found. Several matches can be different places. An empty
+list means no match, not that the service is down.
 
 ## Overpass
 

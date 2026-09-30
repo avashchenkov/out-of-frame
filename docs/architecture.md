@@ -125,14 +125,14 @@ flowchart does not show the state; the table
 
 1. **Input** is one loop for any first message: a greeting, an address alone or a full
    request.
-   - The model extracts only what the user added or corrected in this message, and never
-     coordinates. Code applies these edits to the existing input: other values and existing
-     destination IDs stay the same.
-   - Code geocodes every address and never changes its text. Each pass replaces the previous
-     result, so an address that is not resolved has no coordinates. Code sets the coordinates
-     only when one matching location is clear and precise enough for the request. No suitable
-     match, several possible locations or a result that identifies only a broad area lead to
-     a question for the user. A source failure stops the run (see [Failures](#failures)).
+   - The model picks out only what the user added or changed in this message, never
+     coordinates. Code applies these changes; everything else stays as it was, destination
+     IDs included.
+   - After each message, code geocodes every address again and never changes its text. The
+     new result replaces the old one. An address gets coordinates only if there is exactly
+     one precise match. If nothing matches, several places match, or the match is only a
+     street or a district, the user is asked. If Nominatim is down, the run stops (see
+     [Failures](#failures)).
    - Code, not the model, checks that the input is complete: the property is resolved and in
      Berlin, the user has said where they travel, and each destination is resolved and has
      both departure times. A destination may be outside Berlin.
@@ -162,10 +162,9 @@ flowchart does not show the state; the table
      is not excluded: it can still cover land that is not built.
    - *Commute:* for each destination, code asks Transitous for two journeys on a normal
      weekday: there, when the user leaves home, and back, when they leave the destination.
-     Each journey is the mean of up to the next three connections; one or two are enough.
-     Each direction records whether a route was found, no route was returned or the source
-     was unavailable. Each destination has its own times, so two people with different
-     schedules are two destinations.
+     Each journey is the mean of the next three connections, or of fewer if fewer are found.
+     Each direction has an outcome: found, no route or unavailable. Each destination has its
+     own times, so two people with different schedules are two destinations.
 3. **Report.** Unidentified objects are not removed; they are listed at the end. The model
    gives each journey's mean duration briefly, from `journeys`. Code fills in the references
    (see [Grounding](#grounding)) and, if there are journeys, adds a link to Transitous, as its
@@ -176,19 +175,20 @@ flowchart does not show the state; the table
 The state is the full record of one run, described as a logical data model: records, fields
 and plain types, not the classes of a language or a framework. A step gets only part of it
 (see [What each step reads and writes](#what-each-step-reads-and-writes)). Eval tasks start
-from run states in this model. Exact field encodings and validation rules are left to
-implementation; the distinctions that affect the flow are defined here.
+from run states in this model. It defines what matters for the flow; exact formats and
+validation are left to the code.
 
 - **Updates.** A step returns only the fields it changes. Each field has a reducer: it says
   how an update is combined with the current value. Parallel branches add entries to the same
   lists, such as `sources` and `objects`, so without a reducer one branch's list would replace
-  another's. Input edits are applied by code before it replaces `property` or `destinations`.
+  another's. In the input phase, code first applies the user's changes, then replaces
+  `property` and `destinations` with the result.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
   holds only data.
-- **No derived workflow flags.** Code computes what is still missing in the input or which
-  unclear objects were not investigated. Normalized values such as coordinates, `distance_m`
-  and `mean_duration` are stored: code computes them once from the raw source response for
-  later steps to use.
+- **No flags in the state.** Code computes them when it needs them, for example what is still
+  missing in the input or which unclear objects were not investigated. Values that code
+  computes once from a source response are stored: coordinates, `distance_m` and
+  `mean_duration`.
 - **IDs only where needed.** A record has an ID only if something refers to it. Code creates
   every ID; the model never does.
 
@@ -200,7 +200,7 @@ implementation; the distinctions that affect the flow are defined here.
 | `sources` | list of Source | Geocoding, map and plan responses, plus web pages cited by findings | Append |
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Append |
 | `findings` | list of Finding | One per clear or investigated object | Append |
-| `journeys` | list of Journey | After the commute branch: two results per destination, there and back, including no route or source unavailable | Append |
+| `journeys` | list of Journey | Two per destination, there and back, each with its outcome | Append |
 | `failures` | list of service | The services that still failed after retries: map, plans, transit or web search | Add if new |
 | `report` | text | The report | Replace |
 
@@ -273,25 +273,25 @@ classDiagram
     Journey --> Destination : destination_id
 ```
 
-`Address.source_id` refers to the geocoding response for its current text. Code uses that
-response to distinguish no match from ambiguous matches and to pass the candidate addresses
-to the question step. Candidates are not stored again in `Address`.
+`Address.source_id` points to the Nominatim response for this address. If the address is not
+found, or several places match it, code uses this response to build the question for the user.
 
-A `Source` is one API response, or one web page returned by search, with the text that was
-actually retrieved. A search returning several pages gives each page its own ID and URL.
+A `Source` is one API response or one web page from a search, with the text that was
+retrieved. Each page from a search is a separate source.
 
 A `Journey` has a duration only when its outcome is found. The transit response is not kept
 in the state: code computes the duration from it at once.
 
-A `Finding` takes its checklist class from the object referenced by `object_id`.
+A `Finding` has no class of its own: it takes the class of its object.
 
-The type and status vocabularies for `Finding` will be defined with the eval tasks, before
-agent code, in [checklist.yaml](../src/out_of_frame/data/checklist.yaml). The agent and evals
-will use the same vocabulary; truth labels remain separate and unavailable to the agent.
+The lists of finding types and statuses will be defined in
+[checklist.yaml](../src/out_of_frame/data/checklist.yaml) together with the eval tasks, before
+any agent code. The agent and the evals use the same lists; the agent never sees the truth
+labels.
 
 An investigation has its own state: the object, the searches so far and their results. Only
 the finding and the pages it cites go into the run state. The full search history stays in
-the transcript for evals.
+the trace for evals.
 
 ### What each step reads and writes
 
@@ -338,11 +338,11 @@ Other rules:
 
 ## Grounding
 
-Code assigns an ID to each source response and each web page returned by search. Search
-results stay in the investigation state until cited. A finding cites the IDs it uses and its
-key facts (a name, a date, a status), copied exactly from the source. Code checks that each ID
-exists and each fact appears in the stored text. If not, the finding is rejected:
-the agent searches more, within the object's search limit, or marks the object unidentified.
+Code gives an ID to each source response and to each web page from a search. A page reaches
+the run state only if a finding cites it. A finding cites the IDs it uses and its key facts (a
+name, a date, a status), copied exactly from the source. Code checks that each ID exists and
+each fact appears in the stored text. If not, the finding is rejected: the agent searches more,
+within the object's search limit, or marks the object unidentified.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
 its source URLs and retrieval dates. An unknown ID sends the report back to be written again.
@@ -362,19 +362,19 @@ Code retries each call to the model or a source a few times. If it still fails:
 - **The model or geocoding:** the run stops, and the user is asked to try again later. The
   state is saved after each step, so the run then continues where it stopped.
 - **The map or plan source:** that part of the report is missing, and the rest continues.
-- **The transit source:** affected journey directions are marked `unavailable`; other
-  journey results are kept, and the rest continues.
+- **The transit source:** the journeys it could not plan are marked unavailable, and the
+  rest continues.
 - **Web search in an investigation:** the object stays unidentified, and the other
   investigations continue.
 
-For map, plan, transit and web search failures, code adds the source to `failures` and at
-once shows the user one fixed sentence per failed source, for example "Development plans could
-not be loaded, so the report may be incomplete." The sentence goes to the user through the
-LangGraph stream, not through the state or the model. The model reads `failures` only so that
-it never says "nothing found" there.
+In the last three cases, code adds the service to `failures` and at once shows the user one
+fixed sentence per failed service, for example "Development plans could not be loaded, so the
+report may be incomplete." The sentence goes through the LangGraph stream, not through the
+state or the model. The model reads `failures` only so that it never says "nothing found"
+there.
 
-A successful empty response is not a source failure: no address match leads to a question,
-no nearby objects adds no objects, and no connections gives a journey with no route.
+An empty answer is not a failure: an address with no match leads to a question, an empty map
+adds no objects, and no connections give a journey with no route.
 
 Details such as status codes and retries go only to logs and traces. The flowchart does not
 show these paths.
