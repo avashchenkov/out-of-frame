@@ -295,22 +295,23 @@ the finding and the pages it cites go into the run state.
 ### What each step reads and writes
 
 One row per flowchart step, in the same order and with the same name. A step reads and
-writes only the fields listed for it; no model step gets the whole state. The user's first
-message is the input of the run and goes straight into `messages`.
+writes only the fields listed for it; no model step gets the whole state. `a.b` is a field
+inside a record, and `[]` means every entry of a list. The user's first message is the input of
+the run and goes straight into `messages`.
 
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
-| Input | Extract the property address, commute destinations and departure times | model + code | `messages`, `property`, `destinations` | `property`, `destinations` |
-| Input | Geocode every address | code | `property`, `destinations` | `property`, `destinations`, `sources` |
-| Input | Anything missing or unclear? | code | `property`, `destinations`, their geocoding `sources` | nothing |
+| Input | Extract the property address, commute destinations and departure times | model + code | `messages`, `property.text`, `destinations[]` without `address.point` and `address.source_id` | `property.text`, `destinations[]`: `id`, `name`, `address.text`, `leave_home`, `leave_place` |
+| Input | Geocode every address | code | `property.text`, `destinations[].address.text` | `property.point`, `property.source_id`, `destinations[].address.point`, `destinations[].address.source_id`, `sources` |
+| Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
-| Research | Get map objects in the radius | code | `property` | `objects`, `sources`, `failures` |
-| Research | Triage | model | `objects` (map objects) | `findings` |
-| Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `failures` |
-| Research | Investigate each object, one run per object | model | one entry of `objects` | `findings`, `sources`, `failures` |
-| Research | Plan journeys there and back | code | `property`, `destinations` | `journeys`, `failures` |
-| Report | Write the report | model | `destinations`, `objects`, `findings`, `journeys`, `failures` | `report` |
-| Report | Fill in the references | code | `report`, `findings`, `sources`, `journeys` | `report` |
+| Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
+| Research | Triage | model | map `objects[]`: `class`, `name`, `details` | `findings` for clear objects |
+| Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
+| Research | Investigate each object, one run per object | model | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
+| Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
+| Report | Write the report | model | `destinations[].name`, `objects`, `findings`, `journeys`, `failures` | `report` |
+| Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
 
 ## Who decides
 
