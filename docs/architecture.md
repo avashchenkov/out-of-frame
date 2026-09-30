@@ -128,10 +128,9 @@ flowchart does not show the state; the table
    - The model extracts only what the user added or corrected in this message, and never
      coordinates. Code applies these edits to the existing input: other values and existing
      destination IDs stay the same.
-   - Code geocodes every address and never changes an address. Each pass replaces the
-     previous result, so an address that is not resolved has no coordinates. Code sets a
-     place's coordinates only when one matching location is clear and precise enough for the
-     request. No suitable
+   - Code geocodes every address and never changes its text. Each pass replaces the previous
+     result, so an address that is not resolved has no coordinates. Code sets the coordinates
+     only when one matching location is clear and precise enough for the request. No suitable
      match, several possible locations or a result that identifies only a broad area lead to
      a question for the user. A source failure stops the run (see [Failures](#failures)).
    - Code, not the model, checks that the input is complete: the property is resolved and in
@@ -194,7 +193,7 @@ implementation; the distinctions that affect the flow are defined here.
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
 | `messages` | list of Message | The conversation in the input phase | Append |
-| `property` | Place, or null | The property, in Berlin; null until the user gives its address | Replace |
+| `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Geocoding, map, plan and transit responses, plus web pages cited by findings | Append |
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Append |
@@ -214,8 +213,8 @@ classDiagram
         role: user | agent
         text: text
     }
-    class Place {
-        address: text
+    class Address {
+        text: text
         point: Point, optional
         source_id: ID, optional
     }
@@ -226,7 +225,7 @@ classDiagram
     class Destination {
         id: ID
         name: text
-        place: Place, optional
+        address: Address, optional
         leave_home: time, optional
         leave_place: time, optional
     }
@@ -263,9 +262,9 @@ classDiagram
         mean_duration: duration, optional
         source_id: ID, optional
     }
-    Destination *-- Place
-    Place *-- Point
-    Place --> Source : source_id
+    Destination *-- Address
+    Address *-- Point
+    Address --> Source : source_id
     NearbyObject *-- Point
     NearbyObject --> Source : source_id
     Finding --> NearbyObject : object_id
@@ -274,9 +273,9 @@ classDiagram
     Journey --> Source : source_id
 ```
 
-`Place.source_id` refers to the geocoding response for its current address. Code uses that
+`Address.source_id` refers to the geocoding response for its current text. Code uses that
 response to distinguish no match from ambiguous matches and to pass the candidate addresses
-to the question step. Candidates are not stored again in `Place`.
+to the question step. Candidates are not stored again in `Address`.
 
 A `Source` is one API response, or one web page returned by search, with the text that was
 actually retrieved. A search returning several pages gives each page its own ID and URL.
