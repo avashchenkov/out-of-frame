@@ -294,32 +294,25 @@ the finding and the pages it cites go into the run state.
 
 ### What each step reads and writes
 
-In flowchart order. A step reads and writes only the fields listed for it; no model step gets
-the whole state.
+One row per flowchart step, in the same order and with the same name. A step reads and
+writes only the fields listed for it; no model step gets the whole state. The user's first
+message is the input of the run and goes straight into `messages`.
 
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
-| Input | Add the user's message | code | nothing | `messages` |
-| Input | Extract the property address, destinations and departure times | model + code | `messages`, `property`, `destinations` | `property`, `destinations` |
+| Input | Extract the property address, commute destinations and departure times | model + code | `messages`, `property`, `destinations` | `property`, `destinations` |
 | Input | Geocode every address | code | `property`, `destinations` | `property`, `destinations`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations`, their geocoding `sources` | nothing |
-| Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages` |
-| Research | Get map objects | code | `property` | `objects`, `sources`, `failures` |
+| Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
+| Research | Get map objects in the radius | code | `property` | `objects`, `sources`, `failures` |
 | Research | Triage | model | `objects` (map objects) | `findings` |
 | Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `failures` |
-| Research | Investigate one object | model | one entry of `objects` | `findings`, `sources`, `failures` |
-| Research | Plan journeys | code | `property`, `destinations` | `journeys`, `failures` |
+| Research | Investigate each object, one run per object | model | one entry of `objects` | `findings`, `sources`, `failures` |
+| Research | Plan journeys there and back | code | `property`, `destinations` | `journeys`, `failures` |
 | Report | Write the report | model | `destinations`, `objects`, `findings`, `journeys`, `failures` | `report` |
 | Report | Fill in the references | code | `report`, `findings`, `sources`, `journeys` | `report` |
 
 ## Who decides
-
-The model decides:
-
-- in the input phase: what the message says and how to ask for what is missing;
-- in triage: which map objects are unclear;
-- in an investigation: what to search for, whether to search again and what the finding is;
-- in the report: what to highlight and how to say it.
 
 Code decides what runs next, by fixed rules over the state. The model changes the path only
 through what it writes into the state; there is no LLM router. The one exception is the
