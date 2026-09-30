@@ -161,17 +161,23 @@ flowchart does not show the state; the table
 
 ## The state
 
-The state is the record of one run, described as a logical data model: records, fields and
-plain types, not the classes of a language or a framework. Eval tasks start from run states in
-this model.
+The state is the full record of one run, described as a logical data model: records, fields
+and plain types, not the classes of a language or a framework. A step gets only part of it
+(see [What each step reads and writes](#what-each-step-reads-and-writes)). Eval tasks start
+from run states in this model.
 
 - **Updates.** A step returns only the fields it changes. Parallel branches add entries to the
   same lists, such as `sources` and `objects`, so each field has a merge rule: otherwise one
   branch's list would replace another's.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
   holds only data.
-- **No derived values.** Code computes them when it needs them, for example what is still
-  missing in the input, or which unclear objects were not investigated.
+- **No values that can be derived from the state.** Code computes them when it needs them,
+  for example what is still missing in the input, or which unclear objects were not
+  investigated. Two computed values are stored: `distance_m` and `mean_duration`. Their inputs,
+  the object's shape and the three connections, are only in the raw source response, so
+  code computes them once, when it reads the response.
+- **IDs only where needed.** A record has an ID only if something refers to it. Code creates
+  every ID; the model never does.
 
 | Field | Type | Contents | Merge rule |
 |---|---|---|---|
@@ -197,8 +203,11 @@ classDiagram
     }
     class Place {
         address: text
-        lat: number, optional
-        lon: number, optional
+        point: Point, optional
+    }
+    class Point {
+        lat: number
+        lon: number
     }
     class Destination {
         id: ID
@@ -220,8 +229,7 @@ classDiagram
         class: checklist class ID
         name: text, optional
         details: map tags or plan fields
-        lat: number
-        lon: number
+        point: Point
         distance_m: number
         source_id: ID
     }
@@ -236,13 +244,14 @@ classDiagram
         evidence_ids: list of ID
     }
     class Journey {
-        id: ID
         destination_id: ID
         direction: there | back
-        minutes: number, mean of three connections
+        mean_duration: duration, of the next three connections
         source_id: ID
     }
     Destination *-- Place
+    Place *-- Point
+    NearbyObject *-- Point
     NearbyObject --> Source : source_id
     Finding --> NearbyObject : object_id
     Finding --> Source : evidence_ids
@@ -303,9 +312,10 @@ uses and its key facts (a name, a date, a status), copied exactly from the sourc
 that each ID exists and each fact appears in the stored text. If not, the finding is rejected:
 the agent searches more, within the object's search limit, or marks the object unidentified.
 
-The report cites a finding by its object ID and a journey by its ID, never by a link. Code
-replaces each ID with its sources: the link, the title and the date. An unknown ID sends the
-report back to be written again. So the model cannot invent a reference.
+The report cites a finding by its object ID and a journey by its destination ID and
+direction, never by a link. Code replaces each citation with its sources: the link, the title
+and the date. An unknown ID sends the report back to be written again. So the model cannot
+invent a reference.
 
 ## Prompt injection
 
