@@ -137,10 +137,10 @@ flowchart does not show the state; the table
    in one checklist class: a site from the map, or a planned development from a B-Plan
    (*Bebauungsplan*, a binding development plan). Each class is searched in a circle around
    the property, with the class's own radius. An object is in the circle if its nearest edge
-   is; distances are always measured to the nearest edge. Unclear objects are investigated
-   nearest first, at most five per class; the rest are listed in the report as not
-   investigated. Every branch runs to its end, even with nothing to do; its result is then
-   empty.
+   is; distances are always measured to the nearest edge. An object without a finding is
+   unclear. Unclear objects are investigated nearest first, at most five per class; the rest
+   are listed in the report as not investigated. Every branch runs to its end, even with
+   nothing to do; its result is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
      within the class's circle. Code groups them into objects (one site or one road can be
      several elements) and keeps the nearest N per class. Map names and tags are free text, so
@@ -150,8 +150,8 @@ flowchart does not show the state; the table
      rectangle. Code asks for the square around the circle and drops the plans outside the
      circle. The WFS gives each plan's legal status and, for plans in force, the permitted
      land use. These are fixed values and dates, and none shows whether building has started,
-     so a model could only guess. There is no triage: code marks every plan as unclear. An old
-     plan is not excluded: it can still cover land that is not built.
+     so a model could only guess. There is no triage, so every plan is unclear. An old plan
+     is not excluded: it can still cover land that is not built.
    - *Commute:* for each destination, code asks Transitous for two journeys on a normal
      weekday: there, when the user leaves home, and back, when they leave the destination.
      Each journey is the mean of the next three connections. Each destination has its own
@@ -178,15 +178,15 @@ this model.
 | `messages` | list of Message | The conversation in the input phase | Append |
 | `property` | Place, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
-| `sources` | list of Source | Every source response and search result | Merge by ID |
-| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Merge by ID |
-| `findings` | list of Finding | One per clear or investigated object | Merge by object ID |
+| `sources` | list of Source | Every source response and search result | Append |
+| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Append |
+| `findings` | list of Finding | One per clear or investigated object | Append |
 | `journeys` | list of Journey | Two per destination: there and back | Append |
 | `failures` | list of source kind | The sources that still failed after retries: map, plans, transit or web search | Add if new |
 | `report` | text | The report | Replace |
 
-*Merge by ID* adds new entries and replaces an entry with the same ID. *Null* means not known
-yet; an *optional* field can be null. An empty list is an answer, not null.
+*Null* means not known yet; an *optional* field can be null. An empty list is an answer, not
+null.
 
 ```mermaid
 classDiagram
@@ -223,7 +223,6 @@ classDiagram
         lat: number
         lon: number
         distance_m: number
-        triage: clear | unclear
         source_id: ID
     }
     class Finding {
@@ -267,7 +266,7 @@ the whole state.
 | Input | Anything missing or unclear? | code | `property`, `destinations` | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages` |
 | Research | Get map objects | code | `property` | `objects`, `sources`, `failures` |
-| Research | Triage | model | `objects` (map objects) | `objects`, `findings` |
+| Research | Triage | model | `objects` (map objects) | `findings` |
 | Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `failures` |
 | Research | Investigate one object | model | one entry of `objects` | `findings`, `sources`, `failures` |
 | Research | Plan journeys | code | `property`, `destinations` | `journeys`, `sources`, `failures` |
