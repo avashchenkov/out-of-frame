@@ -295,10 +295,10 @@ the finding and the pages it cites go into the run state.
 
 ### What each step reads and writes
 
-One row per flowchart step, in the same order and with the same name. A step reads and
-writes only the fields listed for it; no model step gets the whole state. `a.b` is a field
-inside a record, and `[]` means every entry of a list. The user's first message is the input of
-the run and goes straight into `messages`.
+One row per flowchart step, in the same order and with the same name; the investigation is
+one row. A step reads and writes only the fields listed for it; no model step gets the whole
+state. `a.b` is a field inside a record, and `[]` means every entry of a list. The user's first
+message is the input of the run and goes straight into `messages`.
 
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
