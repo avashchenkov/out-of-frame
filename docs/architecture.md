@@ -299,7 +299,7 @@ the whole state.
 
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
-| Input | The user's message | user | nothing | `messages` |
+| Input | Add the user's message | code | nothing | `messages` |
 | Input | Extract the property address, destinations and departure times | model + code | `messages`, `property`, `destinations` | `property`, `destinations` |
 | Input | Geocode every address | code | `property`, `destinations` | `property`, `destinations`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations`, their geocoding `sources` | nothing |
