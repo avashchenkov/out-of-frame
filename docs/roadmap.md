@@ -25,8 +25,8 @@ The implementation steps, in order.
    states in `evals/states/` follow the [state model](architecture.md#the-state), not
    LangGraph classes; this step adds the code that loads them into the graph state.
 8. **Remaining sources,** one at a time: Transitous, the B-Plan WFS and web search. With web
-   search come the prompt injection guards in code. The injection tasks in the input and
-   investigation suites measure how often the model is still misled.
+   search come the prompt injection guards. The injection tasks in the input and
+   investigation suites check whether the model is still misled.
 9. **Judge calibration, then the full eval run.** Each LLM judge is checked against human
    grades; until then, only code-graded scores are quoted. The full run covers all tasks,
    several trials each. Results are published with the failures.

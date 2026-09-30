@@ -49,6 +49,7 @@ flowchart TD
         subgraph INV["Investigate each object: one run per object, in parallel, each in its own context"]
             S["Search the web<br/>the model writes the query"]:::model
             TAV[["Tavily<br/>web search API"]]:::ext
+            CHK["Check each page<br/>for prompt injection<br/>drop flagged pages"]:::model
             D{"Enough?<br/>or cap reached"}:::model
             F["Write the finding<br/>type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
         end
@@ -61,7 +62,7 @@ flowchart TD
         T -.->|"per unclear object<br/>nearest first, capped in number"| S
         PL -.->|"per object<br/>nearest first, capped in number"| S
         PL --- WFS
-        S --> D
+        S --> CHK --> D
         S --- TAV
         D -.->|"search again"| S
         D -.->|"stop"| F
@@ -308,7 +309,7 @@ the run and goes straight into `messages`.
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Triage | model | map `objects[]`: `class`, `name`, `details` | `findings` for clear objects |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Investigate each object, one run per object | model | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
+| Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model | `destinations[].name`, `objects`, `findings`, `journeys`, `failures` | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
@@ -343,10 +344,19 @@ So the model cannot invent a reference.
 
 ## Prompt injection
 
-Web pages may contain prompt injection: text written to give the model instructions. It
-reaches only the investigation that ran the search. There the model's only tool is web search,
-searches are capped, and every fact must appear in a stored source. False facts on a page can
-still mislead the model; evals measure how often.
+Only web pages can bring in prompt injection: text written to give the model instructions.
+Map and plan data are trusted. The user's messages reach only the input phase, which writes
+nothing but addresses, names and times.
+
+Before the investigation model sees a page, a separate model call checks it for instructions
+aimed at the model. This checker has no tools and answers only yes or no, so injected text can
+at most make it pass the page. A flagged page is dropped and logged, and the investigation goes
+on with the other pages.
+
+If an injection gets through, code still limits it: the investigation model's only tool is web
+search, searches are capped, and every fact in a finding must appear in a stored source. False
+facts on a page can still mislead the model. Evals plant instructions in test pages to check
+these guards; they cannot measure how often attacks happen in the real world.
 
 ## Failures
 
