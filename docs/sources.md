@@ -17,6 +17,17 @@ Geocoding over OpenStreetMap data. Public instance at
 `https://nominatim.openstreetmap.org/search`. A call returns the places that match an address,
 with their coordinates.
 
+[Search](https://nominatim.org/release-docs/latest/api/Search/) returns a list of matches,
+which can be empty. Results can describe a building, a street or a broader area; coordinates
+alone do not establish that the requested address was resolved. Several results may describe
+different possible locations. An empty result is a successful search with no match, not a
+service outage.
+
+[Reverse](https://nominatim.org/release-docs/latest/api/Reverse/) takes coordinates and returns
+one closest suitable OSM object's address, or an error when there is no OSM data coverage.
+That address can belong to a nearby street. The input flow uses search; it does not need
+reverse geocoding.
+
 ## Overpass
 
 A query service over OpenStreetMap data. Public instance at
