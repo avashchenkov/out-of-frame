@@ -290,8 +290,7 @@ any agent code. The agent and the evals use the same lists; the agent never sees
 labels.
 
 An investigation has its own state: the object, the searches so far and their results. Only
-the finding and the pages it cites go into the run state. The full search history stays in
-the trace for evals.
+the finding and the pages it cites go into the run state.
 
 ### What each step reads and writes
 
