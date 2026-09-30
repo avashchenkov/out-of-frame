@@ -291,7 +291,8 @@ any agent code. The agent and the evals use the same lists; the agent never sees
 labels.
 
 An investigation has its own state: the object, the searches so far and their results. Only
-the finding and the pages it cites go into the run state.
+the finding and the pages it cites go into the run state, and web search in `failures` if it
+failed.
 
 ### What each step reads and writes
 
@@ -307,7 +308,7 @@ message is the input of the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
+| Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model); the `sources` they point to (code) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
