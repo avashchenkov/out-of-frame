@@ -166,8 +166,10 @@ flowchart does not show the state; the table
      Each direction records whether a route was found, no route was returned or the source
      was unavailable. Each destination has its own times, so two people with different
      schedules are two destinations.
-3. **Report.** Unidentified objects are not removed; they are listed at the end. Code fills in
-   the references (see [Grounding](#grounding)).
+3. **Report.** Unidentified objects are not removed; they are listed at the end. The model
+   gives each journey's mean duration briefly, from `journeys`. Code fills in the references
+   (see [Grounding](#grounding)) and, if there are journeys, adds a link to Transitous, as its
+   licence requires.
 
 ## The state
 
@@ -195,11 +197,11 @@ implementation; the distinctions that affect the flow are defined here.
 | `messages` | list of Message | The conversation in the input phase | Append |
 | `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
-| `sources` | list of Source | Geocoding, map, plan and transit responses, plus web pages cited by findings | Append |
+| `sources` | list of Source | Geocoding, map and plan responses, plus web pages cited by findings | Append |
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Append |
 | `findings` | list of Finding | One per clear or investigated object | Append |
 | `journeys` | list of Journey | After the commute branch: two results per destination, there and back, including no route or source unavailable | Append |
-| `failures` | list of source kind | The sources that still failed after retries: map, plans, transit or web search | Add if new |
+| `failures` | list of service | The services that still failed after retries: map, plans, transit or web search | Add if new |
 | `report` | text | The report | Replace |
 
 *Null* means no value; an *optional* field can be null. In the input, null means not known
@@ -231,7 +233,7 @@ classDiagram
     }
     class Source {
         id: ID
-        kind: geocoding | map | plans | transit | web search
+        kind: geocoding | map | plans | web search
         request: text
         url: text
         retrieved_at: date and time
@@ -260,7 +262,6 @@ classDiagram
         direction: there | back
         outcome: found | no route | unavailable
         mean_duration: duration, optional
-        source_id: ID, optional
     }
     Destination *-- Address
     Address *-- Point
@@ -270,7 +271,6 @@ classDiagram
     Finding --> NearbyObject : object_id
     Finding --> Source : evidence_ids
     Journey --> Destination : destination_id
-    Journey --> Source : source_id
 ```
 
 `Address.source_id` refers to the geocoding response for its current text. Code uses that
@@ -280,8 +280,8 @@ to the question step. Candidates are not stored again in `Address`.
 A `Source` is one API response, or one web page returned by search, with the text that was
 actually retrieved. A search returning several pages gives each page its own ID and URL.
 
-A `Journey` has a duration only when its outcome is found. It refers to the source response
-when the outcome is found or no route; an unavailable journey has neither.
+A `Journey` has a duration only when its outcome is found. The transit response is not kept
+in the state: code computes the duration from it at once.
 
 A `Finding` takes its checklist class from the object referenced by `object_id`.
 
@@ -309,9 +309,9 @@ the whole state.
 | Research | Triage | model | `objects` (map objects) | `findings` |
 | Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `failures` |
 | Research | Investigate one object | model | one entry of `objects` | `findings`, `sources`, `failures` |
-| Research | Plan journeys | code | `property`, `destinations` | `journeys`, `sources`, `failures` |
+| Research | Plan journeys | code | `property`, `destinations` | `journeys`, `failures` |
 | Report | Write the report | model | `destinations`, `objects`, `findings`, `journeys`, `failures` | `report` |
-| Report | Fill in the references | code | `report`, `findings`, `journeys`, `sources` | `report` |
+| Report | Fill in the references | code | `report`, `findings`, `sources`, `journeys` | `report` |
 
 ## Who decides
 
@@ -344,10 +344,9 @@ key facts (a name, a date, a status), copied exactly from the source. Code check
 exists and each fact appears in the stored text. If not, the finding is rejected:
 the agent searches more, within the object's search limit, or marks the object unidentified.
 
-The report cites a finding by its object ID and a journey by its destination ID and
-direction, never by a link. Code replaces each citation with its source URLs and retrieval
-dates. An unknown ID sends the report back to be written again. So the model cannot invent a
-reference. An unavailable journey has no source citation.
+The report cites a finding by its object ID, never by a link. Code replaces each citation with
+its source URLs and retrieval dates. An unknown ID sends the report back to be written again.
+So the model cannot invent a reference.
 
 ## Prompt injection
 
