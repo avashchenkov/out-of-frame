@@ -77,7 +77,7 @@ flowchart TD
         direction TB
         RS(["Report starts"]):::milestone
         W["Write the report<br/>from the state, with its own prompt<br/>unidentified objects in the footer"]:::model
-        REF["Fill in the references<br/>from the evidence,<br/>add the failure notices"]:::code
+        REF["Fill in the references<br/>from the evidence"]:::code
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
         RS --> W --> REF
@@ -284,7 +284,7 @@ the whole state.
 | Research | Investigate one object | model | one entry of `objects` | `findings`, `sources`, `failures` |
 | Research | Plan journeys | code | `property`, `destinations` | `journeys`, `sources`, `failures` |
 | Report | Write the report | model | `destinations`, `objects`, `findings`, `journeys`, `failures` | `report` |
-| Report | Fill in the references, add the failure notices | code | `report`, `findings`, `journeys`, `sources`, `failures` | `report` |
+| Report | Fill in the references | code | `report`, `findings`, `journeys`, `sources` | `report` |
 
 ## Who decides
 
@@ -335,11 +335,15 @@ Code retries each call to the model or a source a few times. If it still fails:
 - **The model or geocoding:** the run stops, and the user is asked to try again later. The
   state is saved after each step, so the run then continues where it stopped.
 - **The map, plan or transit source:** that part of the report is missing, and the rest
-  continues. Code adds the source to `failures`. The model reads them, so it never says
-  "nothing found" there. Code adds one fixed sentence per failed source to the report, for
-  example "Development plans could not be loaded, so the report may be incomplete."
+  continues.
 - **Web search in an investigation:** the object stays unidentified, and the other
-  investigations continue. Web search is added to `failures` once.
+  investigations continue.
+
+In the last two cases, code adds the source to `failures` and at once shows the user one fixed
+sentence per failed source, for example "Development plans could not be loaded, so the report
+may be incomplete." The sentence goes to the user through the LangGraph stream, not through the
+state or the model. The model reads `failures` only so that it never says "nothing found"
+there.
 
 Details such as status codes and retries go only to logs and traces. The flowchart does not
 show these paths.
