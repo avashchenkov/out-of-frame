@@ -50,7 +50,7 @@ flowchart TD
             S["Search the web<br/>the model writes the query"]:::model
             TAV[["Tavily<br/>web search API"]]:::ext
             D{"Enough?<br/>or cap reached"}:::model
-            F["Write the finding<br/>class, type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
+            F["Write the finding<br/>type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
         end
         JN(["Research complete<br/><i>when every branch and<br/>every investigation has ended</i>"]):::milestone
         J --> OV
@@ -248,7 +248,6 @@ classDiagram
     }
     class Finding {
         object_id: ID
-        class: checklist class ID
         outcome: identified | unidentified
         type: from the class's list, or unknown
         status: from a fixed list, or unknown
@@ -288,6 +287,8 @@ A `Journey` records the result for one destination and direction:
   source reference points to that empty response;
 - `unavailable`: the source call failed after retries; duration and source reference are
   null, and `transit` is added to `failures`. Technical details stay in logs and traces.
+
+A `Finding` takes its checklist class from the object referenced by `object_id`.
 
 The type and status vocabularies for `Finding` will be defined with the eval tasks, before
 agent code, in [checklist.yaml](../src/out_of_frame/data/checklist.yaml). The agent and evals
