@@ -284,7 +284,7 @@ in the state: code computes the duration from it at once.
 
 A `Finding` has no class of its own: it takes the class of its object.
 
-The lists of finding types and statuses will be defined in
+TODO: define the lists of finding types and statuses in
 [checklist.yaml](../src/out_of_frame/data/checklist.yaml) together with the eval tasks, before
 any agent code. The agent and the evals use the same lists; the agent never sees the truth
 labels.

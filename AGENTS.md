@@ -32,6 +32,8 @@ co-author trailers.
 - Write plain international English: short sentences, common words, no idioms. Many readers
   are not native speakers. Keep prose brief.
 - The README describes only what already exists.
+- In docs and code, mark anything planned but not done yet with `TODO:`, so that a search
+  finds it. The roadmap is the exception: it is the plan itself.
 
 ## Development
 
