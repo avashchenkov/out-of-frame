@@ -46,12 +46,13 @@ flowchart TD
             TR["Plan journeys there and back<br/>per destination, averaged"]:::code
             TRA[["Transitous<br/>journey planner API"]]:::ext
         end
-        subgraph INV["Investigate each object: one run per object, in parallel, each in its own context"]
+        subgraph INV["Investigate each object: a subgraph, one run per object, in parallel, each with its own state"]
             S["Search the web<br/>the model writes the query"]:::model
             TAV[["Tavily<br/>web search API"]]:::ext
             CHK["Check each page<br/>for prompt injection<br/>drop flagged pages"]:::model
             D{"Enough?<br/>or cap reached"}:::model
             F["Write the finding<br/>type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
+            GC{"Finding grounded?"}:::code
         end
         JN(["Research complete<br/><i>when every branch and<br/>every investigation has ended</i>"]):::milestone
         J --> OV
@@ -66,9 +67,11 @@ flowchart TD
         S --- TAV
         D -.->|"search again"| S
         D -.->|"stop"| F
+        F --> GC
+        GC -.->|"no"| D
         T --> JN
         PL --> JN
-        F --> JN
+        GC -.->|"yes"| JN
         TR --> JN
         TR ~~~ PL
         TR -.-|"only if there are destinations"| TRA
@@ -77,7 +80,7 @@ flowchart TD
     subgraph REPORT["Phase 3: Report"]
         direction TB
         RS(["Report starts"]):::milestone
-        W["Write the report<br/>from the state, with its own prompt<br/>unidentified objects in the footer"]:::model
+        W["Write the report<br/>from the state, with its own prompt<br/>unidentified and not investigated<br/>objects at the end"]:::model
         REF["Fill in the references<br/>from the evidence"]:::code
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
@@ -119,9 +122,10 @@ flowchart TD
     style KEY fill:#f8fafc,stroke:#94a3b8
 ```
 
-A run has three phases. All steps share one state: each step reads it and writes its result
-to it. Only the state passes between phases, and nothing is kept for the next run. The
-flowchart does not show the state; the table
+A run has three phases. All steps share one run state: each step reads it and writes its
+result to it. Each investigation is a subgraph with its own state (see
+[The investigation subgraph](#the-investigation-subgraph)). Only the state passes between
+phases, and nothing is kept for the next run. The flowchart does not show the state; the table
 [What each step reads and writes](#what-each-step-reads-and-writes) does.
 
 1. **Input** is one loop for any first message: a greeting, an address alone or a full
@@ -166,10 +170,10 @@ flowchart does not show the state; the table
      Each journey is the mean of the next three connections, or of fewer if fewer are found.
      Each direction has an outcome: found, no route or unavailable. Each destination has its
      own times, so two people with different schedules are two destinations.
-3. **Report.** Unidentified objects are not removed; they are listed at the end. The model
-   gives each journey's mean duration briefly, from `journeys`. Code fills in the references
-   (see [Grounding](#grounding)) and, if there are journeys, adds a link to Transitous, as its
-   licence requires.
+3. **Report.** Unidentified and not investigated objects are not removed; they are listed at
+   the end. The model gives each journey's mean duration briefly, from `journeys`. Code fills
+   in the references (see [Grounding](#grounding)) and, if there are journeys, adds a link to
+   Transitous, as its licence requires.
 
 ## The state
 
@@ -181,9 +185,9 @@ validation are left to the code.
 
 - **Updates.** A step returns only the fields it changes. Each field has a reducer: it says
   how an update is combined with the current value. Parallel branches add entries to the same
-  lists, such as `sources` and `objects`, so without a reducer one branch's list would replace
-  another's. In the input phase, code first applies the user's changes, then replaces
-  `property` and `destinations` with the result.
+  lists, such as `sources` and `objects`; without a reducer, LangGraph rejects such updates. In
+  the input phase, code first applies the user's changes, then replaces `property` and
+  `destinations` with the result.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
   holds only data.
 - **No flags in the state.** Code computes them when it needs them, for example what is still
@@ -290,30 +294,52 @@ TODO: define the lists of finding types and statuses in
 any agent code. The agent and the evals use the same lists; the agent never sees the truth
 labels.
 
-An investigation has its own state: the object, the searches so far and their results. Only
-the finding and the pages it cites go into the run state, and web search in `failures` if it
-failed.
-
 ### What each step reads and writes
 
 One row per flowchart step, in the same order and with the same name; the investigation is
-one row. A step reads and writes only the fields listed for it; no model step gets the whole
-state. `a.b` is a field inside a record, and `[]` means every entry of a list. The user's first
+one row, and its own steps are in [The investigation subgraph](#the-investigation-subgraph).
+A step reads and writes only the fields listed for it; no model step gets the whole state.
+`a.b` is a field inside a record, and `[]` means every entry of a list. The user's first
 message is the input of the run and goes straight into `messages`.
 
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
 | Input | Extract the property address, commute destinations and departure times | model + code | `messages`, `property.text`, `destinations[]` without `address.point` and `address.source_id` | `property.text`, `destinations[]`: `id`, `name`, `address.text`, `leave_home`, `leave_place` |
-| Input | Geocode every address | code | `property.text`, `destinations[].address.text` | `property.point`, `property.source_id`, `destinations[].address.point`, `destinations[].address.source_id`, `sources` |
+| Input | Geocode every address | code | `property.text`, `destinations[]` (only `address.text` is geocoded) | `property.point`, `property.source_id`, `destinations[].address.point`, `destinations[].address.source_id`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model); the `sources` they point to (code) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
+| Research | Investigate each object, one run per object | model + code | one entry of `objects`, and the `sources` entry it points to (code) | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures` | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
+
+### The investigation subgraph
+
+Each investigation is a LangGraph subgraph with its own state. `Send` starts one per unclear
+object and gives it the object and the source the object comes from. The run state never sees
+the subgraph state. When the subgraph ends, it writes three run-state fields: its finding into
+`findings`, the pages the finding cites into `sources`, and web search into `failures` if it
+failed.
+
+| Field | Type | Contents | Reducer |
+|---|---|---|---|
+| `object` | NearbyObject | The object under investigation | Replace |
+| `object_source` | Source | The map or plan response the object comes from | Replace |
+| `queries` | list of text | The searches so far; code counts them against the cap | Append |
+| `new_pages` | list of Source | The pages from the latest search, not checked yet | Replace |
+| `pages` | list of Source | The pages that passed the injection check, each with its own ID | Append |
+| `finding` | Finding, or null | The latest finding; a rejected one is replaced | Replace |
+
+| Step | Who | Reads | Writes |
+|---|---|---|---|
+| Search the web | model + code | `object`, `queries`, `pages` | `queries`, `new_pages` (code) |
+| Check each page for prompt injection | model + code | `new_pages` | `pages`: the pages that pass |
+| Enough? or cap reached | model + code | `object`, `pages`, `finding`, the check result and the number of `queries` (code) | nothing |
+| Write the finding | model + code | `object`, `object_source`, `pages` | `finding`; code sets `object_id` |
+| Finding grounded? | code | `finding`, `object_source`, `pages` | nothing; at the end, the three run-state fields |
 
 ## Who decides
 
@@ -337,17 +363,20 @@ Code gives an ID to each source response and to each web page from a search. A p
 the run state only if a finding cites it. A finding cites the IDs it uses and its key facts (a
 name, a date, a status), copied exactly from the source. Code checks that each ID exists and
 each fact appears in the stored text. If not, the finding is rejected: the agent searches more,
-within the object's search limit, or marks the object unidentified.
+within the object's search limit, or marks the object unidentified. The check runs inside the
+investigation, so only a finding that passes it goes into `findings`.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
-its source URLs and retrieval dates. An unknown ID sends the report back to be written again.
-So the model cannot invent a reference.
+links a person can open, with their retrieval dates. A web page is linked by its URL. A map or
+plan response is not linked as an API request: code links the object's own page instead, on
+OpenStreetMap or, for a plan, the page the WFS gives in `url_www`. An unknown ID sends the
+report back to be written again. So the model cannot invent a reference.
 
 ## Prompt injection
 
 Only web pages can bring in prompt injection: text written to give the model instructions.
-Map and plan data are trusted. The user's messages reach only the input phase, which writes
-nothing but addresses, names and times.
+Map and plan data are trusted. The user's messages reach only the input phase, and later
+phases get only addresses, names and times from it.
 
 Before the investigation model sees a page, a separate model call checks it for instructions
 aimed at the model. This checker has no tools and answers only yes or no, so injected text can
