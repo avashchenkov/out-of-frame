@@ -74,7 +74,7 @@ flowchart TD
         direction TB
         RS(["Report starts"]):::milestone
         W["Write the report<br/>from the state, with its own prompt<br/>unidentified objects in the footer"]:::model
-        REF["Fill in the references<br/>from the evidence"]:::code
+        REF["Fill in the references<br/>from the evidence,<br/>add the failure notices"]:::code
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
         RS --> W --> REF
@@ -182,7 +182,7 @@ this model.
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Merge by ID |
 | `findings` | list of Finding | One per clear or investigated object | Merge by object ID |
 | `journeys` | list of Journey | Two per destination: there and back | Append |
-| `branches` | list of BranchResult | The result of each research branch | Merge by branch |
+| `failures` | list of source kind | The sources that still failed after retries: map, plans, transit or web search | Add if new |
 | `report` | text | The report | Replace |
 
 *Merge by ID* adds new entries and replaces an entry with the same ID. *Null* means not known
@@ -243,10 +243,6 @@ classDiagram
         minutes: number, mean of three connections
         source_id: ID
     }
-    class BranchResult {
-        branch: surroundings | planned development | commute
-        result: ok | empty | failed
-    }
     Destination *-- Place
     NearbyObject --> Source : source_id
     Finding --> NearbyObject : object_id
@@ -270,13 +266,13 @@ the whole state.
 | Input | Geocode every address | code | `property`, `destinations` | `property`, `destinations`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations` | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages` |
-| Research | Get map objects | code | `property` | `objects`, `sources`, `branches` |
+| Research | Get map objects | code | `property` | `objects`, `sources`, `failures` |
 | Research | Triage | model | `objects` (map objects) | `objects`, `findings` |
-| Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `branches` |
-| Research | Investigate one object | model | one entry of `objects` | `findings`, `sources` |
-| Research | Plan journeys | code | `property`, `destinations` | `journeys`, `sources`, `branches` |
-| Report | Write the report | model | `destinations`, `objects`, `findings`, `journeys`, `branches` | `report` |
-| Report | Fill in the references | code | `report`, `findings`, `journeys`, `sources` | `report` |
+| Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `failures` |
+| Research | Investigate one object | model | one entry of `objects` | `findings`, `sources`, `failures` |
+| Research | Plan journeys | code | `property`, `destinations` | `journeys`, `sources`, `failures` |
+| Report | Write the report | model | `destinations`, `objects`, `findings`, `journeys`, `failures` | `report` |
+| Report | Fill in the references, add the failure notices | code | `report`, `findings`, `journeys`, `sources`, `failures` | `report` |
 
 ## Who decides
 
@@ -321,5 +317,16 @@ still mislead the model; evals measure how often.
 
 ## Failures
 
-Code retries a failed source. If it still fails, the report marks that branch as failed and
-the other branches continue. A failed source and an empty result are reported differently.
+Code retries each call to the model or a source a few times. If it still fails:
+
+- **The model or geocoding:** the run stops, and the user is asked to try again later. The
+  state is saved after each step, so the run then continues where it stopped.
+- **The map, plan or transit source:** that part of the report is missing, and the rest
+  continues. Code adds the source to `failures`. The model reads them, so it never says
+  "nothing found" there. Code adds one fixed sentence per failed source to the report, for
+  example "Development plans could not be loaded, so the report may be incomplete."
+- **Web search in an investigation:** the object stays unidentified, and the other
+  investigations continue. Web search is added to `failures` once.
+
+Details such as status codes and retries go only to logs and traces. The flowchart does not
+show these paths.
