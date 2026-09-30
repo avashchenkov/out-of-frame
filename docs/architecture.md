@@ -175,7 +175,6 @@ this model.
 
 | Field | Type | Contents | Merge rule |
 |---|---|---|---|
-| `run_date` | date | The date of the run; the agent has no clock | Replace |
 | `messages` | list of Message | The conversation in the input phase | Append |
 | `property` | Place, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
@@ -266,7 +265,6 @@ the whole state.
 
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
-| Start | Start the run | code | nothing | `run_date` |
 | Input | The user's message | user | nothing | `messages` |
 | Input | Extract the property address, destinations and departure times | model | `messages`, `property`, `destinations` | `property`, `destinations` |
 | Input | Geocode every address | code | `property`, `destinations` | `property`, `destinations`, `sources` |
@@ -275,9 +273,9 @@ the whole state.
 | Research | Get map objects | code | `property` | `objects`, `sources`, `branches` |
 | Research | Triage | model | `objects` (map objects) | `objects`, `findings` |
 | Research | Get B-Plans in the radius | code | `property` | `objects`, `sources`, `branches` |
-| Research | Investigate one object | model | one entry of `objects`, `run_date` | `findings`, `sources` |
-| Research | Plan journeys | code | `property`, `destinations`, `run_date` | `journeys`, `sources`, `branches` |
-| Report | Write the report | model | `run_date`, `destinations`, `objects`, `findings`, `journeys`, `branches` | `report` |
+| Research | Investigate one object | model | one entry of `objects` | `findings`, `sources` |
+| Research | Plan journeys | code | `property`, `destinations` | `journeys`, `sources`, `branches` |
+| Report | Write the report | model | `destinations`, `objects`, `findings`, `journeys`, `branches` | `report` |
 | Report | Fill in the references | code | `report`, `findings`, `journeys`, `sources` | `report` |
 
 ## Who decides
@@ -298,8 +296,10 @@ Other rules:
 
 - **The model's only tool is web search.** Map, plan and transit queries are fixed, with
   fixed radii.
-- **The agent has no clock.** Each run gets the date as input. Status comes only from dated
-  sources, never from the model's memory.
+- **The model has no clock.** Code passes the current date to each step that needs it: an
+  investigation, the journey planner and the report. Evals pass the task's date instead. The
+  date is not kept in the state, because a run can wait days for the user's answer. Status
+  comes only from dated sources, never from the model's memory.
 
 ## Grounding
 
