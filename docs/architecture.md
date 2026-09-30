@@ -127,10 +127,11 @@ flowchart does not show the state; the table
    request.
    - The model extracts only what the user added or corrected in this message, and never
      coordinates. Code applies these edits to the existing input: other values and existing
-     destination IDs stay the same. Changing an address clears its coordinates and its
-     geocoding source reference before the new address is geocoded.
-   - Code geocodes the addresses and never changes an address. It sets a place's coordinates
-     only when one matching location is clear and precise enough for the request. No suitable
+     destination IDs stay the same.
+   - Code geocodes every address and never changes an address. Each pass replaces the
+     previous result, so an address that is not resolved has no coordinates. Code sets a
+     place's coordinates only when one matching location is clear and precise enough for the
+     request. No suitable
      match, several possible locations or a result that identifies only a broad area lead to
      a question for the user. A source failure stops the run (see [Failures](#failures)).
    - Code, not the model, checks that the input is complete: the property is resolved and in
@@ -146,8 +147,9 @@ flowchart does not show the state; the table
    the property, with the class's own radius. An object is in the circle if its nearest edge
    is; distances are always measured to the nearest edge. An object without a finding is
    unclear. Unclear objects are investigated nearest first, at most five per class; the rest
-   are listed in the report as not investigated. Every branch runs to its end, even with
-   nothing to do; its result is then empty.
+   are listed in the report as not investigated. An investigation stops when its evidence is
+   enough and passes the grounding check, or when it reaches its search cap; one source can be
+   enough. Every branch runs to its end, even with nothing to do; its result is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
      within the class's circle. Code groups them into objects (one site or one road can be
      several elements) and keeps the nearest N per class. Map names and tags are free text, so
@@ -203,8 +205,7 @@ implementation; the distinctions that affect the flow are defined here.
 
 *Null* means no value; an *optional* field can be null. In the input, null means not known
 yet: `destinations: null` means the user has not answered, while `[]` means they travel
-nowhere. Research lists start empty; the graph decides when the branches are complete.
-A missing result is not inferred from an empty list while a branch is still running.
+nowhere.
 
 ```mermaid
 classDiagram
@@ -258,7 +259,7 @@ classDiagram
     class Journey {
         destination_id: ID
         direction: there | back
-        outcome: found | no_route | unavailable
+        outcome: found | no route | unavailable
         mean_duration: duration, optional
         source_id: ID, optional
     }
@@ -280,13 +281,8 @@ to the question step. Candidates are not stored again in `Place`.
 A `Source` is one API response, or one web page returned by search, with the text that was
 actually retrieved. A search returning several pages gives each page its own ID and URL.
 
-A `Journey` records the result for one destination and direction:
-
-- `found`: mean duration of the available one to three connections, with a source reference;
-- `no_route`: the source answered but returned no connections; duration is null and the
-  source reference points to that empty response;
-- `unavailable`: the source call failed after retries; duration and source reference are
-  null, and `transit` is added to `failures`. Technical details stay in logs and traces.
+A `Journey` has a duration only when its outcome is found. It refers to the source response
+when the outcome is found or no route; an unavailable journey has neither.
 
 A `Finding` takes its checklist class from the object referenced by `object_id`.
 
@@ -296,9 +292,7 @@ will use the same vocabulary; truth labels remain separate and unavailable to th
 
 An investigation has its own state: the object, the searches so far and their results. Only
 the finding and the pages it cites go into the run state. The full search history stays in
-the transcript for evals. The investigation stops as soon as the retrieved evidence is enough
-to support the finding and it passes the grounding check. One page can be enough; further
-searches are only for unresolved questions, within the cap.
+the transcript for evals.
 
 ### What each step reads and writes
 
@@ -375,14 +369,14 @@ Code retries each call to the model or a source a few times. If it still fails:
 - **Web search in an investigation:** the object stays unidentified, and the other
   investigations continue.
 
-For map, plan, transit and web search failures, code adds the source to `failures` and at once
-shows the user one fixed sentence per failed source, for example "Development plans could not be loaded, so the report
-may be incomplete." The sentence goes to the user through the LangGraph stream, not through the
-state or the model. The model reads `failures` only so that it never says "nothing found"
-there.
+For map, plan, transit and web search failures, code adds the source to `failures` and at
+once shows the user one fixed sentence per failed source, for example "Development plans could
+not be loaded, so the report may be incomplete." The sentence goes to the user through the
+LangGraph stream, not through the state or the model. The model reads `failures` only so that
+it never says "nothing found" there.
 
 A successful empty response is not a source failure: no address match leads to a question,
-no nearby objects adds no objects, and no connections gives a `no_route` journey.
+no nearby objects adds no objects, and no connections gives a journey with no route.
 
 Details such as status codes and retries go only to logs and traces. The flowchart does not
 show these paths.
