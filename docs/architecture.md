@@ -3,6 +3,9 @@
 How the agent is built: the flow of a run, the state it keeps and the rules it follows. What
 the agent is for: [vision.md](vision.md). Each data source: [sources.md](sources.md).
 
+The agent is built on LangGraph ([ADR 1](adr/0001-langgraph.md)), so the flow and the state
+follow its model: one shared state, steps as nodes, parallel branches and pauses for the user.
+
 ## One run
 
 ```mermaid
@@ -166,9 +169,10 @@ and plain types, not the classes of a language or a framework. A step gets only 
 (see [What each step reads and writes](#what-each-step-reads-and-writes)). Eval tasks start
 from run states in this model.
 
-- **Updates.** A step returns only the fields it changes. Parallel branches add entries to the
-  same lists, such as `sources` and `objects`, so each field has a merge rule: otherwise one
-  branch's list would replace another's.
+- **Updates.** A step returns only the fields it changes. Each field has a reducer: it says
+  how an update is combined with the current value. Parallel branches add entries to the same
+  lists, such as `sources` and `objects`, so without a reducer one branch's list would replace
+  another's.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
   holds only data.
 - **No values that can be derived from the state.** Code computes them when it needs them,
@@ -179,7 +183,7 @@ from run states in this model.
 - **IDs only where needed.** A record has an ID only if something refers to it. Code creates
   every ID; the model never does.
 
-| Field | Type | Contents | Merge rule |
+| Field | Type | Contents | Reducer |
 |---|---|---|---|
 | `messages` | list of Message | The conversation in the input phase | Append |
 | `property` | Place, or null | The property, in Berlin; null until the user gives its address | Replace |
