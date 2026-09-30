@@ -12,7 +12,9 @@ The implementation steps, in order.
    the checklist. The scripts stay outside the checks and are never extended.
 4. **Evals.** `docs/eval-architecture.md`: how each step of the run is measured. Then the
    tasks with truth labels, committed before any agent code. Labels come from real-world
-   evidence, not from the map data. Tests never read them.
+   evidence, not from the map data. Tests never read them. Define the finding type and status
+   vocabularies in `src/out_of_frame/data/checklist.yaml` alongside these tasks; the agent and
+   evals share the vocabulary, not the truth labels.
 5. **First slice, without the graph.** Address → map objects → report with sources, as a CLI.
    With tests, source failures included, and CI.
 6. **Eval harness.** It runs the tasks from step 4 and grades them. Each code grader has its
