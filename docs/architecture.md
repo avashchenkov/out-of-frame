@@ -307,11 +307,11 @@ the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Triage | model | map `objects[]`: `class`, `name`, `details` | `findings` for clear objects |
+| Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model | `destinations[].name`, `objects`, `findings`, `journeys`, `failures` | `report` |
+| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures` | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
 
 ## Who decides
