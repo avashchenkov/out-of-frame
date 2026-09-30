@@ -165,8 +165,9 @@ The state is the record of one run, described as a logical data model: records, 
 plain types, not the classes of a language or a framework. Eval tasks start from run states in
 this model.
 
-- **Updates.** A step returns only the fields it changes. Parallel branches can change the
-  same field, so each field has a merge rule.
+- **Updates.** A step returns only the fields it changes. Parallel branches add entries to the
+  same lists, such as `sources` and `objects`, so each field has a merge rule: otherwise one
+  branch's list would replace another's.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
   holds only data.
 - **No derived values.** Code computes them when it needs them, for example what is still
