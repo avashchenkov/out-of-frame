@@ -67,7 +67,8 @@ flowchart TD
         D -.->|"search again"| S
         D -.->|"stop"| F
         F --> GC
-        GC -.->|"no"| D
+        GC -.->|"no, under the cap:<br/>search again"| S
+        GC -.->|"no, at the cap:<br/>unidentified"| JN
         T --> JN
         PL --> JN
         GC -.->|"yes"| JN
@@ -247,6 +248,7 @@ classDiagram
         id: ID
         class: checklist class ID
         name: text, optional
+        url: text
         details: map tags or plan fields
         point: Point
         distance_m: number
@@ -313,7 +315,7 @@ message is the input of the run and goes straight into `messages`.
 | Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures` | `report` |
-| Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
+| Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `objects[].url`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
 
@@ -340,7 +342,7 @@ sees flagged content.
 | Search the web or read a page | model + code | `object`, `history` | `history`; `pages`: only what passes the check (code) |
 | Enough? or cap reached | model + code | `object`, `history`; code counts the tool calls | nothing |
 | Write the finding | model + code | `object`, `history`, `pages` | `finding`; code sets `object_id` |
-| Finding grounded? | code | `finding`, `object.details`, `pages` | `history`: why the finding was rejected; at the end, the three run-state fields |
+| Finding grounded? | code | `finding`, `object.details`, `pages`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides
 
@@ -365,12 +367,14 @@ the run state only if a finding cites it. A finding cites the IDs it uses and it
 name, a date, a status), copied exactly from the source. Code checks that each ID exists and
 each fact appears in the stored text. If not, the finding is rejected: the agent searches more,
 within the object's search limit, or marks the object unidentified. The check runs inside the
-investigation, so only a finding that passes it goes into `findings`.
+investigation, so only a finding that passes it goes into `findings`. Triage findings get the
+same check against the stored map response; a finding that fails it is dropped, so the object
+goes to investigation.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
 links a person can open, with their retrieval dates. A web page is linked by its URL. A map or
-plan response is not linked as an API request: code links the object's own page instead, on
-OpenStreetMap or, for a plan, the page the WFS gives in `url_www`. An unknown ID sends the
+plan response is not linked as an API request: code links the object's `url` instead, its page
+on openstreetmap.org or, for a plan, the page the WFS gives in `url_www`. An unknown ID sends the
 report back to be written again. So the model cannot invent a reference.
 
 ## Prompt injection
