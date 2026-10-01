@@ -15,11 +15,11 @@ The implementation steps, in order.
    evidence, not from the map data. Tests never read them. The lists of finding types and
    statuses go into `src/out_of_frame/data/checklist.yaml` with these tasks; the agent and the
    evals share the lists, not the truth labels.
-5. **First slice, without the graph.** Address → map objects → report with sources, as a CLI.
-   With tests, source failures included, and CI.
-6. **Eval harness.** It runs the tasks from step 4 and grades them. Each code grader has its
-   own tests. The first run covers the tasks the first slice can already run. From here on,
-   every step ends with a run of the tasks that can run by then.
+5. **Eval harness.** It runs the tasks from step 4 and grades them, first against a stub
+   agent, before any agent code. Each code grader has its own tests, and CI runs them. From
+   here on, every step ends with a run of the tasks that can run by then.
+6. **First slice, without the graph.** Address → map objects → report with sources, as a CLI.
+   With tests, source failures included. Its eval run covers the tasks it can already run.
 7. **The graph** ([ADR 1](adr/0001-langgraph.md)): input questions and the investigation
    loop. The loop is tested on the search results saved with the step 4 tasks. The run
    states in `evals/states/` follow the [state model](architecture.md#the-state), not
