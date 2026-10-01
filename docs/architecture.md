@@ -152,13 +152,14 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    is; distances are always measured to the nearest edge. An object without a finding is
    unclear. Unclear objects are investigated nearest first, at most five per class; the rest
    are listed in the report as not investigated. An investigation stops when its evidence is
-   enough and passes the grounding check, or when it reaches its search cap; one source can be
-   enough. Every branch runs to its end, even with nothing to do; its result is then empty.
+   enough and passes the grounding check, or when it reaches its cap of tool calls; one source
+   can be enough. Every branch runs to its end, even with nothing to do; its result is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
      within the class's circle. Code groups them into objects (one site or one road can be
-     several elements) and keeps the nearest N per class. Map names and tags are free text, so
-     the model triages them: clear objects become findings as they are, unclear ones are
-     investigated.
+     several elements) and keeps the nearest N per class. The model triages them from their
+     names and tags and from what it knows. If it is sure what an object is and that the map is
+     current, it writes the finding at once, with the status the map shows; otherwise the
+     object is unclear and is investigated.
    - *Planned development:* the Berlin B-Plan WFS, the city's planning API, filters only by a
      rectangle. Code asks for the square around the circle and drops the plans outside the
      circle. The WFS gives each plan's legal status and, for plans in force, the permitted
@@ -202,7 +203,7 @@ validation are left to the code.
 | `messages` | list of Message | The conversation in the input phase | Append |
 | `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
-| `sources` | list of Source | Geocoding, map and plan responses, plus web pages cited by findings | Append |
+| `sources` | list of Source | Geocoding, map and plan responses, plus Tavily snippets and pages cited by findings | Append |
 | `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Append |
 | `findings` | list of Finding | One per clear or investigated object | Append |
 | `journeys` | list of Journey | Two per destination, there and back, each with its outcome | Append |
@@ -248,7 +249,6 @@ classDiagram
         id: ID
         class: checklist class ID
         name: text, optional
-        url: text
         details: map tags or plan fields
         point: Point
         distance_m: number
@@ -282,8 +282,8 @@ classDiagram
 `Address.source_id` points to the Nominatim response for this address. If the address is not
 found, or several places match it, code uses this response to build the question for the user.
 
-A `Source` is one API response or one web page from a search, with the text that was
-retrieved. Each page from a search is a separate source.
+A `Source` is one API response, or one snippet or page from Tavily, with the text that was
+retrieved. Each snippet or page is a separate source.
 
 A `Journey` has a duration only when its outcome is found. The transit response is not kept
 in the state: code computes the duration from it at once.
@@ -310,20 +310,20 @@ message is the input of the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model); the `sources` they point to (code) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
+| Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures` | `report` |
-| Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `objects[].url`, `sources`, `journeys` | `report` |
+| Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
 
 Each investigation is a LangGraph subgraph with its own state. Code starts one run per unclear
 object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets only
 its object. Its field names differ from the run state's, so nothing passes between them by
-accident. When it ends, code writes its finding into `findings`, the pages the finding cites
-into `sources`, and web search into `failures` if it failed.
+accident. When it ends, code writes its finding into `findings`, the snippets and pages the
+finding cites into `sources`, and web search into `failures` if it failed.
 
 The model has two Tavily tools: search, which returns short snippets, and extract, which
 returns the full text of one page it chooses. Code checks every snippet and page for prompt
@@ -342,14 +342,14 @@ sees flagged content.
 | Search the web or read a page | model + code | `object`, `history` | `history`; `pages`: only what passes the check (code) |
 | Enough? or cap reached | model + code | `object`, `history`; code counts the tool calls | nothing |
 | Write the finding | model + code | `object`, `history`, `pages` | `finding`; code sets `object_id` |
-| Finding grounded? | code | `finding`, `object.details`, `pages`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
+| Finding grounded? | code | `finding`, `object.details`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides
 
 Code decides what runs next, by fixed rules over the state. The model changes the path only
 through what it writes into the state; there is no LLM router. The one exception is the
-investigation loop: the model decides to search again or stop, within a fixed number of
-searches per object.
+investigation loop: the model decides to search again or stop, within a fixed number of tool
+calls per object.
 
 Other rules:
 
@@ -358,24 +358,25 @@ Other rules:
 - **The model has no clock.** Code passes the current date to each step that needs it: an
   investigation, the journey planner and the report. Evals pass the task's date instead. The
   date is not kept in the state, because a run can wait days for the user's answer. Status
-  comes only from dated sources, never from the model's memory.
+  comes only from dated sources, never from the model's memory; in triage, that source is the
+  map.
 
 ## Grounding
 
-Code gives an ID to each source response and to each snippet or page from Tavily. A page reaches
-the run state only if a finding cites it. A finding cites the IDs it uses and its key facts (a
-name, a date, a status), copied exactly from the source. Code checks that each ID exists and
-each fact appears in the stored text. If not, the finding is rejected: the agent searches more,
-within the object's search limit, or marks the object unidentified. The check runs inside the
-investigation, so only a finding that passes it goes into `findings`. Triage findings get the
-same check against the stored map response; a finding that fails it is dropped, so the object
-goes to investigation.
+Code gives an ID to each source response and to each snippet or page from Tavily. A snippet or
+page reaches the run state only if a finding cites it. A finding cites the IDs it uses and its
+key facts (a name, a date, a status), copied exactly from the source. Code checks that each ID
+exists and each fact appears in the stored text. If not, the finding is rejected: the agent
+searches more, within the object's cap, or marks the object unidentified. The check runs
+inside the investigation, so only a finding that passes it, or an unidentified one at the cap,
+goes into `findings`. Triage findings are not checked: in triage the model may use what it
+knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
 links a person can open, with their retrieval dates. A web page is linked by its URL. A map or
-plan response is not linked as an API request: code links the object's `url` instead, its page
-on openstreetmap.org or, for a plan, the page the WFS gives in `url_www`. An unknown ID sends the
-report back to be written again. So the model cannot invent a reference.
+plan response is not linked: the report names the source, OpenStreetMap or the Berlin B-Plan
+WFS, with its date. An unknown ID sends the report back to be written again. So the model
+cannot invent a reference.
 
 ## Prompt injection
 
