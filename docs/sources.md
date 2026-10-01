@@ -9,7 +9,7 @@ queries. Web search is the model's only tool (see [architecture.md](architecture
 | Overpass | map elements in a circle around a point | code | none |
 | Berlin B-Plan WFS | development plans in a rectangle | code | none |
 | Transitous | public transport journeys | code | none |
-| Tavily | web search results | the model | required |
+| Tavily | web search results and page text | the model | required |
 
 ## Nominatim
 
@@ -59,9 +59,10 @@ trams included, without an access agreement.
 
 ## Tavily
 
-A web search API. The model calls `TavilySearch` from `langchain-tavily`. A call returns pages
-with their URL, title and a content snippet. The package also offers other tools, such as
-extract and crawl; this project does not use them.
+A web search API. The model calls `TavilySearch` and `TavilyExtract` from `langchain-tavily`.
+Search returns pages with their URL, title and a short snippet; by default it does not return
+the full text. Extract returns the full text of one URL. The package also offers crawl; this
+project does not use it.
 
 ## Data rights
 

@@ -47,9 +47,8 @@ flowchart TD
             TRA[["Transitous<br/>journey planner API"]]:::ext
         end
         subgraph INV["Investigate each object: a subgraph, one run per object, in parallel, each with its own state"]
-            S["Search the web<br/>the model writes the query"]:::model
+            S["Search the web or read a page<br/>the model chooses<br/>flagged content is dropped first"]:::model
             TAV[["Tavily<br/>web search API"]]:::ext
-            CHK["Check each page<br/>for prompt injection<br/>drop flagged pages"]:::model
             D{"Enough?<br/>or cap reached"}:::model
             F["Write the finding<br/>type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
             GC{"Finding grounded?"}:::code
@@ -63,7 +62,7 @@ flowchart TD
         T -.->|"per unclear object<br/>nearest first, capped in number"| S
         PL -.->|"per object<br/>nearest first, capped in number"| S
         PL --- WFS
-        S --> CHK --> D
+        S --> D
         S --- TAV
         D -.->|"search again"| S
         D -.->|"stop"| F
@@ -311,35 +310,37 @@ message is the input of the run and goes straight into `messages`.
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model); the `sources` they point to (code) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Investigate each object, one run per object | model + code | one entry of `objects`, and the `sources` entry it points to (code) | one entry of `findings`, the `sources` it cites, `failures` |
+| Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures` | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
 
-Each investigation is a LangGraph subgraph with its own state. `Send` starts one per unclear
-object and gives it the object and the source the object comes from. The run state never sees
-the subgraph state. When the subgraph ends, it writes three run-state fields: its finding into
-`findings`, the pages the finding cites into `sources`, and web search into `failures` if it
-failed.
+Each investigation is a LangGraph subgraph with its own state. Code starts one run per unclear
+object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets only
+its object. Its field names differ from the run state's, so nothing passes between them by
+accident. When it ends, code writes its finding into `findings`, the pages the finding cites
+into `sources`, and web search into `failures` if it failed.
+
+The model has two Tavily tools: search, which returns short snippets, and extract, which
+returns the full text of one page it chooses. Code checks every snippet and page for prompt
+injection before it is stored (see [Prompt injection](#prompt-injection)); the model never
+sees flagged content.
 
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
 | `object` | NearbyObject | The object under investigation | Replace |
-| `object_source` | Source | The map or plan response the object comes from | Replace |
-| `queries` | list of text | The searches so far; code counts them against the cap | Append |
-| `new_pages` | list of Source | The pages from the latest search, not checked yet | Replace |
-| `pages` | list of Source | The pages that passed the injection check, each with its own ID | Append |
+| `history` | list of messages | The model's tool calls, the results it was shown, and why a finding was rejected | Append |
+| `pages` | list of Source | Snippets and pages that passed the check, each with an ID | Append |
 | `finding` | Finding, or null | The latest finding; a rejected one is replaced | Replace |
 
 | Step | Who | Reads | Writes |
 |---|---|---|---|
-| Search the web | model + code | `object`, `queries`, `pages` | `queries`, `new_pages` (code) |
-| Check each page for prompt injection | model + code | `new_pages` | `pages`: the pages that pass |
-| Enough? or cap reached | model + code | `object`, `pages`, `finding`, the check result and the number of `queries` (code) | nothing |
-| Write the finding | model + code | `object`, `object_source`, `pages` | `finding`; code sets `object_id` |
-| Finding grounded? | code | `finding`, `object_source`, `pages` | nothing; at the end, the three run-state fields |
+| Search the web or read a page | model + code | `object`, `history` | `history`; `pages`: only what passes the check (code) |
+| Enough? or cap reached | model + code | `object`, `history`; code counts the tool calls | nothing |
+| Write the finding | model + code | `object`, `history`, `pages` | `finding`; code sets `object_id` |
+| Finding grounded? | code | `finding`, `object.details`, `pages` | `history`: why the finding was rejected; at the end, the three run-state fields |
 
 ## Who decides
 
@@ -350,8 +351,8 @@ searches per object.
 
 Other rules:
 
-- **The model's only tool is web search.** Map, plan and transit queries are fixed, with
-  fixed radii.
+- **The model's only tools are Tavily search and extract.** Map, plan and transit queries are
+  fixed, with fixed radii.
 - **The model has no clock.** Code passes the current date to each step that needs it: an
   investigation, the journey planner and the report. Evals pass the task's date instead. The
   date is not kept in the state, because a run can wait days for the user's answer. Status
@@ -359,7 +360,7 @@ Other rules:
 
 ## Grounding
 
-Code gives an ID to each source response and to each web page from a search. A page reaches
+Code gives an ID to each source response and to each snippet or page from Tavily. A page reaches
 the run state only if a finding cites it. A finding cites the IDs it uses and its key facts (a
 name, a date, a status), copied exactly from the source. Code checks that each ID exists and
 each fact appears in the stored text. If not, the finding is rejected: the agent searches more,
@@ -378,15 +379,16 @@ Only web pages can bring in prompt injection: text written to give the model ins
 Map and plan data are trusted. The user's messages reach only the input phase, and later
 phases get only addresses, names and times from it.
 
-Before the investigation model sees a page, a separate model call checks it for instructions
-aimed at the model. This checker has no tools and answers only yes or no, so injected text can
-at most make it pass the page. A flagged page is dropped and logged, and the investigation goes
-on with the other pages.
+Before the investigation model sees a snippet or a page, a separate model call checks it for
+instructions aimed at the model. This checker has no tools and answers only yes or no, so
+injected text can at most make it pass the content. Flagged content is dropped and logged, and
+the investigation goes on with the rest.
 
-If an injection gets through, code still limits it: the investigation model's only tool is web
-search, searches are capped, and every fact in a finding must appear in a stored source. False
-facts on a page can still mislead the model. Evals plant instructions in test pages to check
-these guards; they cannot measure how often attacks happen in the real world.
+If an injection gets through, code still limits it: the investigation model's only tools are
+Tavily search and extract, tool calls are capped, and every fact in a finding must appear in a
+stored source. False facts on a page can still mislead the model. Evals plant instructions in
+test pages to check these guards; they cannot measure how often attacks happen in the real
+world.
 
 ## Failures
 
