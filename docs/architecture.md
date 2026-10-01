@@ -39,7 +39,7 @@ flowchart TD
             T["Triage<br/>which objects are unclear"]:::model
         end
         subgraph PLN["Branch: planned development"]
-            PL["Get B-Plans in the radius<br/>with their legal status<br/>one object per plan"]:::code
+            PL["Get B-Plans in the radius<br/>with their legal status<br/>one object per plan, nearest N"]:::code
             WFS[["Berlin B-Plan WFS<br/>city planning API"]]:::ext
         end
         subgraph COM["Branch: commute"]
@@ -161,11 +161,11 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
      current, it writes the finding at once, with the status the map shows; otherwise the
      object is unclear and is investigated.
    - *Planned development:* the Berlin B-Plan WFS, the city's planning API, filters only by a
-     rectangle. Code asks for the square around the circle and drops the plans outside the
-     circle. The WFS gives each plan's legal status and, for plans in force, the permitted
-     land use. These are fixed values and dates, and none shows whether building has started,
-     so a model could only guess. There is no triage, so every plan is unclear. An old plan
-     is not excluded: it can still cover land that is not built.
+     rectangle. Code asks for the square around the circle, drops the plans outside the
+     circle and keeps the nearest N. The WFS gives each plan's legal status and, for plans in
+     force, the permitted land use. These are fixed values and dates, and none shows whether
+     building has started, so a model could only guess. There is no triage, so every plan is
+     unclear. An old plan is not excluded: it can still cover land that is not built.
    - *Commute:* for each destination, code asks Transitous for two journeys on a normal
      weekday: there, when the user leaves home, and back, when they leave the destination.
      Each journey is the mean of the next three connections, or of fewer if fewer are found.
@@ -173,8 +173,9 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
      own times, so two people with different schedules are two destinations.
 3. **Report.** Unidentified and not investigated objects are not removed; they are listed at
    the end. The model gives each journey's mean duration briefly, from `journeys`. Code fills
-   in the references (see [Grounding](#grounding)) and, if there are journeys, adds a link to
-   Transitous, as its licence requires.
+   in the references (see [Grounding](#grounding)) and adds the credits the licences require:
+   "© OpenStreetMap contributors" with its link, and a link to Transitous if there are
+   journeys.
 
 ## The state
 
@@ -204,7 +205,7 @@ validation are left to the code.
 | `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Geocoding, map and plan responses, plus Tavily snippets and pages cited by findings | Append |
-| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class | Append |
+| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class; N is set in the configuration, separately for map classes and plans | Append |
 | `findings` | list of Finding | One per clear or investigated object | Append |
 | `journeys` | list of Journey | Two per destination, there and back, each with its outcome | Append |
 | `failures` | list of service | The services that still failed after retries: map, plans, transit or web search | Add if new |
@@ -314,7 +315,7 @@ message is the input of the run and goes straight into `messages`.
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures` | `report` |
+| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures`; on a retry, the unknown IDs (code) | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
@@ -342,7 +343,7 @@ sees flagged content.
 | Search the web or read a page | model + code | `object`, `history` | `history`; `pages`: only what passes the check (code) |
 | Enough? or cap reached | model + code | `object`, `history`; code counts the tool calls | nothing |
 | Write the finding | model + code | `object`, `history`, `pages` | `finding`; code sets `object_id` |
-| Finding grounded? | code | `finding`, `object.details`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
+| Finding grounded? | code | `finding`, `object.details`, `object.source_id`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides
 
@@ -366,11 +367,12 @@ Other rules:
 Code gives an ID to each source response and to each snippet or page from Tavily. A snippet or
 page reaches the run state only if a finding cites it. A finding cites the IDs it uses and its
 key facts (a name, a date, a status), copied exactly from the source. Code checks that each ID
-exists and each fact appears in the stored text. If not, the finding is rejected: the agent
-searches more, within the object's cap, or marks the object unidentified. The check runs
-inside the investigation, so only a finding that passes it, or an unidentified one at the cap,
-goes into `findings`. Triage findings are not checked: in triage the model may use what it
-knows to say what a mapped object is.
+exists and each fact appears in the stored text; for the object's own map or plan data, that
+text is the object's details. If not, the finding is rejected: the agent searches more, within
+the object's cap, or marks the object unidentified. The check runs inside the investigation, so
+only a finding that passes it, or an unidentified one at the cap, goes into `findings`. Triage
+findings are not checked: in triage the model may use what it knows to say what a mapped
+object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
 links a person can open, with their retrieval dates. A web page is linked by its URL. A map or

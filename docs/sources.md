@@ -1,7 +1,8 @@
 # Sources
 
 Where the agent's facts come from. Code calls the map, plan and transit sources with fixed
-queries. Web search is the model's only tool (see [architecture.md](architecture.md)).
+queries. Tavily search and extract are the model's only tools (see
+[architecture.md](architecture.md)).
 
 | Source | What it gives | Called by | Key |
 |---|---|---|---|
