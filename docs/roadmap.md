@@ -21,9 +21,9 @@ The implementation steps, in order.
 6. **First slice, without the graph.** Address → map objects → report with sources, as a CLI.
    With tests, source failures included. Its eval run covers the tasks it can already run.
 7. **The graph** ([ADR 1](adr/0001-langgraph.md)): input questions and the investigation
-   loop. The loop is tested on the search results saved with the step 4 tasks. The run
-   states in `evals/states/` follow the [state model](architecture.md#the-state), not
-   LangGraph classes; this step adds the code that loads them into the graph state.
+   loop. The investigation steps are tested on the written states saved with the step 4
+   tasks. The run states in `evals/states/` follow the [state model](architecture.md#the-state),
+   not LangGraph classes; this step adds the code that loads them into the graph state.
 8. **Remaining sources,** one at a time: Transitous, the B-Plan WFS and web search. With web
    search come the prompt injection guards. The injection tasks in the input and
    investigation suites check whether the model is still misled.
