@@ -156,10 +156,10 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    can be enough. Every branch runs to its end, even with nothing to do; its result is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
      within the class's circle. Code groups them into objects (one site or one road can be
-     several elements) and keeps the nearest N per class. The model triages them from their
-     names and tags and from what it knows. If it is sure what an object is and that the map is
-     current, it writes the finding at once, with the status the map shows; otherwise the
-     object is unclear and is investigated.
+     several elements) and keeps the nearest N per class. The model triages each object in its
+     own call, from its name and tags and from what it knows. If it is sure what an object is
+     and that the map is current, it writes the finding at once, with the status the map shows;
+     otherwise the object is unclear and is investigated.
    - *Planned development:* the Berlin B-Plan WFS, the city's planning API, filters only by a
      rectangle. Code asks for the square around the circle, drops the plans outside the
      circle and keeps the nearest N. The WFS gives each plan's legal status and, for plans in
@@ -243,7 +243,6 @@ classDiagram
         kind: geocoding | map | plans | web search
         request: text
         url: text
-        retrieved_at: date and time
         content: text
     }
     class NearbyObject {
@@ -311,7 +310,7 @@ message is the input of the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Triage | model + code | map `objects[]`: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
+| Research | Triage | model + code | one map object per call: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
@@ -359,8 +358,7 @@ Other rules:
 - **The model has no clock.** Code passes the current date to each step that needs it: an
   investigation, the journey planner and the report. Evals pass the task's date instead. The
   date is not kept in the state, because a run can wait days for the user's answer. Status
-  comes only from dated sources, never from the model's memory; in triage, that source is the
-  map.
+  comes only from sources, never from the model's memory; in triage, that source is the map.
 
 ## Grounding
 
@@ -375,11 +373,10 @@ goes into `findings`. Triage findings are not checked: in triage the model may u
 knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
-links a person can open, with their retrieval dates. A web page is linked by its URL. A map or
-plan response is not linked: the report names the source, OpenStreetMap or the Berlin B-Plan
-WFS, with its date. An unknown ID sends the report back to be written again, a few times at
-most; after that the run stops, as when the model fails. So the model cannot invent a
-reference.
+links a person can open. A web page is linked by its URL. A map or plan response is not
+linked: the report names the source, OpenStreetMap or the Berlin B-Plan WFS. An unknown ID
+sends the report back to be written again, a few times at most; after that the run stops, as
+when the model fails. So the model cannot invent a reference.
 
 ## Prompt injection
 
