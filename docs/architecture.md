@@ -174,8 +174,8 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
 3. **Report.** Unidentified and not investigated objects are not removed; they are listed at
    the end. The model gives each journey's mean duration briefly, from `journeys`. Code fills
    in the references (see [Grounding](#grounding)) and adds the credits the licences require:
-   "© OpenStreetMap contributors" with its link, and a link to Transitous if there are
-   journeys.
+   "© OpenStreetMap contributors" with its link, and a link to the Transitous sources page if
+   there are journeys.
 
 ## The state
 
@@ -291,10 +291,10 @@ in the state: code computes the duration from it at once.
 
 A `Finding` has no class of its own: it takes the class of its object.
 
-TODO: define the lists of finding types and statuses in
-[checklist.yaml](../src/out_of_frame/data/checklist.yaml) together with the eval tasks, before
-any agent code. The agent and the evals use the same lists; the agent never sees the truth
-labels.
+TODO: define the lists of finding types and statuses, N for map classes and for plans, and the
+cap of tool calls per object in [checklist.yaml](../src/out_of_frame/data/checklist.yaml)
+together with the eval tasks, before any agent code. The agent and the evals use the same
+lists; the agent never sees the truth labels.
 
 ### What each step reads and writes
 
@@ -354,8 +354,8 @@ calls per object.
 
 Other rules:
 
-- **The model's only tools are Tavily search and extract.** Map, plan and transit queries are
-  fixed, with fixed radii.
+- **Only the investigation has tools: Tavily search and extract.** Map, plan and transit
+  queries are fixed, with fixed radii.
 - **The model has no clock.** Code passes the current date to each step that needs it: an
   investigation, the journey planner and the report. Evals pass the task's date instead. The
   date is not kept in the state, because a run can wait days for the user's answer. Status
@@ -370,15 +370,16 @@ key facts (a name, a date, a status), copied exactly from the source. Code check
 exists and each fact appears in the stored text; for the object's own map or plan data, that
 text is the object's details. If not, the finding is rejected: the agent searches more, within
 the object's cap, or marks the object unidentified. The check runs inside the investigation, so
-only a finding that passes it, or an unidentified one at the cap, goes into `findings`. Triage
-findings are not checked: in triage the model may use what it knows to say what a mapped
-object is.
+only a finding that passes it, or an unidentified one at the cap or after a web search failure,
+goes into `findings`. Triage findings are not checked: in triage the model may use what it
+knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
 links a person can open, with their retrieval dates. A web page is linked by its URL. A map or
 plan response is not linked: the report names the source, OpenStreetMap or the Berlin B-Plan
-WFS, with its date. An unknown ID sends the report back to be written again. So the model
-cannot invent a reference.
+WFS, with its date. An unknown ID sends the report back to be written again, a few times at
+most; after that the run stops, as when the model fails. So the model cannot invent a
+reference.
 
 ## Prompt injection
 
