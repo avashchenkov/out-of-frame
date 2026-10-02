@@ -41,8 +41,8 @@ The evals form one end-to-end suite and several component suites.
 
 | Suite | Level | Runs | Starts from | Sources it calls | Tasks |
 |---|---|---|---|---|---|
-| End-to-end | end-to-end | The whole agent | An address and a user script | live | 5 |
-| Input loop | component | The input loop, until the input is complete | A user script | replayed | 3 |
+| End-to-end | end-to-end | The whole agent | A written first message; a simulated user only in tasks that expect a question | live | 5 |
+| Input loop | component | The input loop, until the input is complete | A written first message; a simulated user only in tasks that expect a question | replayed | 3 |
 | Extract | component | One extract call | Written messages and the current input | none | 10 |
 | Ask | component | One question | Written messages and what code found missing | none | 4 |
 | Triage | component | One triage call, for one map object | One map object | none | 5 |
@@ -53,12 +53,14 @@ The evals form one end-to-end suite and several component suites.
 | Report | component | One report write, or one rewrite after unknown IDs | A run state with all findings | none | 6 |
 | Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 |
 
-**Component tasks start from fixed data,** except the live investigation and the input loop,
-whose simulated user is a model. A fixed task tests
+**Component tasks start from fixed data,** except the live investigation, which searches the
+live web, and the input loop tasks that expect a question, where a simulated user, a model,
+answers it. The first user message is fixed in every task: it is written in the task, never
+generated. A fixed task tests
 how a step or a loop behaves under set conditions, not the sources, so nothing outside the
 model may vary. It shows what happens under those conditions, not how the step does on real
 data. The input loop's geocoding answers from recorded Nominatim responses for the addresses
-in its user scripts. The other fixed data are states written for the task: map objects, search
+in its tasks. The other fixed data are states written for the task: map objects, search
 histories, pages, findings. They are built from the data recorded at the end-to-end
 addresses and from their labels, edited to set up the condition a task needs: enough evidence,
 none, a conflict, a planted page. The expected results follow the edited data: in F1, the
@@ -70,9 +72,9 @@ Every model call has its own suite. A call task starts from a written state, suc
 history, and only that call's output is graded. A written state may not be what the model under
 test would have written; the task tests the call under that condition all the same. A call
 task grades the model's own output, before code acts on it: the grounding check, the fallback
-at the cap, the reference filling. The input loop is also evaluated whole, with a simulated
-user: its tasks differ in their inputs, so that the loop ends after a different number of
-turns.
+at the cap, the reference filling. The input loop is also evaluated whole: its tasks differ in
+their first messages, so that the loop ends after a different number of turns, in I3 after the
+first message.
 
 The end-to-end and live investigation suites run live: the model writes different queries in
 each trial, and the web changes. So they check sound behaviour against dated labels, not exact
@@ -97,14 +99,14 @@ suite's tasks start from.
 
 ```mermaid
 flowchart TD
-    IN1[("End-to-end: an address and a user script<br/>runs the whole graph on live sources")]:::data
-    IN2[("Input loop: a user script<br/>the first message included<br/>geocoding replayed")]:::data
+    IN1[("End-to-end: a written first message<br/>runs the whole graph on live sources")]:::data
+    IN2[("Input loop: a written first message<br/>geocoding replayed")]:::data
     INX[("Extract: written messages<br/>and the current input")]:::data
     INA[("Ask: written messages<br/>and what is missing")]:::data
 
     subgraph INT["Input loop, evaluated whole"]
         direction TB
-        U(["Simulated user"]):::human
+        U(["Simulated user<br/>only if the task<br/>expects a question"]):::human
         subgraph SX["Extract"]
             M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
         end
@@ -166,8 +168,8 @@ flowchart TD
     GC -->|"yes, or at the cap:<br/>unidentified"| FS
     FS --> W
 
-    IN1 -.-> U
-    IN2 -.-> U
+    IN1 -.-> M
+    IN2 -.-> M
     INX -.-> M
     INA -.-> A
     IN3 -.-> T
@@ -527,7 +529,7 @@ flowchart TD
         START((" ")):::start
         TASK[("Task<br/>inputs and expected results<br/>kept apart")]:::data
         INJ[/"Injected into the agent<br/>the model under test<br/>sources: live or replayed<br/>date: the task's as_of<br/>or today, if live"/]:::code
-        SIM["Simulated user<br/>an LLM, in the end-to-end<br/>suite and the input loop"]:::model
+        SIM["Simulated user<br/>an LLM, only in tasks<br/>that expect a question"]:::model
         AG["Out of Frame agent<br/>the part the suite runs"]:::sut
         OUTC[("Outcome<br/>the state where<br/>the suite ends")]:::data
         TRN[("Transcript<br/>tool calls and results<br/>questions and answers, cost")]:::data
@@ -598,10 +600,14 @@ flowchart TD
   agent's own, in [vision.md](vision.md) and [architecture.md](architecture.md). The expected
   results of a task (its labels, the expected split and end list) are read only by the
   graders. Tests never read them; CI checks only their format.
-- **The simulated user** gets a script per task: what it knows, what it says and when. Its
-  answers stay in the transcript, so a failure can be traced to the agent or to the simulator.
-  There is a turn cap: an agent that still asks after it has been given everything fails the
-  task.
+- **The first user message is written in the task,** never generated by a model.
+- **A simulated user answers only in a task that expects a question,** such as I1 and I2. It
+  is an LLM. The task tells it what the user knows and how to answer, for example to give a
+  vague time first in I1. Its answers stay in the transcript, so a failure can be traced to the
+  agent or to the simulator. There is a turn cap: an agent that still asks after it has been
+  given everything fails the task.
+- **A task whose first message is complete has no simulated user,** as in I3. A question there
+  fails the task.
 
 ### Where each check runs
 
@@ -646,6 +652,7 @@ new words, keeps the facts the task needs word for word, and is marked as rewrit
 URL and retrieval date. Whole pages from live runs stay in local results only. Recorded
 OpenStreetMap responses are kept as returned, under the ODbL, with its credit.
 
-The data are ready when all tasks have their inputs, user scripts, starting states and
-source responses, expected results, and labels with evidence and dates; the lists of types and
+The data are ready when all tasks have their inputs, first messages included, what the
+simulated user knows where a task has one, starting states and source responses, expected
+results, and labels with evidence and dates; the lists of types and
 statuses, N and the cap of tool calls go into checklist.yaml with them.
