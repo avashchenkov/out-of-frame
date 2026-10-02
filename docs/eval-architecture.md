@@ -32,10 +32,8 @@ prompts apart by a few percent.
 ## Two levels: component and end-to-end
 
 - **Component:** a task runs one LLM step, one loop of LLM steps, or the investigation
-  subgraph. A failed task shows which part failed; a grade of the end-to-end report alone
-  cannot.
-- **End-to-end:** a task runs the whole agent on live sources. It shows how the parts work
-  together on real data.
+  subgraph.
+- **End-to-end:** a task runs the whole agent on live sources.
 
 The evals form one end-to-end suite and several component suites.
 
@@ -56,23 +54,18 @@ The evals form one end-to-end suite and several component suites.
 **Component tasks start from fixed data,** except the live investigation, which searches the
 live web, and the input loop tasks that expect a question, where a simulated user, a model,
 answers it. The first user message is fixed in every task: it is written in the task, never
-generated. A fixed task tests
-how a step or a loop behaves under set conditions, not the sources, so nothing outside the
-model may vary. It shows what happens under those conditions, not how the step does on real
-data. The input loop's geocoding answers from recorded Nominatim responses for the addresses
-in its tasks. The other fixed data are states written for the task: map objects, search
+generated. The input loop's geocoding answers from recorded Nominatim responses for the
+addresses in its tasks. The other fixed data are states written for the task: map objects, search
 histories, pages, findings. They are built from the data recorded at the end-to-end
 addresses and from their labels, edited to set up the condition a task needs: enough evidence,
 none, a conflict, a planted page. The expected results follow the edited data: in F1, the
 object ends unidentified even if its real type is known. Injection examples are generated,
-since no real page has the condition they need. A model may help write any of this, and a
-person checks it.
+since no real page has the condition they need.
 
 Every model call has its own suite. A call task starts from a written state, such as a search
-history, and only that call's output is graded. A written state may not be what the model under
-test would have written; the task tests the call under that condition all the same. A call
-task grades the model's own output, before code acts on it: the grounding check, the fallback
-at the cap, the reference filling. The input loop is also evaluated whole: its tasks differ in
+history, and only that call's output is graded. A call task grades the model's own output,
+before code acts on it: the grounding check, the fallback at the cap, the reference filling.
+The input loop is also evaluated whole: its tasks differ in
 their first messages, so that the loop ends after a different number of turns, in I3 after the
 first message.
 
@@ -226,9 +219,6 @@ free; what it asks for is graded. The end-to-end tasks together run all the step
 
 ## Grading
 
-Code-based graders check whatever code can check: they are cheap and give the same grade every
-time. An LLM judge grades what depends on meaning, which code cannot check.
-
 The report is graded on two axes, apart:
 
 1. **Facts:** does the object exist, and are its type, status and distance right. Code grades
@@ -266,7 +256,7 @@ labels.
   evidence: "PMI, 2026-04-01: the former cigarette factory is now the NLND Berlin campus"
 ```
 
-- Type and status are then filled in by a person, with a model's help if useful, from
+- Type and status are then filled in by a person from
   real-world evidence: registers, operator announcements, plans. They never come from the map
   tags; otherwise the evals would measure agreement with OpenStreetMap, not truth.
 - Every label must be reachable: its type and status can be found with Tavily search and
@@ -281,8 +271,7 @@ labels.
 
 ### Code-based graders
 
-Findings are matched to labels the way object detection is usually scored: by location, and
-each true object at most once. A finding has no location of its own, so code takes the location
+Findings are matched to labels by location, each label at most once. A finding has no location of its own, so code takes the location
 of its object and matches the finding to a label of the same class within that label's
 `distance_tolerance_m`. It then compares type and status. In a task with one object, the
 finding is compared with that object's label directly.
@@ -344,8 +333,7 @@ An end-to-end task reports partial credit per labelled object over the k trials:
 recall of the findings; the share of statements the support judge finds unsupported or
 contradicted; the number of tool calls and the cost. These scores are also shown per checklist
 class, with the number of labelled objects next to each: a class may have only one. Each
-research branch is marked as ok, empty or failed. One overall score can hide a class or a
-source that does not work. Each suite is reported on its own, never pooled.
+research branch is marked as ok, empty or failed. Each suite is reported on its own, never pooled.
 
 A live investigation task reports, per object over the k trials, the share of findings with the
 right type and status, the share of statements the support judge finds unsupported or
@@ -359,8 +347,7 @@ its own: X9, A3, S4, N4, F4. The injection check reports false alarms and misses
 **Tasks are chosen by behaviour, not by input** (equivalence partitioning). Each LLM step gets
 one task per kind of behaviour it must show, with both sides of each decision: asking when
 something is missing and not asking when nothing is, searching when the map is unclear and not
-searching when it is clear. A second input that takes the same path adds labels and trials but
-tests nothing new, so it is not added. The end-to-end addresses follow the same rule: each
+searching when it is clear. The end-to-end addresses follow the same rule: each
 covers a case the others do not.
 
 ### End-to-end
@@ -593,9 +580,8 @@ flowchart TD
 - **One interface:** `run(task) → transcript, outcome`. The model, the sources, the date and
   the part of the agent to run are injected.
 - **k trials per task,** each from a clean state; k is a run setting, 3 by default.
-- **Each trial is graded as soon as it is recorded.** A broken change shows in the first
-  failures, and the eval run can be cancelled there. A cancelled eval run is marked
-  incomplete, and its metrics are not quoted.
+- **Each trial is graded as soon as it is recorded.** The eval run can be cancelled after any
+  trial; a cancelled eval run is marked incomplete, and its metrics are not quoted.
 - **The agent gets only the task's inputs.** The requirements the graders check are the
   agent's own, in [vision.md](vision.md) and [architecture.md](architecture.md). The expected
   results of a task (its labels, the expected split and end list) are read only by the
@@ -626,10 +612,6 @@ what is free and repeatable.
 ### How tasks change
 
 - **Tasks and labels are committed before any agent code.**
-- **Every failure is looked into by a person,** in its transcript: the fault may be in the
-  agent or in the eval. A task, a label or a grader that was ambiguous or wrong is corrected as
-  a change with its reason, never to turn a failing trial into a pass. A label that the world
-  overtakes, or a real object that a live run finds after labelling, is handled the same way.
 - **Every task starts as a capability task.** In every component suite but the live
   investigation, a task that passes all k trials run after run becomes a regression check: a
   later change must not break it. A live task meets a web that changes, so a regression there
