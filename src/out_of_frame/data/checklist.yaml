@@ -4,6 +4,22 @@
 #
 # osm_tags: an object matches if it has all the tags of one entry. A list of values means
 # any of them.
+#
+# types: what a finding can say an object of the class is. statuses: whether it is in use.
+# A finding may also say unknown for either, when the evidence cannot settle it. The agent and
+# the eval labels use the same lists. Types are coarse: one per kind of impact that matters
+# to a buyer, with clear borders between them. Each class has other, for a site that is
+# identified but fits no type; a site that cannot be identified is unknown.
+# TODO: types for the other classes and the statuses of B-Plans, with the tasks that need them.
+
+statuses:
+  operating: In use now.
+  closed: No longer in use, including disused or demolished.
+  under construction: Being built.
+  planned: Proposed; building has not started.
+
+investigation:
+  tool_cap: 3  # tool calls per object: Tavily searches and page reads together
 
 classes:
   - id: industry
@@ -19,6 +35,12 @@ classes:
       - {landuse: industrial}
       - {power: plant}
       - {man_made: works}
+    types:
+      plant: Power, heat, waste, chemicals or fuel, made, burnt, treated or stored.
+      production: Makes or repairs things, such as a factory or a workshop.
+      logistics: Stores or moves goods, such as a warehouse or a depot.
+      commercial: Offices, services or several businesses on one site.
+      other: The evidence settles what the site is, and no type above fits.
 
   - id: wastewater
     name: Wastewater treatment plants

@@ -154,7 +154,7 @@ labels.
   location: [52.46444, 13.46259]   # latitude, longitude
   distance_tolerance_m: 500
   class: industry
-  type: business park              # from a fixed list per class
+  type: commercial                 # from a fixed list per class
   status: operating
   as_of: 2026-09-25
   evidence: "PMI, 2026-04-01: the former cigarette factory is now the NLND Berlin campus"
