@@ -61,7 +61,8 @@ calibration.
 10. **Judge calibration and MVP results.** Calibrate the three MVP judges against human grades
     of the first real outputs and deliberately faulty examples. Complete and run every
     [MVP task](eval-architecture.md#mvp), several trials each; check that the labels cover
-    every checklist class. Publish results with failures and limitations.
+    every checklist class. Publish results with failures and limitations. Add one Docker
+    image for the CLI; the keys are passed at run time, never built into the image.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.
