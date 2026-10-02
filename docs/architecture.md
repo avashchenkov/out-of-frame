@@ -47,8 +47,9 @@ flowchart TD
             TRA[["Transitous<br/>journey planner API"]]:::ext
         end
         subgraph INV["Investigate each object: a subgraph, one run per object, in parallel, each with its own state"]
-            S["Search the web or read a page<br/>the model chooses<br/>flagged content is dropped first"]:::model
-            TAV[["Tavily<br/>web search API"]]:::ext
+            S["Search the web or read a page<br/>the model chooses"]:::model
+            TAV[["Tavily<br/>search and extract API"]]:::ext
+            K["Check each snippet and page<br/>for prompt injection<br/>code drops what is flagged"]:::model
             D{"Enough?<br/>or cap reached"}:::model
             F["Write the finding<br/>type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
             GC{"Finding grounded?"}:::code
@@ -62,7 +63,8 @@ flowchart TD
         T -.->|"per unclear object<br/>nearest first, capped in number"| S
         PL -.->|"per object<br/>nearest first, capped in number"| S
         PL --- WFS
-        S --> D
+        S -->|"results"| K
+        K -->|"what passes"| D
         S --- TAV
         D -.->|"search again"| S
         D -.->|"stop"| F
@@ -326,9 +328,9 @@ accident. When it ends, code writes its finding into `findings`, the snippets an
 finding cites into `sources`, and web search into `failures` if it failed.
 
 The model has two Tavily tools: search, which returns short snippets, and extract, which
-returns the full text of one page it chooses. Code checks every snippet and page for prompt
-injection before it is stored (see [Prompt injection](#prompt-injection)); the model never
-sees flagged content.
+returns the full text of one page it chooses. A separate model call checks every snippet and
+page for prompt injection before it is stored, and code drops what it flags (see
+[Prompt injection](#prompt-injection)); the model never sees flagged content.
 
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
@@ -339,7 +341,8 @@ sees flagged content.
 
 | Step | Who | Reads | Writes |
 |---|---|---|---|
-| Search the web or read a page | model + code | `object`, `history` | `history`; `pages`: only what passes the check (code) |
+| Search the web or read a page | model + code | `object`, `history` | `history`: the tool call, which code runs |
+| Check each snippet and page for prompt injection | model + code | each snippet and page the tool returned | `history` and `pages`: only what passes (code) |
 | Enough? or cap reached | model + code | `object`, `history`; code counts the tool calls | nothing |
 | Write the finding | model + code | `object`, `history`, `pages` | `finding`; code sets `object_id` |
 | Finding grounded? | code | `finding`, `object.details`, `object.source_id`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
