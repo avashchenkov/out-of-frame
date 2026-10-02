@@ -39,9 +39,10 @@ calibration.
    sources and a stubbed model. The result must demonstrate a supported finding and an honest
    unidentified outcome when evidence is missing; inspect the first report by hand.
 6. **Several objects and triage.** Extend the path to map classes, grouping, nearest-N limits,
-   triage and parallel investigations. Check T1–T3, F2, F5–F6 and R2–R4, plus code tests for
-   grouping, distances, caps and failures. The report must preserve clear findings, show
-   unidentified and not investigated objects, and distinguish an empty result from a failure.
+   code routing, triage and parallel investigations. Check T1–T2, F2, F5–F6 and R2–R4, plus
+   code tests for routing (T3), grouping, distances, caps and failures. The report must preserve
+   clear findings, show unidentified and not investigated objects, and distinguish an empty
+   result from a failure.
 7. **Input conversation.** Add extraction, address disambiguation, questions and LangGraph
    pauses. Check I1–I3 and code tests for applying changes and resuming the run. The user can
    resolve an ambiguous address and supply missing times; complete input starts research

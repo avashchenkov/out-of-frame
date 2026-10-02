@@ -36,7 +36,7 @@ flowchart TD
         subgraph SUR["Branch: surroundings"]
             OV["Get map objects in the radius<br/>nearest N per checklist class"]:::code
             OVP[["Overpass API<br/>OpenStreetMap data"]]:::ext
-            T["Triage<br/>which objects are unclear"]:::model
+            T["Triage<br/>check the remaining objects"]:::model
         end
         subgraph PLN["Branch: planned development"]
             PL["Get B-Plans in the radius<br/>with their legal status<br/>one object per plan, nearest N"]:::code
@@ -58,7 +58,8 @@ flowchart TD
         J --> OV
         J --> PL
         J --> TR
-        OV --> T
+        OV -.->|"the other objects"| T
+        OV -.->|"industry, proposed or under construction<br/>nearest first, capped in number"| S
         OV --- OVP
         T -.->|"per unclear object<br/>nearest first, capped in number"| S
         PL -.->|"per object<br/>nearest first, capped in number"| S
@@ -152,16 +153,19 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    (*Bebauungsplan*, a binding development plan). Each class is searched in a circle around
    the property, with the class's own radius. An object is in the circle if its nearest edge
    is; distances are always measured to the nearest edge. An object without a finding is
-   unclear. Unclear objects are investigated nearest first, at most five per class; the rest
-   are listed in the report as not investigated. An investigation stops when its evidence is
-   enough and passes the grounding check, or when it reaches its cap of tool calls; one source
-   can be enough. Every branch runs to its end, even with nothing to do; its result is then empty.
+   unclear. Unclear objects are investigated nearest first, at most five per class. This limit
+   covers objects sent by code and by triage; the rest are listed as not investigated. An
+   investigation stops when its evidence is enough and passes the grounding check, or when it
+   reaches its cap of tool calls; one source can be enough. Every branch runs to its end, even
+   with nothing to do; its result is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
      within the class's circle. Code groups them into objects (one site or one road can be
-     several elements) and keeps the nearest N per class. The model triages each object in its
-     own call, from its name and tags and from what it knows. If it is sure what an object is
-     and that the map is current, it writes the finding at once, with the status the map shows;
-     otherwise the object is unclear and is investigated.
+     several elements) and keeps the nearest N per class. Code sends every `industry` object
+     and any object tagged as proposed or under construction to investigation, within the cap.
+     The model triages only the rest, one per call, from the name, tags and what it knows.
+     If these are enough to fill the finding without conflicts, it writes it with the map's
+     status; otherwise it sends the object to investigation. These findings use the map
+     without a web check.
    - *Planned development:* the Berlin B-Plan WFS, the city's planning API, filters only by a
      rectangle. Code asks for the square around the circle, drops the plans outside the
      circle and keeps the nearest N. The WFS gives each plan's legal status and, for plans in
@@ -313,7 +317,7 @@ message is the input of the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Triage | model + code | one map object per call: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
+| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |

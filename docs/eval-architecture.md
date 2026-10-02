@@ -42,7 +42,7 @@ tasks built during the MVP; see [MVP](#mvp).
 | Input loop | component | The input loop, until the input is complete | Written user messages: the first one and a reply to each expected question | replayed | 3 | I1–I3 |
 | Extract | component | One extract call | Written messages and the current input | none | 10 | — |
 | Ask | component | One question | Written messages and what code found missing | none | 4 | — |
-| Triage | component | One triage call, for one map object | One map object | none | 5 | T1–T3 |
+| Triage | component | One triage call, after code routing | One map object | none | 4 | T1–T2 |
 | Injection check | component | The prompt injection check, on one snippet or page | A generated snippet or page | none | 4 | P1–P4 |
 | Search | component | One search or page read | An object, with a written search history or none | none | 5 | — |
 | Enough | component | One decision to stop or search again | A written search history | none | 4 | — |
@@ -91,7 +91,7 @@ name in its first line.
 |---|---|---|---|---|
 | Extract the property address, commute destinations and departure times | Input | Extract, input loop | X1–X10, I1–I3 | Code: the changes against the expected ones |
 | Ask for what is missing | Input | Ask, input loop | A1–A4, I1–I3 | Question judge; no verdict judge |
-| Triage | Research | Triage | T1–T5 | Code: clear or unclear; for a clear object, type against the label, status against the map, key facts in the object's details; interpretation judge |
+| Triage | Research | Triage | T1–T2, T4–T5 | Code: clear or unclear; for a clear object, type against the label, status against the map, key facts in the object's details; interpretation judge |
 | Check each snippet and page for prompt injection | Research, investigation | Injection check | P1–P4 | Code: flagged or not |
 | Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N4 | Code: stops or searches again |
@@ -257,8 +257,8 @@ its own: X9, A3, S4, N4, F4. The injection check reports false alarms and misses
 
 **Tasks are chosen by behaviour, not by input** (equivalence partitioning). Each LLM step gets
 one task per kind of behaviour it must show, with both sides of each decision: asking when
-something is missing and not asking when nothing is, searching when the map is unclear and not
-searching when it is clear. The end-to-end addresses follow the same rule: each
+something is missing and not asking when nothing is; in triage, investigating unclear objects
+and accepting clear ones. The end-to-end addresses follow the same rule: each
 covers a case the others do not.
 
 ### End-to-end
@@ -321,17 +321,21 @@ several cases. More addresses are added only for a case none of them covers.
 
 ### Triage
 
-One call per map object. The model relies on the map, but if the map is not enough to fill
-every field of the finding, or the model suspects it is out of date, the object goes to
-investigation.
+Only objects left by [code routing](architecture.md#one-run) reach triage. Missing map
+details, or details that conflict with each other or with what the model knows, lead to
+investigation; clear findings use the map's status.
 
 | # | Run state | Passes when |
 |---|---|---|
 | T1 | An airport whose OSM name and tags make it clear | A finding with the type of its label and the status the map shows |
-| T2 | An unnamed industrial area | Sent to investigation |
-| T3 | The former Philip Morris factory: its OSM name and tags look complete but are out of date | Sent to investigation: the map cannot show what the site does today |
-| T4 | A stormwater filter whose tags say wastewater plant but whose name says what it is | Never a finding of a wastewater plant: the type of its label, or sent to investigation |
-| T5 | A site whose map tags say disused | If a finding, its status is the map's, not one from memory |
+| T2 | An airport whose name says closed but whose tags say operating | Sent to investigation |
+| T4 | A stormwater filter whose tags say wastewater plant but whose name says what it is | Sent to investigation |
+| T5 | An airport whose map tags say disused | If a finding, its status is the map's, not one from memory |
+
+T3 is a code test: the former Philip Morris factory goes straight to investigation because
+its class is `industry`, even with complete tags. Code tests also cover proposed and
+under-construction objects, B-Plans, objects passed to triage and the shared cap. E2 checks
+whether the investigation finds the site's current use.
 
 ### Investigation subgraph
 
