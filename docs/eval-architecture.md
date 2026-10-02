@@ -35,31 +35,31 @@ prompts apart by a few percent.
   subgraph.
 - **End-to-end:** a task runs the whole agent on live sources.
 
-The evals form one end-to-end suite and several component suites.
+The evals form one end-to-end suite and several component suites. The MVP column lists the
+tasks built first; see [MVP](#mvp).
 
-| Suite | Level | Runs | Starts from | Sources it calls | Tasks |
-|---|---|---|---|---|---|
-| End-to-end | end-to-end | The whole agent | A written first message; a simulated user only in tasks that expect a question | live | 5 |
-| Input loop | component | The input loop, until the input is complete | A written first message; a simulated user only in tasks that expect a question | replayed | 3 |
-| Extract | component | One extract call | Written messages and the current input | none | 10 |
-| Ask | component | One question | Written messages and what code found missing | none | 4 |
-| Triage | component | One triage call, for one map object | One map object | none | 5 |
-| Injection check | component | The prompt injection check, on one snippet or page | A generated snippet or page | none | 4 |
-| Search | component | One search or page read | An object, with a written search history or none | none | 5 |
-| Enough | component | One decision to stop or search again | A written search history | none | 4 |
-| Finding | component | Write the finding | A written search history and its pages | none | 7 |
-| Report | component | One report write, or one rewrite after unknown IDs | A run state with all findings | none | 6 |
-| Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 |
+| Suite | Level | Runs | Starts from | Sources it calls | Tasks | MVP |
+|---|---|---|---|---|---|---|
+| End-to-end | end-to-end | The whole agent | Written user messages: the first one and a reply to each expected question | live | 5 | E1–E5 |
+| Input loop | component | The input loop, until the input is complete | Written user messages: the first one and a reply to each expected question | replayed | 3 | I1–I3 |
+| Extract | component | One extract call | Written messages and the current input | none | 10 | — |
+| Ask | component | One question | Written messages and what code found missing | none | 4 | — |
+| Triage | component | One triage call, for one map object | One map object | none | 5 | T1–T3 |
+| Injection check | component | The prompt injection check, on one snippet or page | A generated snippet or page | none | 4 | P1–P4 |
+| Search | component | One search or page read | An object, with a written search history or none | none | 5 | — |
+| Enough | component | One decision to stop or search again | A written search history | none | 4 | — |
+| Finding | component | Write the finding | A written search history and its pages | none | 7 | F1, F2, F4–F6 |
+| Report | component | One report write, or one rewrite after unknown IDs | A run state with all findings | none | 6 | R2–R4 |
+| Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | — |
 
 **Component tasks start from fixed data,** except the live investigation, which searches the
-live web, and the input loop tasks that expect a question, where a simulated user, a model,
-answers it. The first user message is fixed in every task: it is written in the task, never
-generated. The input loop's geocoding answers from recorded Nominatim responses for the
-addresses in its tasks. The other fixed data are states written for the task: map objects, search
-histories, pages, findings. They are built from the data recorded at the end-to-end
-addresses and from their labels, edited to set up the condition a task needs: enough evidence,
-none, a conflict, a planted page. The expected results follow the edited data: in F1, the
-object ends unidentified even if its real type is known. Injection examples are generated,
+live web. The user's messages are written in the task. The input loop's geocoding answers from
+recorded Nominatim responses for the addresses in its tasks. The other fixed data are states
+written for the task: map objects, search histories, pages, findings. They are built from the
+data recorded at the end-to-end addresses and from their labels, edited to set up the
+condition a task needs: enough evidence, none, a conflict, a planted page. The expected
+results follow the edited data: in F1, the object ends unidentified even if its real type is
+known. Injection examples are generated,
 since no real page has the condition they need.
 
 Every model call has its own suite. A call task starts from a written state, such as a search
@@ -92,14 +92,14 @@ suite's tasks start from.
 
 ```mermaid
 flowchart TD
-    IN1[("End-to-end: a written first message<br/>runs the whole graph on live sources")]:::data
-    IN2[("Input loop: a written first message<br/>geocoding replayed")]:::data
+    IN1[("End-to-end: written user messages<br/>runs the whole graph on live sources")]:::data
+    IN2[("Input loop: written user messages<br/>geocoding replayed")]:::data
     INX[("Extract: written messages<br/>and the current input")]:::data
     INA[("Ask: written messages<br/>and what is missing")]:::data
 
     subgraph INT["Input loop, evaluated whole"]
         direction TB
-        U(["Simulated user<br/>only if the task<br/>expects a question"]):::human
+        U[("The next written reply")]:::data
         subgraph SX["Extract"]
             M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
         end
@@ -177,15 +177,13 @@ flowchart TD
 
     subgraph KEY["Key"]
         direction LR
-        k1(["Simulated user"]):::human
         k2["Model decides"]:::model
         k3["Code decides"]:::code
         k4[("Fixed input or state")]:::data
-        k1 ~~~ k2 ~~~ k3 ~~~ k4
+        k2 ~~~ k3 ~~~ k4
     end
     REP ~~~ KEY
 
-    classDef human fill:#fcd34d,stroke:#92400e,color:#111827
     classDef model fill:#c4b5fd,stroke:#5b21b6,stroke-width:2px,color:#111827
     classDef code fill:#ffffff,stroke:#475569,stroke-width:1.5px,color:#111827
     classDef data fill:#e5e7eb,stroke:#6b7280,color:#111827
@@ -217,6 +215,20 @@ The input loop only checks the state after each turn and whether the agent asks 
 whether it asks is decided by code, so the Ask suite grades the question itself. Its wording is
 free; what it asks for is graded. The end-to-end tasks together run all the steps.
 
+## MVP
+
+The MVP builds the tasks in the MVP column of the
+[suite table](#two-levels-component-and-end-to-end), and the demo shows them. The other tasks
+stay designed here. Each is built only when a failure in the transcripts or feedback from users
+shows that it is needed.
+
+- **Judges:** support, interpretation and no verdict, the three that grade the end-to-end
+  report. The search relevance and question judges come with the suites that need them; until
+  then, the end-to-end suite counts tool calls only as a cost.
+- **No simulated user:** the user's replies are written in the task, like the first message
+  (see [Running the evals](#running-the-evals)). A simulated user, an LLM that answers from
+  what the task says the user knows, comes later.
+
 ## Grading
 
 The report is graded on two axes, apart:
@@ -240,7 +252,9 @@ the agent uses. `location` and `distance_tolerance_m` let code match a finding t
 
 Labels are not drawn from the map by hand. For each end-to-end address, a script queries the
 map and plan sources and writes every object of each checklist class inside its radius into the
-labels, with its name, location and class. It also records the responses as fixtures. A class
+labels, with its name, location and class. It groups the elements into objects and computes
+each location with the agent's own code, so a label's location is the point the agent gets for
+the same object. It also records the responses as fixtures. A class
 with no object in its radius is labelled as empty. Triage and investigation tasks reuse these
 labels.
 
@@ -271,10 +285,11 @@ labels.
 
 ### Code-based graders
 
-Findings are matched to labels by location, each label at most once. A finding has no location of its own, so code takes the location
-of its object and matches the finding to a label of the same class within that label's
-`distance_tolerance_m`. It then compares type and status. In a task with one object, the
-finding is compared with that object's label directly.
+Findings are matched to labels by location, each label at most once. A finding has no location
+of its own, so code takes the location of its object and matches the finding to the nearest
+label of the same class within that label's `distance_tolerance_m`. The tolerance covers map
+edits made after labelling, which a live run can see. Code then compares type and status. In
+a task with one object, the finding is compared with that object's label directly.
 
 - A label without a finding is a **miss**.
 - A matched finding with a wrong type or status is an **error**: "a Philip Morris factory" is
@@ -282,8 +297,6 @@ finding is compared with that object's label directly.
 - A finding that matches no label is a **false alarm**, and in an empty class every finding is
   one. A label matches one finding at most, so a second finding for the same object is a false
   alarm too.
-- If a finding lies within the tolerance of two labels, code does not choose; it is checked by
-  hand.
 
 Only a matched finding with the right type and status counts as correct, in precision and in
 recall, so they cover every finding, not a chosen few. Recall leaves out the labels that the
@@ -319,9 +332,13 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 - **Question:** does a question to the user ask for everything code found missing, and for
   nothing that is known or not needed?
 
-Each judge is checked against human grades on a held-out slice of real trials, once per judge
-version. Until then, only the numbers from code-based graders are quoted. A judge that
-disagrees with the human grades has its axis left out.
+Each judge has its own calibration set. For the support judge, an example is one statement with
+the source it cites; for the interpretation and no verdict judges, one report. The examples
+come from the first real end-to-end runs, stored as they are, plus a few made faulty on
+purpose, such as a report with a planted verdict or a statement its source does not support. A
+person grades the set once, by the judge's rubric. Each judge version is checked against these
+grades: it must catch every faulty example and may disagree on at most two of the others. Until
+a judge passes, only the numbers from code-based graders are quoted, and its axis is left out.
 
 ### Metrics
 
@@ -333,7 +350,8 @@ An end-to-end task reports partial credit per labelled object over the k trials:
 recall of the findings; the share of statements the support judge finds unsupported or
 contradicted; the number of tool calls and the cost. These scores are also shown per checklist
 class, with the number of labelled objects next to each: a class may have only one. Each
-research branch is marked as ok, empty or failed. Each suite is reported on its own, never pooled.
+research branch is marked as ok, empty or failed. Each suite is reported on its own, never
+pooled.
 
 A live investigation task reports, per object over the k trials, the share of findings with the
 right type and status, the share of statements the support judge finds unsupported or
@@ -355,8 +373,8 @@ covers a case the others do not.
 One task per address, with labels. Two tasks also give destinations, one with one
 destination and one with two; in the others, the user travels nowhere. Code checks the
 findings against the labels, and two journeys, there and back, for each destination and none
-without one. The support, interpretation and no verdict judges grade the report; the search
-relevance judge grades the tool calls.
+without one. The support, interpretation and no verdict judges grade the report. After the
+MVP, the search relevance judge also grades the tool calls.
 
 | # | Address near | What it covers |
 |---|---|---|
@@ -516,7 +534,6 @@ flowchart TD
         START((" ")):::start
         TASK[("Task<br/>inputs and expected results<br/>kept apart")]:::data
         INJ[/"Injected into the agent<br/>the model under test<br/>sources: live or replayed<br/>date: the task's as_of<br/>or today, if live"/]:::code
-        SIM["Simulated user<br/>an LLM, only in tasks<br/>that expect a question"]:::model
         AG["Out of Frame agent<br/>the part the suite runs"]:::sut
         OUTC[("Outcome<br/>the state where<br/>the suite ends")]:::data
         TRN[("Transcript<br/>tool calls and results<br/>questions and answers, cost")]:::data
@@ -524,7 +541,6 @@ flowchart TD
         START --> TASK
         TASK -->|"inputs only"| INJ
         INJ --> AG
-        SIM <-->|"questions and answers"| AG
         AG --> OUTC
         AG --> TRN
         OUTC --> RD
@@ -586,14 +602,10 @@ flowchart TD
   agent's own, in [vision.md](vision.md) and [architecture.md](architecture.md). The expected
   results of a task (its labels, the expected split and end list) are read only by the
   graders. Tests never read them; CI checks only their format.
-- **The first user message is written in the task,** never generated by a model.
-- **A simulated user answers only in a task that expects a question,** such as I1 and I2. It
-  is an LLM. The task tells it what the user knows and how to answer, for example to give a
-  vague time first in I1. Its answers stay in the transcript, so a failure can be traced to the
-  agent or to the simulator. There is a turn cap: an agent that still asks after it has been
-  given everything fails the task.
-- **A task whose first message is complete has no simulated user,** as in I3. A question there
-  fails the task.
+- **Every user message is written in the task:** the first message and, in a task that
+  expects questions, one reply per question, given in order. Code decides what is missing, so
+  what each question should ask for is known in advance. An agent that asks after the replies
+  have run out fails the task; I3 has no replies, so any question fails it.
 
 ### Where each check runs
 
@@ -607,11 +619,11 @@ what is free and repeatable.
 | Grader tests: each code-based grader on a hand-written outcome it must pass and one it must fail | none | none | CI |
 | End-to-end and live investigation suites | real | live | by hand |
 | The other component suites | real | replayed or none | by hand |
-| LLM judge calibration, per judge version | the LLM judges | recorded trials | by hand |
+| LLM judge calibration, per judge version | the LLM judges | the calibration sets | by hand |
 
 ### How tasks change
 
-- **Tasks and labels are committed before any agent code.**
+- **The MVP tasks and their labels are committed before any agent code.**
 - **Every task starts as a capability task.** In every component suite but the live
   investigation, a task that passes all k trials run after run becomes a regression check: a
   later change must not break it. A live task meets a web that changes, so a regression there
@@ -622,11 +634,12 @@ what is free and repeatable.
 ### Files
 
 ```
-evals/tasks/      the tasks, with evidence, dates and reasons inline
-evals/states/     the run states, search histories, snippets and pages that tasks start from
-evals/fixtures/   recorded source responses, for replay
-evals/graders/    the code-based graders and the LLM judge rubrics
-evals/results/    dated runs, with failures and real addresses
+evals/tasks/        the tasks, with evidence, dates and reasons inline
+evals/states/       the run states, search histories, snippets and pages that tasks start from
+evals/fixtures/     recorded source responses, for replay
+evals/graders/      the code-based graders and the LLM judge rubrics
+evals/calibration/  the judges' calibration sets, with their grades
+evals/results/      dated runs, with failures and real addresses
 ```
 
 Web pages are not copied into the repository. A page that a task starts from is rewritten in
@@ -634,7 +647,6 @@ new words, keeps the facts the task needs word for word, and is marked as rewrit
 URL and retrieval date. Whole pages from live runs stay in local results only. Recorded
 OpenStreetMap responses are kept as returned, under the ODbL, with its credit.
 
-The data are ready when all tasks have their inputs, first messages included, what the
-simulated user knows where a task has one, starting states and source responses, expected
-results, and labels with evidence and dates; the lists of types and
-statuses, N and the cap of tool calls go into checklist.yaml with them.
+The data are ready when all MVP tasks have their inputs, user messages included, starting
+states and source responses, expected results, and labels with evidence and dates; the lists of
+types and statuses, N and the cap of tool calls go into checklist.yaml with them.

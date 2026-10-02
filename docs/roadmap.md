@@ -11,22 +11,28 @@ The implementation steps, in order.
    [overpass-counts](../spikes/overpass-counts/findings-2026-09-25.md). The findings may change
    the checklist. The scripts stay outside the checks and are never extended.
 4. **Evals.** `docs/eval-architecture.md`: how each step of the run is measured. Then the
-   tasks with truth labels, committed before any agent code. Labels come from real-world
-   evidence, not from the map data. Tests never read them. The lists of finding types and
-   statuses go into `src/out_of_frame/data/checklist.yaml` with these tasks; the agent and the
-   evals share the lists, not the truth labels.
+   [MVP](eval-architecture.md#mvp) tasks with truth labels, committed before any agent code.
+   Labels come from real-world evidence, not from the map data. Tests never read them. The
+   lists of finding types and statuses go into `src/out_of_frame/data/checklist.yaml` with
+   these tasks; the agent and the evals share the lists, not the truth labels.
 5. **Eval harness.** It runs the tasks from step 4 and grades them, first against a stub
    agent, before any agent code. Each code grader has its own tests, and CI runs them. From
    here on, every step ends with a run of the tasks that can run by then.
 6. **First slice, without the graph.** Address → map objects → report with sources, as a CLI.
    With tests, source failures included. Its eval run covers the tasks it can already run.
 7. **The graph** ([ADR 1](adr/0001-langgraph.md)): input questions and the investigation
-   loop. The investigation steps are tested on the written states saved with the step 4
-   tasks. The run states in `evals/states/` follow the [state model](architecture.md#the-state),
-   not LangGraph classes; this step adds the code that loads them into the graph state.
+   loop. The finding tasks run on the written states saved with the step 4 tasks. The run
+   states in `evals/states/` follow the [state model](architecture.md#the-state), not LangGraph
+   classes; this step adds the code that loads them into the graph state.
 8. **Remaining sources,** one at a time: Transitous, the B-Plan WFS and web search. With web
-   search come the prompt injection guards. The injection tasks in the input and
-   investigation suites check whether the model is still misled.
-9. **Judge calibration, then the full eval run.** Each LLM judge is checked against human
-   grades; until then, only code-graded scores are quoted. The full run covers all tasks,
-   several trials each. Results are published with the failures.
+   search come the prompt injection guards. The injection check tasks test the checker; F4
+   checks whether the model is still misled by a page that got past it.
+9. **Judge calibration, then the full eval run.** Each LLM judge of the MVP gets its
+   [calibration set](eval-architecture.md#llm-judges) from the reports of the first real runs,
+   graded by hand once, and is checked against it; until then, only code-graded scores are
+   quoted. The full run covers all MVP
+   tasks, several trials each. Results are published with the failures.
+
+After the MVP, the other designed tasks, the search relevance and question judges, and a
+simulated user are added one at a time, each only when a failure in the transcripts or
+feedback from users shows that it is needed.
