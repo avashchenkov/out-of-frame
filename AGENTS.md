@@ -9,9 +9,11 @@ Before any change larger than a typo fix, read:
 
 - [docs/vision.md](docs/vision.md): what the agent is for and what is out of scope;
 - [docs/architecture.md](docs/architecture.md): how a run works and who decides what;
+- [docs/eval-architecture.md](docs/eval-architecture.md): how the agent is measured, and the
+  eval tasks to prepare before each behaviour;
 - [docs/roadmap.md](docs/roadmap.md): the implementation steps and which are done.
 
-Do not change vision.md or architecture.md on your own. If a change conflicts with them, stop
+Do not change vision.md, architecture.md or eval-architecture.md on your own. If a change conflicts with them, stop
 and ask. Continue only if the user approves.
 
 When a step is committed, mark it done in the roadmap with ✅. If the plan changes, propose
