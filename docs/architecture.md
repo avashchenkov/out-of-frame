@@ -159,8 +159,9 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    reaches its cap of tool calls; one source can be enough. Every branch runs to its end, even
    with nothing to do; its result is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each checklist class
-     within the class's circle. Code groups them into objects (one site or one road can be
-     several elements) and keeps the nearest N per class. Code sends every `industry` object
+     within the class's circle, and the addresses of the buildings inside each area. Code
+     groups the elements into objects (one site or one road can be several elements), gives
+     each object the addresses inside it and keeps the nearest N per class. Code sends every `industry` object
      and any object tagged as proposed or under construction to investigation, within the cap.
      The model triages only the rest, one per call, from the name, tags and what it knows.
      If these are enough to fill the finding without conflicts, it writes it with the map's
@@ -256,6 +257,7 @@ classDiagram
         class: checklist class ID
         name: text, optional
         details: map tags or plan fields
+        addresses: list of text
         point: Point
         distance_m: number
         source_id: ID
@@ -294,6 +296,10 @@ retrieved. Each snippet or page is a separate source.
 A `Journey` has a duration only when its outcome is found. The transit response is not kept
 in the state: code computes the duration from it at once.
 
+`NearbyObject.addresses` lists the street addresses of the buildings inside a map area, from
+OpenStreetMap. It is empty for a road, a railway or a B-Plan. An unnamed object cannot be found
+on the web by its coordinates, but it can by its address.
+
 A `Finding` has no class of its own: it takes the class of its object.
 
 TODO: define the lists of finding types and statuses, N for map classes and for plans, and the
@@ -328,7 +334,8 @@ message is the input of the run and goes straight into `messages`.
 
 Each investigation is a LangGraph subgraph with its own state. Code starts one run per unclear
 object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets only
-its object. Its field names differ from the run state's, so nothing passes between them by
+its object. The model sees the object's class, name, details and addresses, not its point or
+distance: it searches by address. The run's field names differ from the run state's, so nothing passes between them by
 accident. When it ends, code writes its finding into `findings`, the snippets and pages the
 finding cites into `sources`, and web search into `failures` if it failed.
 
