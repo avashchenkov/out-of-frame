@@ -24,6 +24,8 @@ calibration.
    Prepare F1: a written investigation state with no usable evidence and the tool cap reached,
    where the expected result is unidentified. Record the inputs, fixtures, evidence and dates;
    define the finding types, statuses and tool cap needed for these cases in `checklist.yaml`.
+   Write L1's label by hand from its recorded map response: the labelling script needs the
+   grouping code of step 6.
    States follow the [logical state model](architecture.md#the-state), not LangGraph classes.
    Build only enough of `run(task)` to run and record these cases against a stub and grade
    their outcomes. Test each code grader on an outcome it must pass and one it must fail;
@@ -39,7 +41,9 @@ calibration.
    sources and a stubbed model. The result must demonstrate a supported finding and an honest
    unidentified outcome when evidence is missing; inspect the first report by hand.
 6. **Several objects and triage.** Extend the path to map classes, grouping, nearest-N limits,
-   code routing, triage and parallel investigations. Check T1–T2, F2, F5–F6 and R2–R4, plus
+   code routing, triage and parallel investigations. Add the
+   [labelling script](eval-architecture.md#ground-truth-labels), which uses the grouping code.
+   Check T1–T2, F2, F5–F6 and R2–R4, plus
    code tests for routing (T3), grouping, distances, caps and failures. The report must preserve
    clear findings, show unidentified and not investigated objects, and distinguish an empty
    result from a failure.
