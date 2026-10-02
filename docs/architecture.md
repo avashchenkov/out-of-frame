@@ -294,8 +294,9 @@ A `Finding` has no class of its own: it takes the class of its object.
 
 TODO: define the lists of finding types and statuses, N for map classes and for plans, and the
 cap of tool calls per object in [checklist.yaml](../src/out_of_frame/data/checklist.yaml)
-together with the eval tasks, before any agent code. The agent and the evals use the same
-lists; the agent never sees the truth labels.
+in stages with the eval tasks, before implementing the behaviour that uses each value (see
+[roadmap.md](roadmap.md)). The agent and the evals use the same lists; the agent never sees
+the truth labels.
 
 ### What each step reads and writes
 

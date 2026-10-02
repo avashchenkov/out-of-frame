@@ -34,7 +34,7 @@ prompts apart by a few percent.
 - **End-to-end:** a task runs the whole agent on live sources.
 
 The evals form one end-to-end suite and several component suites. The MVP column lists the
-tasks built first; see [MVP](#mvp).
+tasks built during the MVP; see [MVP](#mvp).
 
 | Suite | Level | Runs | Starts from | Sources it calls | Tasks | MVP |
 |---|---|---|---|---|---|---|
@@ -48,7 +48,7 @@ tasks built first; see [MVP](#mvp).
 | Enough | component | One decision to stop or search again | A written search history | none | 4 | — |
 | Finding | component | Write the finding | A written search history and its pages | none | 7 | F1, F2, F4–F6 |
 | Report | component | One report write, or one rewrite after unknown IDs | A run state with all findings | none | 6 | R2–R4 |
-| Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | — |
+| Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | L1 |
 
 **Component tasks start from fixed data,** except the live investigation, which searches the
 live web. The user's messages are written in the task. The input loop's geocoding answers from
@@ -105,15 +105,19 @@ free; what it asks for is graded. The end-to-end tasks together run all the step
 ## MVP
 
 The MVP builds the tasks in the MVP column of the
-[suite table](#two-levels-component-and-end-to-end), and the demo shows them. The other tasks
-stay designed here. Each is built only when a failure in the transcripts or feedback from users
-shows that it is needed.
+[suite table](#two-levels-component-and-end-to-end), and the demo shows them. They are prepared
+in stages, before the behaviour each checks, in the order of the [roadmap](roadmap.md).
+Start with L1 and F1, then extend the tasks and harness with the agent. The other tasks stay
+designed here and are built only if an observed failure shows a need; no phase after the MVP
+is planned.
 
 - **Judges:** support, interpretation and no verdict, the three that grade the end-to-end
-  report. The search relevance and question judges come later, with the Search and Ask suites.
+  report. Review early outputs by hand against their rubrics; these grades go into the
+  judges' calibration sets. Automate and calibrate the judges from real outputs before quoting
+  their scores. The search relevance and question judges are outside the MVP.
 - **No simulated user:** the user's replies are written in the task, like the first message
   (see [Running the evals](#running-the-evals)). A simulated user, an LLM that answers from
-  what the task says the user knows, comes later.
+  what the task says the user knows, is outside the MVP.
 
 ## Grading
 
@@ -452,7 +456,7 @@ flowchart TD
         CG["Other code graders<br/>IDs, key facts, distances, durations<br/>flagged or not, input state"]:::code
         JG["LLM judges<br/>support, interpretation,<br/>no verdict"]:::model
         CAL[("Calibration sets<br/>graded once by a person")]:::data
-        MET[("Metrics per suite, over k trials<br/>component: pass@k, pass^k<br/>end-to-end: precision and recall<br/>per class, unsupported share, cost")]:::data
+        MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: precision and recall per class<br/>live suites: unsupported share, cost")]:::data
         PUB(["Results published<br/>with the failures"]):::human
         STOP(("●")):::stop
         GS --> MATCH
@@ -515,7 +519,7 @@ what is free and repeatable.
 | Check | Model | Sources | Where |
 |---|---|---|---|
 | Pipeline test: the graph runs through and yields every report state | fake | replayed | CI |
-| Task format: every task parses; every class has a labelled object at one address at least | none | none | CI |
+| Task format: every prepared task parses; at MVP completion, every class has a labelled object at one address at least | none | none | CI |
 | Grader tests: each code-based grader on a hand-written outcome it must pass and one it must fail | none | none | CI |
 | End-to-end and live investigation suites | real | live | by hand |
 | The other component suites | real | replayed or none | by hand |
@@ -523,7 +527,9 @@ what is free and repeatable.
 
 ### How tasks change
 
-- **The MVP tasks and their labels are committed before any agent code.**
+- **Prepare tasks and labels before implementing the behaviour they check.** Build the MVP
+  set in stages, following the [roadmap](roadmap.md), and extend the harness and graders with
+  it. The whole MVP set does not have to exist before the first agent code.
 - **Every task starts as a capability task.** In every component suite but the live
   investigation, a task that passes all k trials run after run becomes a regression check: a
   later change must not break it. A live task meets a web that changes, so a regression there
@@ -547,6 +553,7 @@ new words, keeps the facts the task needs word for word, and is marked as rewrit
 URL and retrieval date. Whole pages from live runs stay in local results only. Recorded
 OpenStreetMap responses are kept as returned, under the ODbL, with its credit.
 
-The data are ready when all MVP tasks have their inputs, user messages included, starting
-states and source responses, expected results, and labels with evidence and dates; the lists of
-types and statuses, N and the cap of tool calls go into checklist.yaml with them.
+The data for a step are ready when its tasks have their inputs, user messages included,
+starting states and source responses where needed, expected results, and labels with evidence
+and dates. Define the types, statuses and limits needed by that step in checklist.yaml with
+its tasks. Complete the remaining MVP data before the final full run.
