@@ -14,11 +14,9 @@ cover it. A model's answer differs between trials and between models, so it is m
 several trials.
 
 The model makes decisions, the *LLM steps*: the model boxes in the
-[architecture](architecture.md#one-run) diagram. The prompt injection checker, which screens
-each snippet and page before the model reads it, is a separate model call inside the search
-step, and is evaluated as a step too. The [step table](#llm-steps) lists them all. Most calls
-make several decisions: a finding, for example, has a type, a status, its reasons, its key
-facts and its evidence. Each decision gets its own tasks or its own grader.
+[architecture](architecture.md#one-run) diagram. The [step table](#llm-steps) lists them all.
+Most calls make several decisions: a finding, for example, has a type, a status, its reasons,
+its key facts and its evidence. Each decision gets its own tasks or its own grader.
 
 Everything else is code, covered by ordinary tests with a stubbed model: distances, which
 objects are investigated and how many, source failures, the two Tavily tools and the cap of
@@ -86,119 +84,8 @@ only part with tools, and the only loop the model ends. So it is evaluated on tw
 
 ### LLM steps
 
-Which part of the agent's graph each suite runs. Each framed part is one component suite; the
-input loop and the live investigation run their whole frames. A dashed arrow is the input a
-suite's tasks start from.
-
-```mermaid
-flowchart TD
-    IN1[("End-to-end: written user messages<br/>runs the whole graph on live sources")]:::data
-    IN2[("Input loop: written user messages<br/>geocoding replayed")]:::data
-    INX[("Extract: written messages<br/>and the current input")]:::data
-    INA[("Ask: written messages<br/>and what is missing")]:::data
-
-    subgraph INT["Input loop, evaluated whole"]
-        direction TB
-        U[("The next written reply")]:::data
-        subgraph SX["Extract"]
-            M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
-        end
-        C{"Geocode, then:<br/>anything missing or unclear?"}:::code
-        subgraph SA["Ask"]
-            A["Ask for what is missing"]:::model
-        end
-        U --> M --> C
-        C -->|"yes"| A
-        A -->|"question"| U
-    end
-    SRC["Get map objects, B-Plans<br/>and journeys from the sources"]:::code
-    IN3[("Triage: map objects<br/>from recorded Overpass responses")]:::data
-    subgraph TRI["Triage, one call"]
-        T["Triage"]:::model
-    end
-    IN4[("Search: an object<br/>with a written history or none")]:::data
-    IN5[("Injection check:<br/>a generated snippet or page")]:::data
-    IN6[("Enough: a written history")]:::data
-    IN7[("Finding: a written history<br/>and its pages")]:::data
-    IN8[("Live investigation: one object<br/>search and extract on the live web")]:::data
-    subgraph INV["Investigation subgraph, one object"]
-        direction TB
-        subgraph SSE["Search"]
-            S["Search the web or read a page"]:::model
-        end
-        subgraph SIC["Injection check"]
-            K["Check each snippet and page<br/>for prompt injection"]:::model
-        end
-        subgraph SEN["Enough"]
-            D{"Enough?<br/>or cap reached"}:::model
-        end
-        subgraph SFI["Finding"]
-            F["Write the finding"]:::model
-        end
-        GC{"Finding grounded?"}:::code
-        S -->|"results"| K
-        K -->|"what passes"| D
-        D -->|"search again"| S
-        D -->|"stop"| F
-        F --> GC
-        GC -->|"no, under the cap"| S
-    end
-    FS[("Findings, plans, journeys")]:::data
-    IN9[("Report: a finished run state<br/>with all findings; for a rewrite,<br/>also the unknown IDs")]:::data
-    subgraph REP["Report: one write or one rewrite"]
-        direction TB
-        W["Write the report"]:::model
-        REF["Fill in the references"]:::code
-        W --> REF
-        REF -->|"unknown ID"| W
-    end
-    C -->|"input complete"| SRC
-    SRC -->|"map objects"| T
-    SRC -->|"every B-Plan, capped"| S
-    SRC -->|"journeys"| FS
-    T -->|"clear"| FS
-    T -->|"per unclear object"| S
-    GC -->|"yes, or at the cap:<br/>unidentified"| FS
-    FS --> W
-
-    IN1 -.-> M
-    IN2 -.-> M
-    INX -.-> M
-    INA -.-> A
-    IN3 -.-> T
-    IN4 -.-> S
-    IN5 -.-> K
-    IN6 -.-> D
-    IN7 -.-> F
-    IN8 -.-> INV
-    IN9 -.-> W
-    SRC ~~~ IN3
-    FS ~~~ IN9
-
-    subgraph KEY["Key"]
-        direction LR
-        k2["Model decides"]:::model
-        k3["Code decides"]:::code
-        k4[("Fixed input or state")]:::data
-        k2 ~~~ k3 ~~~ k4
-    end
-    REP ~~~ KEY
-
-    classDef model fill:#c4b5fd,stroke:#5b21b6,stroke-width:2px,color:#111827
-    classDef code fill:#ffffff,stroke:#475569,stroke-width:1.5px,color:#111827
-    classDef data fill:#e5e7eb,stroke:#6b7280,color:#111827
-    style INT fill:#f1f5f9,stroke:#475569,stroke-dasharray:5 3
-    style SX fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style SA fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style TRI fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style INV fill:#f1f5f9,stroke:#475569
-    style SSE fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style SIC fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style SEN fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style SFI fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style REP fill:#e2e8f0,stroke:#475569,stroke-dasharray:5 3
-    style KEY fill:#f8fafc,stroke:#94a3b8
-```
+Each row is a model box in the [architecture diagram](architecture.md#one-run), under the
+name in its first line.
 
 | LLM step | Phase | Suite | Tasks | Graders |
 |---|---|---|---|---|
@@ -206,13 +93,13 @@ flowchart TD
 | Ask for what is missing | Input | Ask, input loop | A1–A4, I1–I3 | Question judge; no verdict judge |
 | Triage | Research | Triage | T1–T5 | Code: clear or unclear; for a clear object, type against the label, status against the map, key facts in the object's details; interpretation judge |
 | Check each snippet and page for prompt injection | Research, investigation | Injection check | P1–P4 | Code: flagged or not |
-| Search the web or read a page | Research, investigation | Search, live investigation | S1–S5, L1–L3 | Search relevance judge; code: S4 |
+| Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N4 | Code: stops or searches again |
 | Write the finding | Research, investigation | Finding, live investigation | F1–F7, L1–L3 | Code: outcome, type and status against the label, evidence IDs and key facts; support and interpretation judges |
 | Write the report | Report | Report | R1–R6 | Code: every finding in the report, IDs, distances and durations; support, interpretation and no verdict judges |
 
-The input loop only checks the state after each turn and whether the agent asks or finishes;
-whether it asks is decided by code, so the Ask suite grades the question itself. Its wording is
+The input loop checks only the input state at the end. Whether the agent asks is decided by
+code, so the Ask suite grades the question itself. Its wording is
 free; what it asks for is graded. The end-to-end tasks together run all the steps.
 
 ## MVP
@@ -223,8 +110,7 @@ stay designed here. Each is built only when a failure in the transcripts or feed
 shows that it is needed.
 
 - **Judges:** support, interpretation and no verdict, the three that grade the end-to-end
-  report. The search relevance and question judges come with the suites that need them; until
-  then, the end-to-end suite counts tool calls only as a cost.
+  report. The search relevance and question judges come later, with the Search and Ask suites.
 - **No simulated user:** the user's replies are written in the task, like the first message
   (see [Running the evals](#running-the-evals)). A simulated user, an LLM that answers from
   what the task says the user knows, comes later.
@@ -305,9 +191,12 @@ nearest five) and the labels of a branch whose source failed.
 
 The other code-based graders are in the [step table](#llm-steps). The output is shaped for
 them: types and statuses come from fixed lists, and the model cites each finding by its object
-ID, so code checks in the transcript, before the IDs are replaced with links, that every
-finding is in the report. In the input loop, code checks the state after each turn and whether
-the agent asks or finishes.
+ID. A report task grades the model's draft, before code replaces the IDs with links, so code
+checks that every finding is in it.
+
+Graders read only the outcome: the state where the suite ends. The transcript is kept for a
+person who looks into a failure; no grader reads it. The harness counts the tool calls and the
+cost as the trial runs.
 
 ### LLM judges
 
@@ -373,8 +262,7 @@ covers a case the others do not.
 One task per address, with labels. Two tasks also give destinations, one with one
 destination and one with two; in the others, the user travels nowhere. Code checks the
 findings against the labels, and two journeys, there and back, for each destination and none
-without one. The support, interpretation and no verdict judges grade the report. After the
-MVP, the search relevance judge also grades the tool calls.
+without one. The support, interpretation and no verdict judges grade the report.
 
 | # | Address near | What it covers |
 |---|---|---|
@@ -399,7 +287,7 @@ several cases. More addresses are added only for a case none of them covers.
 
 | # | Input | Passes when |
 |---|---|---|
-| I1 | A destination without times; then a vague time, "in the morning" | The vague time stays empty, and it asks until both clock times are given |
+| I1 | A destination without times; then a vague time, "in the morning"; then both clock times | The input ends with the clock times from the last reply |
 | I2 | An ambiguous address: a street name in several districts | It asks which one and resolves the answer |
 | I3 | A full first message: a Berlin address, a destination outside Berlin and both clock times | No question; the input is complete after the first message |
 
@@ -498,7 +386,7 @@ the object without the planted one.
 One task per kind of object the agent must investigate, each a labelled object at the
 end-to-end addresses. The object is fixed in the task, so the suite does not depend on triage.
 Nothing is planted; the web is as it is. Code checks the finding's type and status against the
-label; the support and search relevance judges grade the finding and the tool calls.
+label; the support judge grades the finding.
 
 | # | Object | What it covers |
 |---|---|---|
@@ -527,43 +415,55 @@ language.
 
 ## Running the evals
 
+The diagram shows the MVP; see [MVP](#mvp) for what comes later.
+
 ```mermaid
 flowchart TD
     subgraph TRIALS["Phase 1: Run one trial from a clean state, k per task"]
         direction TB
         START((" ")):::start
-        TASK[("Task<br/>inputs and expected results<br/>kept apart")]:::data
-        INJ[/"Injected into the agent<br/>the model under test<br/>sources: live or replayed<br/>date: the task's as_of<br/>or today, if live"/]:::code
+        TASK[("Task<br/>written user messages<br/>or a written state;<br/>expected results kept apart")]:::data
+        INJ[/"run(task) injects the model,<br/>recorded or live sources<br/>and the date: as_of,<br/>or today if live"/]:::code
         AG["Out of Frame agent<br/>the part the suite runs"]:::sut
-        OUTC[("Outcome<br/>the state where<br/>the suite ends")]:::data
-        TRN[("Transcript<br/>tool calls and results<br/>questions and answers, cost")]:::data
+        RPL{"Input loop and end-to-end:<br/>a written reply left?"}:::code
+        OUTC[("Outcome<br/>the state where the suite ends")]:::data
+        TRN[("Transcript<br/>for a person who looks<br/>into a failure, not graded")]:::data
+        CNT[("Tool calls and cost<br/>counted by the harness")]:::data
         RD(["Trial recorded"]):::milestone
         START --> TASK
         TASK -->|"inputs only"| INJ
         INJ --> AG
+        AG -->|"asks the user"| RPL
+        RPL -->|"yes: the next one"| AG
+        RPL -->|"no: the trial fails"| RD
         AG --> OUTC
         AG --> TRN
+        AG --> CNT
         OUTC --> RD
         TRN --> RD
+        CNT --> RD
     end
 
-    subgraph GRADE["Phase 2: Grade the trial, then publish"]
+    subgraph GRADE["Phase 2: Grade the trial at once, then publish"]
         direction TB
-        GS(["Grading the trial"]):::milestone
-        SC[("Expected results<br/>read here and nowhere else")]:::data
-        CG["Code-based graders<br/>whatever code can check"]:::code
-        JG["LLM judges, model-based graders<br/>one per dimension, isolated"]:::model
-        CALD[("LLM judge calibration<br/>per judge version: agrees<br/>with human grades or not")]:::data
-        MET[("Metrics per suite, over k trials")]:::data
-        PUB(["Results published"]):::human
+        GS(["Grading the outcome<br/>with its suite's graders"]):::milestone
+        SC[("Expected results<br/>read only here")]:::data
+        MATCH["Findings against labels<br/>nearest of the same class<br/>within tolerance"]:::code
+        CG["Other code graders<br/>IDs, key facts, distances, durations<br/>flagged or not, input state"]:::code
+        JG["LLM judges<br/>support, interpretation,<br/>no verdict"]:::model
+        CAL[("Calibration sets<br/>graded once by a person")]:::data
+        MET[("Metrics per suite, over k trials<br/>component: pass@k, pass^k<br/>end-to-end: precision and recall<br/>per class, unsupported share, cost")]:::data
+        PUB(["Results published<br/>with the failures"]):::human
         STOP(("●")):::stop
+        GS --> MATCH
         GS --> CG
         GS --> JG
+        SC --> MATCH
         SC --> CG
-        SC --> JG
+        CAL -->|"per judge version:<br/>all faulty examples caught,<br/>at most two other disagreements"| JG
+        MATCH --> MET
         CG --> MET
-        JG --> MET
-        CALD -->|"uncalibrated judges not quoted"| MET
+        JG -->|"only judges that passed"| MET
         MET --> PUB --> STOP
     end
 
@@ -571,7 +471,7 @@ flowchart TD
 
     subgraph KEY["Who does what"]
         direction LR
-        k1(["Reviewer"]):::human
+        k1(["Person"]):::human
         k2["Model decides"]:::model
         k3["Code decides"]:::code
         k6["The agent under test"]:::sut
