@@ -1,0 +1,19 @@
+# F1, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F1
+suite: finding
+covers: Nothing usable was found and the cap is reached; the object ends unidentified.
+date: 2026-10-03  # fixed data: the date the pages were retrieved
+
+input:
+  state: f1-nothing-usable.yaml  # in evals/states/
+
+# Read only by the graders. The expected result follows the written state, not the real site:
+# L1 shows that Klärwerkstraße 3 is a car repair workshop. Code also checks that every
+# evidence ID exists and that every key fact appears word for word in a cited source. Code
+# cannot catch an invented claim in why_it_matters: the support judge grades it. Until that
+# judge is calibrated, its grade is not quoted and a person reviews the finding.
+expected:
+  outcome: unidentified
+  type: unknown
+  status: unknown

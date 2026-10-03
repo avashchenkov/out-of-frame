@@ -1,0 +1,111 @@
+# An investigation state with three tool calls, the cap, and nothing about the object: every
+# result is about another address or about no site at all. Built from the L1 object and from
+# real Tavily results of 2026-10-03. Each snippet and page is rewritten in new words; names
+# and addresses are kept as found.
+object:
+  id: osm-way-985575964
+  class: industry
+  name: null
+  details: {landuse: industrial}
+  addresses:
+    - Klärwerkstraße 3, 13597 Berlin
+    - Klärwerkstraße 7, 13597 Berlin
+  point: {lat: 52.52840, lon: 13.23202}
+  distance_m: 218
+  source_id: overpass-l1  # the map source of L1
+
+history:
+  - {role: model, tool: search, query: Klärwerkstraße 7 13597 Berlin}
+  - {role: tool, pages: [web-1, web-2, web-3, web-4]}
+  - {role: model, tool: extract, url: "https://www.sprenger-metallbau.de"}
+  - {role: tool, pages: [web-5]}
+  - {role: model, tool: search, query: Klärwerkstraße Berlin Spandau Firmen Gewerbe}
+  - {role: tool, pages: [web-6, web-7, web-8, web-9]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Klärwerkstraße 7 13597 Berlin
+    url: https://s-b-h.de/sbh-vor-ort/sbh-nordost/standorte-nordost/berlin_482b4a43484c5033524c4d7043646f454e4d5869724
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      SBH Nordost, a training provider, gives a site at Klärwerkstraße 1 a, 13597 Berlin -
+      Spandau, with a phone number and an e-mail contact.
+  - id: web-2
+    kind: web search
+    request: Klärwerkstraße 7 13597 Berlin
+    url: https://neue-perspektive-spandau.de
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      Neue Perspektive Spandau, a coaching project, is at Klärwerkstraße 1A, 13597
+      Berlin-Spandau. The page gives a phone number, an e-mail address and opening hours.
+  - id: web-3
+    kind: web search
+    request: Klärwerkstraße 7 13597 Berlin
+    url: https://www.sprenger-metallbau.de
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      Ed. Sprenger GmbH, Metall- und Apparatebau, has a production hall of 1100 m² at ground
+      level at Klärwerkstraße 1a, 13597 Berlin, with a 10-tonne crane. Its offices are in an
+      annex of the main building.
+  - id: web-4
+    kind: web search
+    request: Klärwerkstraße 7 13597 Berlin
+    url: https://grone.de/standorte/kontakt/grone-bildungszentrum-berlin-spandau
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      Grone has more than 200 sites in Germany. This is the contact page of the
+      Grone-Bildungszentrum Berlin - Spandau, a centre for further training and retraining.
+  - id: web-5
+    kind: web search
+    request: https://www.sprenger-metallbau.de
+    url: https://www.sprenger-metallbau.de
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      Ed. Sprenger GmbH is a metalwork firm founded in 1867. In 2012 it moved from
+      Helmholtzstraße in Berlin-Moabit to Klärwerkstraße in Spandau. Its address is
+      Klärwerkstraße 1A, 13597 Berlin, and it has 13 staff. At Klärwerkstraße 1a it has a
+      production hall of 1100 m² with a 10-tonne crane, a laser cutter and a CNC press brake.
+      It makes and fits doors, windows, facades, stairs and other steel parts.
+  - id: web-6
+    kind: web search
+    request: Klärwerkstraße Berlin Spandau Firmen Gewerbe
+    url: https://www.immobilienscout24.de/expose/160959969
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      An office to let at Klärwerkstraße 1a, Spandau (Ortsteil), 13597 Berlin. The listing
+      says that the building is in the industrial area of Berlin-Spandau.
+  - id: web-7
+    kind: web search
+    request: Klärwerkstraße Berlin Spandau Firmen Gewerbe
+    url: https://service.berlin.de/standort/326251
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      The trade office of the district, Ordnungsamt Spandau - Gewerbeservice, is at
+      Galenstraße 14, 13597 Berlin.
+  - id: web-8
+    kind: web search
+    request: Klärwerkstraße Berlin Spandau Firmen Gewerbe
+    url: https://www.morgenpost.de/unternehmen/bezirk-spandau
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      A business directory of the Berliner Morgenpost for the Spandau district, with addresses
+      and opening hours.
+  - id: web-9
+    kind: web search
+    request: Klärwerkstraße Berlin Spandau Firmen Gewerbe
+    url: https://www.beyer-spandau.de
+    retrieved: 2026-10-03
+    rewritten: true
+    content: >-
+      BEYER GmbH Berlin is a heating and plumbing firm.
+
+finding: null
