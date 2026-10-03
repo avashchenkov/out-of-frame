@@ -13,8 +13,10 @@
 # TODO: types for the other classes and the statuses of B-Plans, with the tasks that need them.
 
 statuses:
-  operating: In use now.
-  closed: No longer in use, including disused or demolished.
+  operating: >-
+    In use now. A current listing of a business at the site, such as a directory entry or its
+    own website, is enough, unless a source says that it closed or moved.
+  closed: No longer in use, including disused or demolished. A source must say so.
   under construction: Being built.
   planned: Proposed; building has not started.
 
