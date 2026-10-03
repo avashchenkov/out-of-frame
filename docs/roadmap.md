@@ -39,7 +39,9 @@ calibration.
    Introduce the injection guards with web access, preparing P1–P4 and F4 before implementing
    them. Check L1 on the live web, F1 and F4 on fixed states, and the whole path with replayed
    sources and a stubbed model. The result must demonstrate a supported finding and an honest
-   unidentified outcome when evidence is missing; inspect the first report by hand.
+   unidentified outcome when evidence is missing; inspect the first report by hand. Write the
+   rubrics of the three MVP judges with the first report and run the judges uncalibrated;
+   their scores are not quoted until they pass calibration in step 10.
 6. **Several objects and triage.** Extend the path to map classes, grouping, nearest-N limits,
    code routing, triage and parallel investigations. Add the
    [labelling script](eval-architecture.md#ground-truth-labels), which uses the grouping code.
