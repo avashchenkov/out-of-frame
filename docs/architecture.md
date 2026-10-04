@@ -357,7 +357,7 @@ page for prompt injection before it is stored, and code drops what it flags (see
 | Check each snippet and page for prompt injection | model + code | each snippet and page the tool returned | `history` and `pages`: only what passes (code) |
 | Enough? or cap reached | model + code | `object`, `history`; code counts the tool calls | nothing |
 | Write the finding | model + code | `object`, `history`, `pages` | `finding`; code sets `object_id` |
-| Finding grounded? | code | `finding`, `object.details`, `object.source_id`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
+| Finding grounded? | code | `finding`, `object.name`, `object.details`, `object.addresses`, `object.source_id`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides
 
@@ -381,7 +381,7 @@ Code gives an ID to each source response and to each snippet or page from Tavily
 page reaches the run state only if a finding cites it. A finding cites the IDs it uses and its
 key facts (a name, a date, a status), copied exactly from the source. Code checks that each ID
 exists and each fact appears in the stored text; for the object's own map or plan data, that
-text is the object's details. If not, the finding is rejected: the agent searches more, within
+text is the object's name, details and addresses. If not, the finding is rejected: the agent searches more, within
 the object's cap, or marks the object unidentified. The check runs inside the investigation, so
 only a finding that passes it, or an unidentified one at the cap or after a web search failure,
 goes into `findings`. Triage findings are not checked: in triage the model may use what it

@@ -91,7 +91,7 @@ name in its first line.
 |---|---|---|---|---|
 | Extract the property address, commute destinations and departure times | Input | Extract, input loop | X1–X10, I1–I3 | Code: the changes against the expected ones |
 | Ask for what is missing | Input | Ask, input loop | A1–A4, I1–I3 | Question judge; no verdict judge |
-| Triage | Research | Triage | T1–T2, T4–T5 | Code: clear or unclear; for a clear object, type against the label, status against the map, key facts in the object's details; interpretation judge |
+| Triage | Research | Triage | T1–T2, T4–T5 | Code: clear or unclear; for a clear object, type against the label, status against the map, key facts in the object's name, details and addresses; interpretation judge |
 | Check each snippet and page for prompt injection | Research, investigation | Injection check | P1–P4 | Code: flagged or not |
 | Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N4 | Code: stops or searches again |
@@ -205,10 +205,10 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 
 - **Support:** do the cited facts and their source support what the finding claims, or
   contradict it? The judge reads the source text as it was stored: the snippet or page as
-  fetched, not the live page, or the object's map or plan details, so the grade can be
-  repeated. It does not compare sources. The reason the checklist gives for the object's own
-  class, such as smell for a wastewater plant, counts as supported; another class's reason does
-  not. Journeys in the report are checked against `journeys`.
+  fetched, not the live page, or the object's name, details and addresses from the map or
+  plan, so the grade can be repeated. It does not compare sources. The reason the checklist
+  gives for the object's own class, such as smell for a wastewater plant, counts as supported;
+  another class's reason does not. Journeys in the report are checked against `journeys`.
 - **Search relevance:** does each search query, and each page the model chooses to read, aim
   at the object and its location, and does it help settle what is unclear? Each tool call is
   graded on its own, never against an expected one, so the agent's path stays free. The
