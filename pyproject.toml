@@ -7,7 +7,10 @@ authors = [
     { name = "Artur Vashchenkov", email = "washenkov@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "pydantic>=2.13.5",
+    "pyyaml>=6.0.3",
+]
 
 [project.scripts]
 out-of-frame = "out_of_frame:main"
@@ -15,3 +18,20 @@ out-of-frame = "out_of_frame:main"
 [build-system]
 requires = ["uv_build>=0.12.12,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]  # the evals package lives at the repository root
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["spikes"]  # exploratory scripts stay outside the checks
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
