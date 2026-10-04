@@ -138,11 +138,11 @@ grade them by code, the true values are recorded apart from the agent, as labels
 records what a correct finding says about one object, in the project's own format. `class` is
 the class of the object; `type` and `status` come from the same lists in `checklist.yaml` that
 the agent uses. `location` and `distance_tolerance_m` let code match a finding to the label.
-`evidence` shows why the label is true, and `as_of` is the date on which it was checked.
+`source_url` is the address of one page that shows why the label is true.
 
 Labels are not drawn from the map by hand. For each end-to-end address, a script queries the
 map and plan sources and writes every object of each checklist class inside its radius into the
-labels, with its name, location and class. It groups the elements into objects and computes
+labels, with an ID, its location and its class. It groups the elements into objects and computes
 each location with the agent's own code, so a label's location is the point the agent gets for
 the same object. It also records the responses as fixtures. A class
 with no object in its radius is labelled as empty. Triage and investigation tasks reuse these
@@ -150,14 +150,12 @@ labels.
 
 ```yaml
 - id: nlnd-campus
-  name: NLND Berlin campus, the former Philip Morris factory
   location: [52.46444, 13.46259]   # latitude, longitude
   distance_tolerance_m: 500
   class: industry
   type: commercial                 # from a fixed list per class
   status: operating
-  as_of: 2026-09-25
-  evidence: "PMI, 2026-04-01: the former cigarette factory is now the NLND Berlin campus"
+  source_url: https://www.pmi.com/markets/germany/de/presse/nlnd-berlin
 ```
 
 - Type and status are then filled in by a person from
@@ -170,7 +168,6 @@ labels.
   the object as unidentified is right only if its type is `unknown`. The WFS fields of a
   B-Plan, for example, do not show whether building has started; if no other evidence does,
   that status is `unknown`.
-- Every label has `as_of`, because many cases are about a status that changed.
 - Across the end-to-end addresses, every checklist class has at least one labelled object.
 
 ### Code-based graders
@@ -431,7 +428,7 @@ flowchart TD
         direction TB
         START((" ")):::start
         TASK[("Task<br/>written user messages<br/>or a written state;<br/>expected results kept apart")]:::data
-        INJ[/"run(task) injects the model,<br/>recorded or live sources<br/>and the date: as_of,<br/>or today if live"/]:::code
+        INJ[/"run(task) injects the model,<br/>recorded or live sources<br/>and the date: the task's,<br/>or today if live"/]:::code
         AG["Out of Frame agent<br/>the part the suite runs"]:::sut
         RPL{"Input loop and end-to-end:<br/>a written reply left?"}:::code
         OUTC[("Outcome<br/>the state where the suite ends")]:::data

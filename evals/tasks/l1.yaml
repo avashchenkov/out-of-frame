@@ -8,7 +8,7 @@ date: today  # a live task runs with the date of the trial
 # What the agent gets. The object is near Freiheit 22, 13597 Berlin, the E1 candidate.
 input:
   object:
-    id: osm-way-985575964
+    id: osm-way-985575964  # as the agent's code will make it
     class: industry
     name: null
     details: {landuse: industrial}
@@ -31,30 +31,10 @@ input:
 # Read only by the graders.
 expected:
   label:
-    id: klaerwerkstrasse-3
-    name: Müller KFZ-Service, also listed as Autoservice Müller, a car repair workshop
-    location: [52.52840, 13.23202]  # latitude, longitude
-    distance_tolerance_m: 100
+    id: klaerwerkstrasse-3  # for a human reviewer only
+    location: [52.52840, 13.23202]  # used only in end-to-end tasks
+    distance_tolerance_m: 100  # used only in end-to-end tasks
     class: industry
     type: production
     status: operating
-    as_of: 2026-10-03
-    evidence:
-      - >-
-        Gelbe Seiten, retrieved 2026-10-03: "Mirko Müller und Marcus Rudolph Kfz-Werkstatt",
-        "Autoreparaturen", "Klärwerkstr. 3, 13597 Berlin-Spandau"
-        (https://www.gelbeseiten.de/gsbiz/e3d0ea74-a77c-42f4-9f93-0fd870d0e4dc)
-      - >-
-        Das Örtliche, retrieved 2026-10-03: "Müller KFZ-Service", "Klärwerkstr. 3",
-        "Branche: Autoreparaturen in Berlin"
-        (https://www.dasoertliche.de/Themen/M%C3%BCller-KFZ-Service-Berlin-Spandau-Kl%C3%A4rwerkstr)
-      - >-
-        nochoffen.de, retrieved 2026-10-03: opening hours Monday to Friday 08:00-18:00,
-        Saturday 08:00-14:00 (https://www.nochoffen.de/haselhorst-autoservice-mueller)
-    reachable: >-
-      Tavily search "Klärwerkstraße 3 13597 Berlin", 2026-10-03: all five first results name
-      the workshop. A search by the coordinates finds nothing about the site.
-    note: >-
-      No source names a business at Klärwerkstraße 7. The listings have no dates; by the
-      checklist's rule, a current listing is enough for operating. The newest dated source is
-      an 11880 review of 2024-11-22, shown on the Gelbe Seiten page.
+    source_url: https://www.gelbeseiten.de/gsbiz/e3d0ea74-a77c-42f4-9f93-0fd870d0e4dc  # for a human reviewer only
