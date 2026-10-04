@@ -550,9 +550,10 @@ evals/results/      dated runs, with failures and real addresses
 ```
 
 Web pages are not copied into the repository. A page that a task starts from is rewritten in
-new words, keeps the facts the task needs word for word, and is marked as rewritten, with its
-URL and retrieval date. Whole pages from live runs stay in local results only. Recorded
-OpenStreetMap responses are kept as returned, under the ODbL, with its credit.
+new words, keeps the facts the task needs word for word, and keeps its URL. The file says that
+its pages are rewritten and when they were retrieved. Whole pages from live runs stay in local
+results only. Recorded OpenStreetMap responses are kept as returned, under the ODbL, with its
+credit.
 
 The data for a step are ready when its tasks have their inputs, user messages included,
 starting states and source responses where needed, expected results, and labels with evidence
