@@ -26,7 +26,6 @@ input:
         [out:json][timeout:60];way(985575964);out geom;way(985575964);map_to_area->.a;
         nwr(area.a)["addr:housenumber"];out center;
       fixture: overpass/l1-way-985575964.json
-      retrieved: 2026-10-03
 
 # Read only by the graders.
 expected:
