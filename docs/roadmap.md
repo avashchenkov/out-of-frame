@@ -32,16 +32,24 @@ calibration.
    put these tests and task-format checks in CI. This step is ready when both cases run and
    their expected outcomes can be distinguished from wrong ones. Other MVP cases come with
    the behaviour they check; the full task set is not a prerequisite for agent code.
-5. **First working slice: investigate one object.** As a CLI: a precise address → one selected
-   unclear map object → live Tavily search and page reads → a finding → a report with sources.
-   Build the investigation subgraph in LangGraph ([ADR 1](adr/0001-langgraph.md)) as part of
-   this path, with its stopping decision, tool cap, grounding check and source failures.
-   Introduce the injection guards with web access, preparing P1–P4 and F4 before implementing
-   them. Check L1 on the live web, F1 and F4 on fixed states, and the whole path with replayed
-   sources and a stubbed model. The result must demonstrate a supported finding and an honest
-   unidentified outcome when evidence is missing; inspect the first report by hand. Write the
-   rubrics of the three MVP judges with the first report and run the judges uncalibrated;
-   their scores are not quoted until they pass calibration in step 10.
+5. **First working slice: investigate one object.** As a CLI: a precise address → one unclear
+   map object → live Tavily search and page reads → a finding → a report with sources. Until
+   triage in step 6, the CLI takes the nearest unnamed object of a checked class. All model
+   calls use Claude Haiku 4.5; the evals show if it is not enough. In this order:
+   1. The finding call: its prompt and model call. Run F1 against it. The runner records an
+      error of the part as a failed trial.
+   2. The investigation subgraph in LangGraph ([ADR 1](adr/0001-langgraph.md)): search, the
+      stopping decision, the tool cap, the finding, the grounding check and a web search
+      failure. Code tests with a stubbed model and Tavily.
+   3. Live Tavily. Run L1 on the live web.
+   4. The injection guards: prepare P1–P4 and F4, then build the checker.
+   5. The CLI path: Nominatim, Overpass, the object choice and the report with sources. Check
+      the whole path with replayed sources and a stubbed model.
+   6. The rubrics of the three MVP judges, written with the first report. Run the judges
+      uncalibrated; their scores are not quoted until they pass calibration in step 10.
+
+   The result must demonstrate a supported finding and an honest unidentified outcome when
+   evidence is missing; inspect the first report by hand.
 6. **Several objects and triage.** Extend the path to map classes, grouping, nearest-N limits,
    code routing, triage and parallel investigations. Add the
    [labelling script](eval-architecture.md#ground-truth-labels), which uses the grouping code.
