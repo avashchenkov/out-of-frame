@@ -19,7 +19,7 @@ calibration.
    folder per question, each with a dated note of its findings:
    [overpass-counts](../spikes/overpass-counts/findings-2026-09-25.md). The findings may change
    the checklist. The scripts stay outside the checks and are never extended.
-4. **First eval cases and a minimal runner.** Prepare L1: one unnamed map object from a
+4. ✅ **First eval cases and a minimal runner.** Prepare L1: one unnamed map object from a
    candidate end-to-end address, with a type and status verified from real-world evidence.
    Prepare F1: a written investigation state with no usable evidence and the tool cap reached,
    where the expected result is unidentified. Record the inputs, fixtures, evidence and dates;
