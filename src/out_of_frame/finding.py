@@ -1,5 +1,5 @@
-"""Write the finding of an investigation: one model call, see
-docs/architecture.md#the-investigation-subgraph."""
+"""Draft the finding of an investigation: one model call. The grounding check then accepts or
+rejects the draft, see docs/architecture.md#the-investigation-subgraph."""
 
 import datetime as dt
 from functools import cache
@@ -33,7 +33,7 @@ TOOLS = [
 ]
 
 
-def write_finding(state: InvestigationState, date: dt.date) -> Finding:
+def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
     """Ask the model what the investigation found about its map object."""
     map_object = state.map_object
     template = templates().get_template("finding.md.j2")
@@ -45,8 +45,8 @@ def write_finding(state: InvestigationState, date: dt.date) -> Finding:
     )
     request = [SystemMessage(system), *messages(state), HumanMessage("Write the finding.")]
     call = finder().invoke(request).tool_calls[0]
-    # The ID is set by code, not taken from the model.
-    return Finding.model_validate(call["args"] | {"map_object_id": map_object.id})
+    answer = finding_tool().model_validate(call["args"])
+    return Finding.model_validate(answer.model_dump() | {"map_object_id": map_object.id})
 
 
 def messages(state: InvestigationState) -> list[BaseMessage]:
@@ -77,8 +77,8 @@ def finder():
 
 def finding_tool() -> type[BaseModel]:
     """The Finding fields that the model fills in, with their descriptions. The type and the
-    status are limited to the research scope's lists, so that the model can only choose one of
-    them, or null. The map object's ID is left out: code sets it."""
+    status are limited to the research scope's lists, or null: the model sees only these, and
+    draft_finding rejects any other. The map object's ID is left out: code sets it."""
     scope = research_scope.load()
     fields = {name: (f.annotation, f) for name, f in Finding.model_fields.items()}
     del fields["map_object_id"]
@@ -95,7 +95,7 @@ def templates() -> jinja2.Environment:
     """The prompt templates in prompts/."""
     return jinja2.Environment(
         loader=jinja2.PackageLoader("out_of_frame", "prompts"),
-        undefined=jinja2.StrictUndefined,  # a missing value fails instead of rendering empty
+        undefined=jinja2.StrictUndefined,
         trim_blocks=True,
         lstrip_blocks=True,
     )
