@@ -23,7 +23,8 @@ finding_statuses:
   planned: Proposed; building has not started.
 
 identified_types:
-  plant: Power, heat, waste, chemicals or fuel, made, burnt, treated or stored.
+  plant: Power, heat, waste, chemicals or fuel, made, burnt, treated or stored, including waste
+    recycling.
   production: Makes or repairs things, such as a factory or a workshop.
   logistics: Stores or moves goods, such as a warehouse or a depot.
   commercial: Offices, services or several businesses on one site.
