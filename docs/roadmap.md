@@ -36,8 +36,9 @@ calibration.
    map object → live Tavily search and page reads → a finding → a report with sources. Until
    triage in step 6, the CLI takes the nearest unnamed object of a checked category. All model
    calls use Claude Haiku 4.5; the evals show if it is not enough. In this order:
-   1. The finding call: its prompt and model call. Run F1 against it. The runner records an
-      error of the part as a failed trial.
+   1. The call that drafts the finding: its prompt and model call. Run F1 against it, and F5
+      as a positive control: a prompt that never identifies anything also passes F1. The runner
+      records an error of the part as a failed trial.
    2. The investigation subgraph in LangGraph ([ADR 1](adr/0001-langgraph.md)): search, the
       stopping decision, the tool cap, the finding, the grounding check and a web search
       failure. Code tests with a stubbed model and Tavily.
@@ -53,7 +54,7 @@ calibration.
 6. **Several objects and triage.** Extend the path to map categories, grouping, nearest-N limits,
    code routing, triage and parallel investigations. Add the
    [labelling script](eval-architecture.md#ground-truth-labels), which uses the grouping code.
-   Check T1–T2, F2, F5–F6 and R2–R4, plus
+   Check T1–T2, F2, F6 and R2–R4, plus
    code tests for routing (T3), grouping, distances, caps and failures. The report must preserve
    clear findings, show unidentified and not investigated objects, and distinguish an empty
    result from a failure.
