@@ -7,8 +7,8 @@ import json
 import pytest
 
 from evals.graders.finding import Expected
-from evals.load import Task
-from evals.run import Outcome, Trial, abstain, run
+from evals.load import TASKS, Task
+from evals.run import Outcome, Trial, abstain, draft_finding, run, select_tasks
 from out_of_frame.state import Coordinates, Finding, InvestigationState, MapObject, Source
 
 MAP_OBJECT = MapObject(
@@ -145,3 +145,53 @@ def test_a_trial_records_the_sources_it_was_graded_against(tmp_path):
     run([task], identify, 1, out)  # identify returns no sources of its own
     trial = json.loads(out.read_text(encoding="utf-8").splitlines()[1])
     assert [source["id"] for source in trial["sources"]] == ["web-1"]
+
+
+def test_an_error_of_the_part_fails_its_trial_and_the_run_goes_on(tmp_path):
+    calls = []
+
+    def fail_once(inputs, date):
+        calls.append(date)
+        if len(calls) == 1:
+            raise RuntimeError("model unavailable")
+        return identify(inputs, date)
+
+    out = tmp_path / "run.jsonl"
+    summary = run([FIXED], fail_once, 2, out)["F"]
+    assert summary["passed"] == 1 and summary["errors"] == 1 and not summary["pass^k"]
+    lines = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert [line.get("trial") for line in lines] == [None, 1, 2, 2, None]
+    assert "model unavailable" in lines[1]["error"]
+    assert lines[1]["passed"] is False and lines[1]["grades"] == []
+    assert "finding" in lines[2] and lines[3]["passed"] is True
+    assert lines[-1]["complete"] is True
+
+
+def test_a_live_task_whose_part_always_fails_has_no_right_results(tmp_path):
+    def fail(inputs, date):
+        raise RuntimeError("model unavailable")
+
+    assert run([LIVE], fail, 2, tmp_path / "run.jsonl")["L"]["right result share"] == 0
+
+
+def test_draft_finding_drafts_the_finding_from_the_state(monkeypatch):
+    found = identify(STATE, None).outcome.finding
+    seen = []
+
+    def fake_draft_finding(state, date):
+        seen.append((state, date))
+        return found
+
+    monkeypatch.setattr("out_of_frame.finding.draft_finding", fake_draft_finding)
+    trial = draft_finding(STATE, dt.date(2026, 10, 3))
+    assert seen == [(STATE, dt.date(2026, 10, 3))]
+    assert trial.outcome.finding == found and trial.tool_calls == 0
+    with pytest.raises(TypeError):
+        draft_finding(MAP_OBJECT, dt.date(2026, 10, 3))
+
+
+def test_a_part_runs_only_the_tasks_of_its_suites():
+    assert {task.suite for task in select_tasks("draft_finding", [])} == {"finding"}
+    assert len(select_tasks("abstain", [])) > len(select_tasks("draft_finding", []))
+    with pytest.raises(ValueError, match="cannot run L1"):
+        select_tasks("draft_finding", [TASKS / "l1.yaml"])

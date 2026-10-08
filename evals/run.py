@@ -1,15 +1,18 @@
 """Run eval tasks: k trials per task, each graded as soon as it is recorded.
 
 See docs/eval-architecture.md#running-the-evals. Run: uv run python -m evals.run --part abstain
+A part that calls the model needs the API key: uv run --env-file .env python -m evals.run ...
 """
 
 import argparse
 import datetime as dt
 import json
+import traceback
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import out_of_frame.finding
 from evals.graders.finding import Grade, grade_grounding, grade_result
 from evals.load import EVALS, Inputs, Task, load, load_all
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source
@@ -58,7 +61,17 @@ def abstain(inputs: Inputs, date: dt.date) -> Trial:
     return Trial(Outcome(finding, []), transcript=[], tool_calls=0, cost_usd=0.0)
 
 
-PARTS: dict[str, Part] = {"abstain": abstain}
+def draft_finding(inputs: Inputs, date: dt.date) -> Trial:
+    """The model call that drafts the finding, on a task from a written state."""
+    if not isinstance(inputs, InvestigationState):
+        raise TypeError("draft_finding needs a task from a written state")
+    finding = out_of_frame.finding.draft_finding(inputs, date)
+    return Trial(Outcome(finding, []), transcript=[], tool_calls=0, cost_usd=0.0)
+
+
+PARTS: dict[str, Part] = {"abstain": abstain, "draft_finding": draft_finding}
+# The suites that a part can run. A part not listed here runs every suite.
+PART_SUITES = {"draft_finding": {"finding"}}
 
 
 def graded_sources(task: Task, outcome: Outcome) -> list[Source]:
@@ -82,7 +95,22 @@ def run_task(task: Task, part: Part, k: int, record: Callable[[dict], None]) -> 
     trials = []
     for n in range(1, k + 1):
         date = task.date or dt.date.today()
-        trial = part(task.inputs.model_copy(deep=True), date)  # each trial from a clean state
+        try:
+            trial = part(task.inputs.model_copy(deep=True), date)  # each trial from a clean state
+        except Exception:
+            failed = {
+                "task": task.id,
+                "trial": n,
+                "date": date.isoformat(),
+                "error": traceback.format_exc(),
+                "tool_calls": 0,  # not known; TODO: counted by the harness, see Trial
+                "cost_usd": 0.0,
+                "passed": False,
+                "grades": [],
+            }
+            record(failed)
+            trials.append(failed)
+            continue
         recorded = {
             "task": task.id,
             "trial": n,
@@ -116,11 +144,12 @@ def summarise(suite: str, trials: list[dict]) -> dict:
             name: sum(g["passed"] for t in trials for g in t["grades"] if g["grader"] == name)
             for name in dict.fromkeys(g["grader"] for t in trials for g in t["grades"])
         },
+        "errors": sum("error" in t for t in trials),  # trials where the part failed
         "tool_calls": sum(t["tool_calls"] for t in trials),
         "cost_usd": sum(t["cost_usd"] for t in trials),
     }
     if suite == "live investigation":
-        summary["right result share"] = summary["graders"]["result"] / len(trials)
+        summary["right result share"] = summary["graders"].get("result", 0) / len(trials)
     else:
         summary |= {
             "passed": sum(t["passed"] for t in trials),
@@ -135,8 +164,8 @@ def run(
 ) -> dict[str, dict]:
     """Run every task and write each trial to out at once. A cancelled run is incomplete.
 
-    TODO: in step 5, record an error of the part as a failed trial instead of stopping the run;
-    an error of a grader still stops it. Average pass@k and pass^k over each suite.
+    An error of the part fails its trial, and the run goes on; an error of a grader stops it.
+    TODO: average pass@k and pass^k over each suite.
     """
     if k < 1:
         raise ValueError("k must be at least 1")
@@ -170,16 +199,32 @@ def run(
     return summaries
 
 
+def select_tasks(part: str, paths: list[Path]) -> list[Task]:
+    """The tasks in the given files, or, if none are given, every task that the part can run."""
+    suites = PART_SUITES.get(part)
+    if not paths:
+        return [task for task in load_all() if suites is None or task.suite in suites]
+    tasks = [load(path) for path in paths]
+    if suites is not None and (others := [task.id for task in tasks if task.suite not in suites]):
+        raise ValueError(f"the part {part} cannot run {', '.join(others)}")
+    return tasks
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("tasks", nargs="*", type=Path, help="task files; all tasks if none")
+    parser.add_argument(
+        "tasks", nargs="*", type=Path, help="task files; if none, every task the part can run"
+    )
     parser.add_argument("--part", choices=PARTS, required=True)
     parser.add_argument("--k", type=int, default=3, help="trials per task")
     args = parser.parse_args()
     if args.k < 1:
         parser.error("--k must be at least 1")
 
-    tasks = [load(path) for path in args.tasks] or load_all()
+    try:
+        tasks = select_tasks(args.part, args.tasks)
+    except ValueError as error:
+        parser.error(str(error))
     out = RESULTS / f"{dt.datetime.now(dt.UTC):%Y-%m-%dT%H-%M-%S-%fZ}.jsonl"
     for task_id, s in run(tasks, PARTS[args.part], args.k, out, args.part).items():
         graders = ", ".join(f"{name} {n}/{s['trials']}" for name, n in s["graders"].items())
@@ -189,7 +234,11 @@ def main() -> None:
             )
         else:
             result = f"right result in {s['right result share']:.0%} of trials"
-        print(f"{task_id}: {result}; graders: {graders}")
+        if graders:
+            result += f"; graders: {graders}"
+        if s["errors"]:
+            result += f"; part errors: {s['errors']}"
+        print(f"{task_id}: {result}")
     print(f"Trials: {out}")
 
 
