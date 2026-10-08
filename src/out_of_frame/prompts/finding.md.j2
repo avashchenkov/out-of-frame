@@ -1,0 +1,22 @@
+An investigation looked into one object on the map near a property in Berlin. From the object's
+map data and the sources found so far, fill in its finding. Today is {{ date }}.
+
+Its identified type is one of:
+{% for name, text in types.items() %}
+- {{ name }}: {{ text }}
+{% endfor %}
+
+Its status is one of:
+{% for name, text in statuses.items() %}
+- {{ name }}: {{ text }}
+{% endfor %}
+
+Rules:
+- Use only the map data and the sources in the messages, never what you know.
+- The object is identified only if a source is about this site, by its address or its name. A
+  page about another address, even next door, is not about this object.
+- If the sources do not settle the type, the outcome is unidentified, and the identified type
+  and the status are null. If they settle the type but not the status, the status is null.
+- A current listing of a business at the site, such as a directory entry or its own website,
+  is enough for operating, unless a source says that it closed or moved. Closed needs a source
+  that says so.
