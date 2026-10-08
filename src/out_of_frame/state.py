@@ -50,15 +50,29 @@ class MapObject(Record):
 class Finding(Record):
     """What an investigation found about one map object."""
 
-    map_object_id: str  # the ID of the MapObject
-    outcome: Literal["identified", "unidentified"]
-    # None for either when the sources do not settle it. A type of "other" means the sources
-    # settle what the object is, and no listed type fits it.
-    identified_type: str | None  # one of the research scope's identified types
-    status: str | None  # one of the research scope's finding statuses
-    why_it_matters: str
-    key_facts: list[str]
-    evidence_ids: list[str]  # the IDs of the Sources that the key facts come from
+    # The descriptions are also the model's instructions for each field: see finding.py.
+    map_object_id: str  # the ID of the MapObject; set by code, never by the model
+    outcome: Literal["identified", "unidentified"] = Field(
+        description="identified if a source settles what the object is"
+    )
+    identified_type: str | None = Field(
+        description="One of the listed types; other if the sources settle what the object is "
+        "and no listed type fits; null if they do not settle it."
+    )
+    status: str | None = Field(
+        description="One of the listed statuses; null if the sources do not settle it."
+    )
+    why_it_matters: str = Field(
+        description="One sentence on what the object means for someone living at the "
+        "property. Empty if the object is unidentified."
+    )
+    key_facts: list[str] = Field(
+        description="Short quotes, copied word for word from a cited source or the map data."
+    )
+    evidence_ids: list[str] = Field(
+        description="The IDs of the sources that the key facts come from, such as web-1 or "
+        "the map's source ID, without brackets."
+    )
 
 
 class ToolCall(Record):
