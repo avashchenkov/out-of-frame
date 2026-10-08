@@ -1,0 +1,18 @@
+# F5, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F5
+suite: finding
+covers: >-
+  Official documents from 2005 and 2008 settle what the object is, a plant that crushes and
+  screens construction waste at Nonnendammallee 11-14, but no source says whether it is in use
+  now. A page about a neighbouring site, Nonnendammallee 15, must not be taken for the object.
+date: 2026-10-08  # fixed data: the date the pages were retrieved
+
+input:
+  state: f5-type-without-status.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: plant  # construction waste is treated there
+  status: null  # the newest source is from 2008
