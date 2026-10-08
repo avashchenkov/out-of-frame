@@ -9,30 +9,29 @@ import pytest
 from evals.graders.finding import Expected
 from evals.load import Task
 from evals.run import Outcome, Trial, abstain, run
-from out_of_frame.state import Finding, InvestigationState, NearbyObject, Point, Source
+from out_of_frame.state import Coordinates, Finding, InvestigationState, MapObject, Source
 
-OBJECT = NearbyObject(
+MAP_OBJECT = MapObject(
     id="obj-1",
-    class_="industry",
     name="Test GmbH",
     details={"landuse": "industrial"},
     addresses=[],
-    point=Point(lat=52.5, lon=13.4),
-    distance_m=100,
+    coordinates=Coordinates(lat=52.5, lon=13.4),
+    distance_from_property_m=100,
     source_id="map-1",
 )
 EXPECTED = Expected("identified", "production", "operating")
-LIVE = Task(id="L", suite="live investigation", date=None, inputs=OBJECT, expected=EXPECTED)
-STATE = InvestigationState(object=OBJECT, history=[], pages=[], finding=None)
+LIVE = Task(id="L", suite="live investigation", date=None, inputs=MAP_OBJECT, expected=EXPECTED)
+STATE = InvestigationState(map_object=MAP_OBJECT, history=[], pages=[], finding=None)
 FIXED = Task(id="F", suite="finding", date=dt.date(2026, 10, 3), inputs=STATE, expected=EXPECTED)
 
 
 def identify(inputs, date):
-    obj = inputs if isinstance(inputs, NearbyObject) else inputs.object
+    map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
     finding = Finding(
-        object_id=obj.id,
+        map_object_id=map_object.id,
         outcome="identified",
-        type="production",
+        identified_type="production",
         status="operating",
         why_it_matters="",
         key_facts=["Test GmbH"],
@@ -97,9 +96,9 @@ def test_a_fixed_task_ignores_sources_the_agent_adds(tmp_path):
             content="Test GmbH runs a chemical plant.",
         )
         finding = Finding(
-            object_id=inputs.object.id,
+            map_object_id=inputs.map_object.id,
             outcome="identified",
-            type="production",
+            identified_type="production",
             status="operating",
             why_it_matters="",
             key_facts=["chemical plant"],
@@ -125,7 +124,7 @@ def test_a_trial_is_kept_when_grading_fails(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError):
         run([FIXED], identify, 1, out)
     lines = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
-    assert lines[1]["finding"]["type"] == "production"
+    assert lines[1]["finding"]["identified_type"] == "production"
     assert lines[-1]["complete"] is False
 
 

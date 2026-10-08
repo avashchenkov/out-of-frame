@@ -21,7 +21,7 @@ It checks five kinds of object, each within its own radius:
 - **wastewater treatment plants**: smell;
 - **airports**: aircraft noise;
 - **major roads and railways**, including planned ones: noise;
-- **planned development**: what will be built nearby.
+- **planned objects**: what will be built nearby.
 
 For each place the user travels to regularly, it adds the public transport trip there and
 back at the user's usual times.
@@ -35,13 +35,13 @@ a product or a public service.
 ## Why an agent
 
 Official registers list what is already built and registered. A chat model has no map and no
-checklist. The most important facts are often in neither. One example is an industrial site
+list of what to look for. The most important facts are often in neither. One example is an industrial site
 that is never in the news: a search for the address finds nothing, but the map shows an
 unnamed industrial area next door. Another is a planned project whose status is only in a PDF
 on a city website. To find such facts, the agent investigates each object separately: it
 searches, reads the results and decides whether the object is now clear. That is the agent's
 work; collecting the data is ordinary code.
 
-The agent knows what to check when choosing a home, but it does not know the city. The
-checklist is built in. What is actually near the address comes from current maps, plans and
+The agent knows what to check when choosing a home, but it does not know the city. What to
+look for is built in. What is actually near the address comes from current maps, plans and
 web pages, never from the model's memory.

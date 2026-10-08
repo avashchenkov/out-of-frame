@@ -7,16 +7,12 @@ grounding check in step 5.
 
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
+
+from out_of_frame.record import Record
 
 
-class Record(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid", frozen=True, populate_by_name=True, serialize_by_alias=True
-    )
-
-
-class Point(Record):
+class Coordinates(Record):
     lat: float
     lon: float
 
@@ -31,27 +27,38 @@ class Source(Record):
     content: str
 
 
-class NearbyObject(Record):
+class MapObject(Record):
+    """An object on the map near the property, such as a plant, an airport or a motorway."""
+
     model_config = Record.model_config | ConfigDict(coerce_numbers_to_str=True)  # OSM tags
 
     id: str
-    class_: str = Field(alias="class")
     name: str | None
-    details: dict[str, str]
+    details: dict[str, str]  # the category and the source's own fields, such as landuse=industrial
     addresses: list[str]
-    point: Point
-    distance_m: float
-    source_id: str
+    coordinates: Coordinates  # for an area or a line, the centre of its bounds
+    distance_from_property_m: float  # to the object's nearest edge
+    source_id: str  # the ID of the Source: the map or plan response the object comes from
+
+    def map_text(self) -> str:
+        """The object's own data as text: its name, details and addresses. A key fact that a
+        finding takes from the map must appear in it."""
+        lines = [self.name or ""] + [f"{key}={value}" for key, value in self.details.items()]
+        return "\n".join(lines + self.addresses)
 
 
 class Finding(Record):
-    object_id: str
+    """What an investigation found about one map object."""
+
+    map_object_id: str  # the ID of the MapObject
     outcome: Literal["identified", "unidentified"]
-    type: str
-    status: str
+    # None for either when the sources do not settle it. A type of "other" means the sources
+    # settle what the object is, and no listed type fits it.
+    identified_type: str | None  # one of the research scope's identified types
+    status: str | None  # one of the research scope's finding statuses
     why_it_matters: str
     key_facts: list[str]
-    evidence_ids: list[str]
+    evidence_ids: list[str]  # the IDs of the Sources that the key facts come from
 
 
 class ToolCall(Record):
@@ -85,7 +92,7 @@ class InvestigationState(Record):
     TODO: in step 5, each model call sees the history with the text of the pages it shows.
     """
 
-    object: NearbyObject
+    map_object: MapObject
     history: list[HistoryEntry]
     pages: list[Source]
     finding: Finding | None

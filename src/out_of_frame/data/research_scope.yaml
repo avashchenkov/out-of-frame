@@ -1,0 +1,86 @@
+# The research scope: what the agent fetches around an address, and what a finding can say.
+#
+# categories: what to fetch from each source, and how far. Each category is searched within its
+# own radius, measured from the property to the nearest edge of the object. A radius says where
+# the agent looks. It is not a legal limit. Sources: docs/sources.md. A map object has no
+# category field; code puts the category into its details, next to the fields of its source.
+#
+# osm_tags: an object matches if it has all the tags of one entry. A list of values means
+# any of them.
+#
+# identified_types: what a finding can say an object is. finding_statuses: whether it is in
+# use. A finding leaves either null when the evidence cannot settle it; other means that the
+# evidence settles what the object is and no listed type fits. The agent and the eval labels
+# use the same lists. Types are coarse: one per kind of impact that matters to a buyer, with
+# clear borders between them.
+# TODO: types for objects other than industrial sites and the statuses of planned objects,
+# with the tasks that need them.
+
+finding_statuses:
+  operating: In use now.
+  closed: No longer in use, including disused or demolished.
+  under construction: Being built.
+  planned: Proposed; building has not started.
+
+identified_types:
+  plant: Power, heat, waste, chemicals or fuel, made, burnt, treated or stored.
+  production: Makes or repairs things, such as a factory or a workshop.
+  logistics: Stores or moves goods, such as a warehouse or a depot.
+  commercial: Offices, services or several businesses on one site.
+  other: The evidence settles what the object is, and no type above fits.
+
+categories:
+  # Objects from OpenStreetMap.
+  - id: industry
+    name: Industrial and energy sites
+    # Abstandserlass NRW 2007: from 1500 m (class I) down to 100 m (class VII), by the kind and
+    # size of the plant. The kind is not known before the investigation, so the largest
+    # distance is used.
+    radius_m: 1500
+    source: overpass
+    osm_tags:
+      - {landuse: industrial}
+      - {power: plant}
+      - {man_made: works}
+
+  - id: wastewater
+    name: Wastewater treatment plants
+    # Abstandserlass NRW 2007: 300 m for plants up to 100,000 population equivalents (class V,
+    # no. 143), 500 m above (class IV, no. 78). The capacity is not known before the
+    # investigation, so the larger distance is used.
+    radius_m: 500
+    source: overpass
+    osm_tags:
+      - {man_made: wastewater_plant}
+
+  - id: airport
+    name: Airports
+    # Chosen for this project. The Abstandserlass has no entry for airports. Aircraft noise
+    # follows the flight paths and can reach further.
+    radius_m: 5000
+    source: overpass
+    osm_tags:
+      - {aeroway: aerodrome}
+
+  - id: road_rail
+    name: Major roads and railways, including planned ones
+    # Chosen for this project. The Abstandserlass has no entry for roads or railway lines.
+    radius_m: 300
+    source: overpass
+    osm_tags:
+      - {highway: [motorway, trunk]}
+      - {highway: construction, construction: [motorway, trunk]}
+      - {highway: proposed, proposed: [motorway, trunk]}
+      - {railway: [rail, light_rail]}
+      - {railway: construction, construction: [rail, light_rail]}
+      - {railway: proposed, proposed: [rail, light_rail]}
+
+  # Objects from B-Plans, the city's development plans.
+  - id: planned_objects
+    name: Planned objects
+    # Chosen for this project.
+    radius_m: 500
+    source: bplan_wfs
+    wfs_feature_types:
+      - bplan:a_bp_iv
+      - bplan:b_bp_fs

@@ -12,8 +12,7 @@ from pathlib import Path
 
 from evals.graders.finding import Grade, grade_grounding, grade_result
 from evals.load import EVALS, Inputs, Task, load, load_all
-from out_of_frame.checklist import UNKNOWN
-from out_of_frame.state import Finding, InvestigationState, NearbyObject, Source
+from out_of_frame.state import Finding, InvestigationState, MapObject, Source
 
 RESULTS = EVALS / "results"
 
@@ -46,12 +45,12 @@ type Part = Callable[[Inputs, dt.date], Trial]
 
 def abstain(inputs: Inputs, date: dt.date) -> Trial:
     """A stub that never identifies anything."""
-    obj = inputs if isinstance(inputs, NearbyObject) else inputs.object
+    map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
     finding = Finding(
-        object_id=obj.id,
+        map_object_id=map_object.id,
         outcome="unidentified",
-        type=UNKNOWN,
-        status=UNKNOWN,
+        identified_type=None,
+        status=None,
         why_it_matters="",
         key_facts=[],
         evidence_ids=[],
@@ -71,10 +70,11 @@ def graded_sources(task: Task, outcome: Outcome) -> list[Source]:
 
 
 def grade(task: Task, outcome: Outcome) -> list[Grade]:
-    obj = task.inputs if isinstance(task.inputs, NearbyObject) else task.inputs.object
+    inputs = task.inputs
+    map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
     return [
-        grade_result(outcome.finding, obj, task.expected),
-        grade_grounding(outcome.finding, obj, graded_sources(task, outcome)),
+        grade_result(outcome.finding, map_object, task.expected),
+        grade_grounding(outcome.finding, map_object, graded_sources(task, outcome)),
     ]
 
 

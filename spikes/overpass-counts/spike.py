@@ -2,7 +2,7 @@
 # requires-python = ">=3.14"
 # dependencies = ["pyyaml"]
 # ///
-"""Spike (roadmap step 3): how many objects of each checklist class does Overpass return near a
+"""Spike (roadmap step 3): how many objects of each category does Overpass return near a
 few addresses, and how many have no name?
 
 Exploratory code, outside the checks, never extended. Run: uv run spikes/overpass-counts/spike.py
@@ -23,7 +23,7 @@ ADDRESSES = [
     "Corinthstraße 60, 10245 Berlin",  # near the planned A100, 17th section
     "Saganer Straße 8, 10317 Berlin",  # near the Klingenberg power station
 ]
-CHECKLIST = Path(__file__).parents[2] / "src/out_of_frame/data/checklist.yaml"
+RESEARCH_SCOPE = Path(__file__).parents[2] / "src/out_of_frame/data/research_scope.yaml"
 HEADERS = {"User-Agent": "out-of-frame-spike (github.com/avashchenkov/out-of-frame)"}
 
 
@@ -74,7 +74,7 @@ def overpass(classes, lat, lon):
     return groups
 
 
-classes = [c for c in yaml.safe_load(CHECKLIST.read_text())["classes"] if c["source"] == "overpass"]
+classes = [c for c in yaml.safe_load(RESEARCH_SCOPE.read_text())["categories"] if c["source"] == "overpass"]
 for address in ADDRESSES:
     lat, lon = geocode(address)
     print(f"\n{address} ({lat:.5f}, {lon:.5f})")

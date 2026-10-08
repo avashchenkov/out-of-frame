@@ -7,8 +7,6 @@ TODO: the grounding check itself, with the investigation in step 5.
 import re
 import unicodedata
 
-from out_of_frame.state import NearbyObject
-
 
 def normalise(text: str) -> str:
     """One Unicode form and single spaces: the same words written with other code points match.
@@ -16,12 +14,6 @@ def normalise(text: str) -> str:
     This covers a decomposed "ü" and a no-break space, which pages often use.
     """
     return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text)).strip()
-
-
-def object_text(obj: NearbyObject) -> str:
-    """The object's own map or plan data as text: its name, details and addresses."""
-    lines = [obj.name or ""] + [f"{key}={value}" for key, value in obj.details.items()]
-    return "\n".join(lines + obj.addresses)
 
 
 def appears_in(fact: str, text: str) -> bool:

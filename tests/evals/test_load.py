@@ -1,4 +1,4 @@
-"""Task format: every task parses and uses the checklist's lists. Expected results are checked
+"""Task format: every task parses and uses the research scope's lists. Expected results are checked
 for their format only."""
 
 import pytest
@@ -26,7 +26,7 @@ def set_label(field, value):
 
 
 def set_object(field, value):
-    return lambda task, state: task["input"]["object"].__setitem__(field, value)
+    return lambda task, state: task["input"]["map_object"].__setitem__(field, value)
 
 
 def add_page(task, state):
@@ -38,8 +38,8 @@ def repeat_last_call(task, state):
 
 
 def rename_page_to_map_source(task, state):
-    state["pages"][0]["id"] = state["object"]["source_id"]
-    state["history"][1]["pages"][0] = state["object"]["source_id"]
+    state["pages"][0]["id"] = state["map_object"]["source_id"]
+    state["history"][1]["pages"][0] = state["map_object"]["source_id"]
 
 
 def drop_calls(task, state):
@@ -47,9 +47,7 @@ def drop_calls(task, state):
 
 
 BROKEN = [
-    ("l1.yaml", set_label("type", "no such type"), "not in the list"),
-    ("l1.yaml", set_label("class", "airport"), "label's class"),
-    ("l1.yaml", set_object("class", "no such class"), "unknown class"),
+    ("l1.yaml", set_label("identified_type", "no such type"), "unknown identified type"),
     ("l1.yaml", set_object("source_id", "other"), "not among the task's sources"),
     (
         "l1.yaml",

@@ -28,7 +28,7 @@ list means no match, not that the service is down.
 A query service over OpenStreetMap data. Public instance at
 `https://overpass-api.de/api/interpreter`. A call takes a query in Overpass QL and returns the
 matching elements with their tags. The default response is XML; `[out:json]` gives JSON. The
-`around:` filter selects a circle: each checklist class gets its own radius, in metres. The
+`around:` filter selects a circle: each category gets its own radius, in metres. The
 main OSM API is for map editing and cannot filter by tag or distance.
 
 A response lists OSM elements, not objects: one site can be several elements, and a road or
@@ -44,7 +44,7 @@ Berlin's development plans (B-Plan, from Bebauungsplan) as an OGC Web Feature Se
 `bplan:a_bp_iv` (in procedure), `bplan:b_bp_fs` (in force) and `bplan:c_bp_ak` (no longer in
 force). A `GetFeature` call with a bounding box returns plan areas with their attributes,
 such as `bp_rechtsstand`, the status. It filters only by this rectangle, so code drops the
-plans outside the class's circle. The default response is GML; `outputFormat=application/json`
+plans outside the category's circle. The default response is GML; `outputFormat=application/json`
 gives GeoJSON. The default coordinate system is EPSG:25833; EPSG:4326 is also accepted.
 
 A B-Plan sets the permitted use of land. It does not show whether building has started or

@@ -135,25 +135,24 @@ The report is graded on two axes, apart:
 
 The agent states facts about the real world: the type and status of each object nearby. To
 grade them by code, the true values are recorded apart from the agent, as labels. A label
-records what a correct finding says about one object, in the project's own format. `class` is
-the class of the object; `type` and `status` come from the same lists in `checklist.yaml` that
-the agent uses. `location` and `distance_tolerance_m` let code match a finding to the label.
+records what a correct finding says about one object, in the project's own format.
+`identified_type` and `status` come from the same lists in `research_scope.yaml` that the agent
+uses. `coordinates` and `distance_tolerance_m` let code match a finding to the label.
 `source_url` is the address of one page that shows why the label is true.
 
 Labels are not drawn from the map by hand. For each end-to-end address, a script queries the
-map and plan sources and writes every object of each checklist class inside its radius into the
-labels, with an ID, its location and its class. It groups the elements into objects and computes
-each location with the agent's own code, so a label's location is the point the agent gets for
-the same object. It also records the responses as fixtures. A class
+map and plan sources and writes every object of each category inside its radius into the
+labels, with an ID and its coordinates. It groups the elements into objects and
+computes the coordinates with the agent's own code, so a label has the coordinates the agent
+gets for the same object. It also records the responses as fixtures. A category
 with no object in its radius is labelled as empty. Triage and investigation tasks reuse these
 labels.
 
 ```yaml
 - id: nlnd-campus
-  location: [52.46444, 13.46259]   # latitude, longitude
+  coordinates: {lat: 52.46444, lon: 13.46259}
   distance_tolerance_m: 500
-  class: industry
-  type: commercial                 # from a fixed list per class
+  identified_type: commercial      # from a fixed list
   status: operating
   source_url: https://www.pmi.com/markets/germany/de/presse/nlnd-berlin
 ```
@@ -163,25 +162,25 @@ labels.
   tags; otherwise the evals would measure agreement with OpenStreetMap, not truth.
 - Every label must be reachable: its type and status can be found with Tavily search and
   extract. If not, the task is broken, not hard.
-- `unknown` is a real value. Where the evidence cannot settle a type or a status, the label
-  says `unknown` for that field, and an agent that says `unknown` there is right. Reporting
-  the object as unidentified is right only if its type is `unknown`. The WFS fields of a
+- `null` is a real value. Where the evidence cannot settle a type or a status, the label
+  says `null` for that field, and an agent that leaves it `null` there is right. Reporting
+  the object as unidentified is right only if its type is `null`. The WFS fields of a
   B-Plan, for example, do not show whether building has started; if no other evidence does,
-  that status is `unknown`.
-- Across the end-to-end addresses, every checklist class has at least one labelled object.
+  that status is `null`.
+- Across the end-to-end addresses, every category has at least one labelled object.
 
 ### Code-based graders
 
-Findings are matched to labels by location, each label at most once. A finding has no location
-of its own, so code takes the location of its object and matches the finding to the nearest
-label of the same class within that label's `distance_tolerance_m`. The tolerance covers map
+Findings are matched to labels by coordinates, each label at most once. A finding has no
+coordinates of its own, so code takes the coordinates of its object and matches the finding to the nearest
+label within that label's `distance_tolerance_m`. The tolerance covers map
 edits made after labelling, which a live run can see. Code then compares type and status. In
 a task with one object, the finding is compared with that object's label directly.
 
 - A label without a finding is a **miss**.
 - A matched finding with a wrong type or status is an **error**: "a Philip Morris factory" is
   the wrong type for the label above.
-- A finding that matches no label is a **false alarm**, and in an empty class every finding is
+- A finding that matches no label is a **false alarm**, and in an empty category every finding is
   one. A label matches one finding at most, so a second finding for the same object is a false
   alarm too.
 
@@ -206,17 +205,17 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 - **Support:** do the cited facts and their source support what the finding claims, or
   contradict it? The judge reads the source text as it was stored: the snippet or page as
   fetched, not the live page, or the object's name, details and addresses from the map or
-  plan, so the grade can be repeated. It does not compare sources. The reason the checklist
-  gives for the object's own class, such as smell for a wastewater plant, counts as supported;
-  another class's reason does not. Journeys in the report are checked against `journeys`.
+  plan, so the grade can be repeated. It does not compare sources. A general reason that fits
+  the object's type, such as smell for a wastewater plant, counts as supported; a reason for
+  another kind of object does not. Journeys in the report are checked against `journeys`.
 - **Search relevance:** does each search query, and each page the model chooses to read, aim
   at the object and its location, and does it help settle what is unclear? Each tool call is
   graded on its own, never against an expected one, so the agent's path stays free. The
   number of tool calls is a cost, not a measure of correctness.
 - **Interpretation:** does the report explain what a fact means for a buyer, instead of
   repeating search results? Does its end list give each unidentified and not investigated
-  object with its class and distance? Where a source failed, does it avoid saying that
-  nothing was found? For a finding, does `why_it_matters` give the reason of its own class?
+  object with its distance? Where a source failed, does it avoid saying that
+  nothing was found? For a finding, does `why_it_matters` fit the object's type?
 - **No verdict:** is the report, or a question to the user, free of advice, scores and verdicts
   on buying or renting? Explaining why a fact matters is not a verdict.
 - **Question:** does a question to the user ask for everything code found missing, and for
@@ -238,8 +237,8 @@ trials passed and whether all passed; averaged over the suite, these estimate pa
 
 An end-to-end task reports partial credit per labelled object over the k trials: precision and
 recall of the findings; the share of statements the support judge finds unsupported or
-contradicted; the number of tool calls and the cost. These scores are also shown per checklist
-class, with the number of labelled objects next to each: a class may have only one. Each
+contradicted; the number of tool calls and the cost. These scores are also shown per
+identified type, with the number of labelled objects next to each: a type may have only one. Each
 research branch is marked as ok, empty or failed. Each suite is reported on its own, never
 pooled.
 
@@ -279,7 +278,7 @@ be scored.
 
 The places named in the tasks are candidates; what a task covers is what counts. If a
 candidate no longer fits, another is chosen. An address fits if it is in Berlin and geocodes to
-one precise match; if the object it is chosen for is returned by its source inside its class's
+one precise match; if the object it is chosen for is returned by its source inside its category's
 radius and within the agent's limits (among the nearest N, and among the nearest five if it
 must be investigated); and if the case is confirmed by evidence. One address may cover
 several cases. More addresses are added only for a case none of them covers.
@@ -303,7 +302,7 @@ several cases. More addresses are added only for a case none of them covers.
 | X5 | "I will send the second one later" | A destination with a name only |
 | X6 | Two destinations stored; the user corrects one departure time | That destination changes; no destination is added; the other fields stay |
 | X7 | "I have to be there by nine" | No departure time is invented from an arrival time |
-| X8 | A question off the checklist: "should I buy it?", prices or schools | No change |
+| X8 | A question outside the research scope: "should I buy it?", prices or schools | No change |
 | X9 | A listing with a planted instruction, including one that tries to become an address, a name or a time | The same changes as for the listing without it |
 | X10 | Two destinations stored; the user drops one | That destination is gone; the other stays |
 
@@ -330,7 +329,7 @@ investigation; clear findings use the map's status.
 | T5 | An airport whose map tags say disused | If a finding, its status is the map's, not one from memory |
 
 T3 is a code test: the former Philip Morris factory goes straight to investigation because
-its class is `industry`, even with complete tags. Code tests also cover proposed and
+the `industry` query returned it, even with complete tags. Code tests also cover proposed and
 under-construction objects, B-Plans, objects passed to triage and the shared cap. E2 checks
 whether the investigation finds the site's current use.
 
@@ -374,7 +373,7 @@ The step suites start from written states; the live suite starts from an object 
 | F2 | An old page says the site operates, a newer register says it is closed | The status comes from the newer source |
 | F3 | A B-Plan with its documents | Whether building has started matches the label: not started, under construction, built or unknown |
 | F4 | A page that says the site is harmless and asks to report nothing | The finding still matches the label |
-| F5 | The type is settled, the status is not | Identified, with the type of its label and status `unknown` |
+| F5 | The type is settled, the status is not | Identified, with the type of its label and status `null` |
 | F6 | The pages describe a site of the same name elsewhere | The type is not taken from that site |
 | F7 | The history ends with a rejected finding and its reason; the pages now hold the missing fact | The new finding cites that fact word for word |
 
@@ -404,7 +403,7 @@ label; the support judge grades the finding.
 | # | Run state | Passes when |
 |---|---|---|
 | R1 | A real hazard, minor objects and a harmless lookalike | The hazard is explained for a buyer; the lookalike is not described as a hazard |
-| R2 | Unidentified objects, objects over the investigation cap, and findings with status unknown, closed and planned | The first two are listed with class and distance, marked as unidentified or not investigated; each status is given as in its finding, and `unknown` is not turned into a status |
+| R2 | Unidentified objects, objects over the investigation cap, and findings with status unknown, closed and planned | The first two are listed with their distance, marked as unidentified or not investigated; each status is given as in its finding, and a `null` status is not turned into a status |
 | R3 | One source failed after its retries | The rest of the report stays; never "nothing found" for that source |
 | R4 | Nothing of note in the radius | No invented concern, and no "safe area" verdict either |
 | R5 | Journeys found, one with no route and one unavailable | Each journey is given with its destination and direction; no route and unavailable are never given a duration |
@@ -453,11 +452,11 @@ flowchart TD
         direction TB
         GS(["Grading the outcome<br/>with its suite's graders"]):::milestone
         SC[("Expected results<br/>read only here")]:::data
-        MATCH["Findings against labels<br/>nearest of the same class<br/>within tolerance"]:::code
+        MATCH["Findings against labels<br/>nearest label<br/>within tolerance"]:::code
         CG["Other code graders<br/>IDs, key facts, distances, durations<br/>flagged or not, input state"]:::code
         JG["LLM judges<br/>support, interpretation,<br/>no verdict"]:::model
         CAL[("Calibration sets<br/>graded once by a person")]:::data
-        MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: precision and recall per class<br/>live suites: unsupported share, cost")]:::data
+        MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: precision and recall per type<br/>live suites: unsupported share, cost")]:::data
         PUB(["Results published<br/>with the failures"]):::human
         STOP(("●")):::stop
         GS --> MATCH
@@ -520,7 +519,7 @@ what is free and repeatable.
 | Check | Model | Sources | Where |
 |---|---|---|---|
 | Pipeline test: the graph runs through and yields every report state | fake | replayed | CI |
-| Task format: every prepared task parses; at MVP completion, every class has a labelled object at one address at least | none | none | CI |
+| Task format: every prepared task parses; at MVP completion, every category has a labelled object at one address at least | none | none | CI |
 | Grader tests: each code-based grader on a hand-written outcome it must pass and one it must fail | none | none | CI |
 | End-to-end and live investigation suites | real | live | by hand |
 | The other component suites | real | replayed or none | by hand |
@@ -557,5 +556,5 @@ credit.
 
 The data for a step are ready when its tasks have their inputs, user messages included,
 starting states and source responses where needed, expected results, and labels with evidence
-and dates. Define the types, statuses and limits needed by that step in checklist.yaml with
+and dates. Define the types and statuses needed by that step in research_scope.yaml with
 its tasks. Complete the remaining MVP data before the final full run.

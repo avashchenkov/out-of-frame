@@ -12,18 +12,18 @@ these grades go into the judges' calibration sets. Quote LLM judge scores only a
 calibration.
 
 1. ✅ **Repository setup.**
-2. ✅ **Checklist.** Each checked class with its radius, its source and why it matters. Kept as
+2. ✅ **Research scope.** Each checked category with its radius and its source. Kept as
    data.
-3. ✅ **Spike.** How many objects of each class does Overpass return, and how many have no
-   name? This sets the investigation cap per class. Exploratory scripts live in `spikes/`, one
+3. ✅ **Spike.** How many objects of each category does Overpass return, and how many have no
+   name? This sets the investigation cap per category. Exploratory scripts live in `spikes/`, one
    folder per question, each with a dated note of its findings:
    [overpass-counts](../spikes/overpass-counts/findings-2026-09-25.md). The findings may change
-   the checklist. The scripts stay outside the checks and are never extended.
+   the research scope. The scripts stay outside the checks and are never extended.
 4. ✅ **First eval cases and a minimal runner.** Prepare L1: one unnamed map object from a
    candidate end-to-end address, with a type and status verified from real-world evidence.
    Prepare F1: a written investigation state with no usable evidence and the tool cap reached,
    where the expected result is unidentified. Record the inputs, fixtures, evidence and dates;
-   define the finding types, statuses and tool cap needed for these cases in `checklist.yaml`.
+   define the finding types, statuses and tool cap needed for these cases.
    Write L1's label by hand from its recorded map response: the labelling script needs the
    grouping code of step 6.
    States follow the [logical state model](architecture.md#the-state), not LangGraph classes.
@@ -34,7 +34,7 @@ calibration.
    the behaviour they check; the full task set is not a prerequisite for agent code.
 5. **First working slice: investigate one object.** As a CLI: a precise address → one unclear
    map object → live Tavily search and page reads → a finding → a report with sources. Until
-   triage in step 6, the CLI takes the nearest unnamed object of a checked class. All model
+   triage in step 6, the CLI takes the nearest unnamed object of a checked category. All model
    calls use Claude Haiku 4.5; the evals show if it is not enough. In this order:
    1. The finding call: its prompt and model call. Run F1 against it. The runner records an
       error of the part as a failed trial.
@@ -50,7 +50,7 @@ calibration.
 
    The result must demonstrate a supported finding and an honest unidentified outcome when
    evidence is missing; inspect the first report by hand.
-6. **Several objects and triage.** Extend the path to map classes, grouping, nearest-N limits,
+6. **Several objects and triage.** Extend the path to map categories, grouping, nearest-N limits,
    code routing, triage and parallel investigations. Add the
    [labelling script](eval-architecture.md#ground-truth-labels), which uses the grouping code.
    Check T1–T2, F2, F5–F6 and R2–R4, plus
@@ -71,7 +71,7 @@ calibration.
 10. **Judge calibration and MVP results.** Calibrate the three MVP judges against human grades
     of the first real outputs and deliberately faulty examples. Complete and run every
     [MVP task](eval-architecture.md#mvp), several trials each; check that the labels cover
-    every checklist class. Publish results with failures and limitations. Add one Docker
+    every category. Publish results with failures and limitations. Add one Docker
     image for the CLI; the keys are passed at run time, never built into the image.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are

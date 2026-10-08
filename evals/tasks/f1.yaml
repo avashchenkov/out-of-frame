@@ -13,5 +13,5 @@ input:
 # Read only by the graders. Follows the written state, not the real site.
 expected:
   outcome: unidentified
-  type: unknown
-  status: unknown
+  identified_type: null  # no source settles it
+  status: null

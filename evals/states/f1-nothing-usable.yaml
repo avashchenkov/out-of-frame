@@ -2,16 +2,15 @@
 # result is about another address or about no site at all. Built from the L1 object and from
 # real Tavily results of 2026-10-03. Each snippet and page is rewritten in new words; names
 # and addresses are kept as found.
-object:
+map_object:
   id: osm-way-985575964
-  class: industry
   name: null
-  details: {landuse: industrial}
+  details: {category: industry, landuse: industrial}
   addresses:
     - Klärwerkstraße 3, 13597 Berlin
     - Klärwerkstraße 7, 13597 Berlin
-  point: {lat: 52.52840, lon: 13.23202}
-  distance_m: 218
+  coordinates: {lat: 52.52840, lon: 13.23202}
+  distance_from_property_m: 218
   source_id: overpass-l1  # the map source of L1
 
 history:

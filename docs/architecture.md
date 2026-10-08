@@ -34,11 +34,11 @@ flowchart TD
         direction TB
         J(["Research starts<br/><i>branches run in parallel</i>"]):::milestone
         subgraph SUR["Branch: surroundings"]
-            OV["Get map objects in the radius<br/>nearest N per checklist class"]:::code
+            OV["Get map objects in the radius<br/>nearest N per category"]:::code
             OVP[["Overpass API<br/>OpenStreetMap data"]]:::ext
             T["Triage<br/>check the remaining objects"]:::model
         end
-        subgraph PLN["Branch: planned development"]
+        subgraph PLN["Branch: planned objects"]
             PL["Get B-Plans in the radius<br/>with their legal status<br/>one object per plan, nearest N"]:::code
             WFS[["Berlin B-Plan WFS<br/>city planning API"]]:::ext
         end
@@ -148,26 +148,28 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
      and a destination announced but not described ("I will send the second one later") gets
      a name only. The model asks for what is missing or unclear, for example which of several
      matching addresses is meant.
-2. **Research** starts when the input is complete. An object is one thing near the property
-   in one checklist class: a site from the map, or a planned development from a B-Plan
-   (*Bebauungsplan*, a binding development plan). Each class is searched in a circle around
-   the property, with the class's own radius. An object is in the circle if its nearest edge
+2. **Research** starts when the input is complete. An object is one thing near the property:
+   a site from the map, or a planned object from a B-Plan (*Bebauungsplan*, a binding
+   development plan). Code fetches objects by the categories of the research scope; each
+   category is searched in a circle around the property, with the category's own radius. The
+   object has no category field: code puts the category into its `details`, next to the
+   fields of its source. An object is in the circle if its nearest edge
    is; distances are always measured to the nearest edge. An object without a finding is
-   unclear. Unclear objects are investigated nearest first, at most five per class. This limit
+   unclear. Unclear objects are investigated nearest first, at most five per category. This limit
    covers objects sent by code and by triage; the rest are listed as not investigated. An
    investigation stops when its evidence is enough and passes the grounding check, or when it
    reaches its cap of tool calls; one source can be enough. Every branch runs to its end, even
    with nothing to do; its result is then empty.
-   - *Surroundings:* one Overpass query returns the map elements of each checklist class
-     within the class's circle, and the addresses of the buildings inside each area. Code
+   - *Surroundings:* one Overpass query returns the map elements of each category
+     within the category's circle, and the addresses of the buildings inside each area. Code
      groups the elements into objects (one site or one road can be several elements), gives
-     each object the addresses inside it and keeps the nearest N per class. Code sends every `industry` object
+     each object the addresses inside it and keeps the nearest N per category. Code sends every `industry` object
      and any object tagged as proposed or under construction to investigation, within the cap.
      The model triages only the rest, one per call, from the name, tags and what it knows.
      If these are enough to fill the finding without conflicts, it writes it with the map's
      status; otherwise it sends the object to investigation. These findings use the map
      without a web check.
-   - *Planned development:* the Berlin B-Plan WFS, the city's planning API, filters only by a
+   - *Planned objects:* the Berlin B-Plan WFS, the city's planning API, filters only by a
      rectangle. Code asks for the square around the circle, drops the plans outside the
      circle and keeps the nearest N. The WFS gives each plan's legal status and, for plans in
      force, the permitted land use. These are fixed values and dates, and none shows whether
@@ -194,17 +196,20 @@ validation are left to the code.
 
 - **Updates.** A step returns only the fields it changes. Each field has a reducer: it says
   how an update is combined with the current value. Parallel branches add entries to the same
-  lists, such as `sources` and `objects`; without a reducer, LangGraph rejects such updates. In
+  lists, such as `sources` and `map_objects`; without a reducer, LangGraph rejects such updates. In
   the input phase, code first applies the user's changes, then replaces `property` and
   `destinations` with the result.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
   holds only data.
 - **No flags in the state.** Code computes them when it needs them, for example what is still
   missing in the input or which unclear objects were not investigated. Values that code
-  computes once from a source response are stored: coordinates, `distance_m` and
+  computes once from a source response are stored: coordinates, `distance_from_property_m` and
   `mean_duration`.
 - **IDs only where needed.** A record has an ID only if something refers to it. Code creates
   every ID; the model never does.
+- **Source data as it comes.** A map object keeps the fields of its source in `details`,
+  unparsed, and the model reads them. A record has a field of its own only where code uses
+  it: an ID, a name, coordinates, a distance, a source.
 
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
@@ -212,7 +217,7 @@ validation are left to the code.
 | `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Geocoding, map and plan responses, plus Tavily snippets and pages cited by findings | Append |
-| `objects` | list of NearbyObject | Map objects and B-Plans, nearest N per class; N is set in the configuration, separately for map classes and plans | Append |
+| `map_objects` | list of MapObject | Map objects and B-Plans, nearest N per category; N is set in the configuration, separately for map categories and plans | Append |
 | `findings` | list of Finding | One per clear or investigated object | Append |
 | `journeys` | list of Journey | Two per destination, there and back, each with its outcome | Append |
 | `failures` | list of service | The services that still failed after retries: map, plans, transit or web search | Add if new |
@@ -231,10 +236,10 @@ classDiagram
     }
     class Address {
         text: text
-        point: Point, optional
-        source_id: ID, optional
+        coordinates: Coordinates, optional
+        source_id: Source ID, optional
     }
-    class Point {
+    class Coordinates {
         lat: number
         lon: number
     }
@@ -252,37 +257,36 @@ classDiagram
         url: text
         content: text
     }
-    class NearbyObject {
+    class MapObject {
         id: ID
-        class: checklist class ID
         name: text, optional
         details: map tags or plan fields
         addresses: list of text
-        point: Point
-        distance_m: number
-        source_id: ID
+        coordinates: Coordinates
+        distance_from_property_m: number
+        source_id: Source ID
     }
     class Finding {
-        object_id: ID
+        map_object_id: MapObject ID
         outcome: identified | unidentified
-        type: from the class's list, or unknown
-        status: from a fixed list, or unknown
+        identified_type: from the research scope's list, or null
+        status: from a fixed list, or null
         why_it_matters: text
         key_facts: list of text
-        evidence_ids: list of ID
+        evidence_ids: list of Source ID
     }
     class Journey {
-        destination_id: ID
+        destination_id: Destination ID
         direction: there | back
         outcome: found | no route | unavailable
         mean_duration: duration, optional
     }
     Destination *-- Address
-    Address *-- Point
+    Address *-- Coordinates
     Address --> Source : source_id
-    NearbyObject *-- Point
-    NearbyObject --> Source : source_id
-    Finding --> NearbyObject : object_id
+    MapObject *-- Coordinates
+    MapObject --> Source : source_id
+    Finding --> MapObject : map_object_id
     Finding --> Source : evidence_ids
     Journey --> Destination : destination_id
 ```
@@ -296,15 +300,15 @@ retrieved. Each snippet or page is a separate source.
 A `Journey` has a duration only when its outcome is found. The transit response is not kept
 in the state: code computes the duration from it at once.
 
-`NearbyObject.addresses` lists the street addresses of the buildings inside a map area, from
+`MapObject.addresses` lists the street addresses of the buildings inside a map area, from
 OpenStreetMap. It is empty for a road, a railway or a B-Plan. An unnamed object cannot be found
 on the web by its coordinates, but it can by its address.
 
-A `Finding` has no class of its own: it takes the class of its object.
+Only a `Finding` classifies an object: its `identified_type` and `status` come from the lists
+in the research scope.
 
-TODO: define the lists of finding types and statuses, N for map classes and for plans, and the
-cap of tool calls per object in [checklist.yaml](../src/out_of_frame/data/checklist.yaml)
-in stages with the eval tasks, before implementing the behaviour that uses each value (see
+TODO: define the lists of finding types and statuses and N for map categories and for plans in
+[research_scope.yaml](../src/out_of_frame/data/research_scope.yaml) in stages with the eval tasks, before implementing the behaviour that uses each value (see
 [roadmap.md](roadmap.md)). The agent and the evals use the same lists; the agent never sees
 the truth labels.
 
@@ -318,23 +322,23 @@ message is the input of the run and goes straight into `messages`.
 
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
-| Input | Extract the property address, commute destinations and departure times | model + code | `messages`, `property.text`, `destinations[]` without `address.point` and `address.source_id` | `property.text`, `destinations[]`: `id`, `name`, `address.text`, `leave_home`, `leave_place` |
-| Input | Geocode every address | code | `property.text`, `destinations[]` (only `address.text` is geocoded) | `property.point`, `property.source_id`, `destinations[].address.point`, `destinations[].address.source_id`, `sources` |
+| Input | Extract the property address, commute destinations and departure times | model + code | `messages`, `property.text`, `destinations[]` without `address.coordinates` and `address.source_id` | `property.text`, `destinations[]`: `id`, `name`, `address.text`, `leave_home`, `leave_place` |
+| Input | Geocode every address | code | `property.text`, `destinations[]` (only `address.text` is geocoded) | `property.coordinates`, `property.source_id`, `destinations[].address.coordinates`, `destinations[].address.source_id`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
-| Research | Get map objects in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `class`, `name`, `details` (model) | `findings` for clear objects; code sets `object_id` and `evidence_ids` |
-| Research | Get B-Plans in the radius | code | `property.point` | `objects`, `sources`, `failures` |
-| Research | Investigate each object, one run per object | model + code | one entry of `objects` | one entry of `findings`, the `sources` it cites, `failures` |
-| Research | Plan journeys there and back | code | `property.point`, `destinations[]`: `id`, `address.point`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `objects`, `findings`, `failures`; on a retry, the unknown IDs (code) | `report` |
-| Report | Fill in the references | code | `report`, `findings[]`: `object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
+| Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
+| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_ids` |
+| Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
+| Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the `sources` it cites, `failures` |
+| Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
+| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects`, `findings`, `failures`; on a retry, the unknown IDs (code) | `report` |
+| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
 
 Each investigation is a LangGraph subgraph with its own state. Code starts one run per unclear
 object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets only
-its object. The model sees the object's class, name, details and addresses, not its point or
+its object. The model sees the object's name, details and addresses, not its coordinates or
 distance: it searches by address. The run's field names differ from the run state's, so nothing passes between them by
 accident. When it ends, code writes its finding into `findings`, the snippets and pages the
 finding cites into `sources`, and web search into `failures` if it failed.
@@ -346,18 +350,18 @@ page for prompt injection before it is stored, and code drops what it flags (see
 
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
-| `object` | NearbyObject | The object under investigation | Replace |
+| `map_object` | MapObject | The object under investigation | Replace |
 | `history` | list of messages | The model's tool calls, the results it was shown, and why a finding was rejected | Append |
 | `pages` | list of Source | Snippets and pages that passed the check, each with an ID | Append |
 | `finding` | Finding, or null | The latest finding; a rejected one is replaced | Replace |
 
 | Step | Who | Reads | Writes |
 |---|---|---|---|
-| Search the web or read a page | model + code | `object`, `history` | `history`: the tool call, which code runs |
+| Search the web or read a page | model + code | `map_object`, `history` | `history`: the tool call, which code runs |
 | Check each snippet and page for prompt injection | model + code | each snippet and page the tool returned | `history` and `pages`: only what passes (code) |
-| Enough? or cap reached | model + code | `object`, `history`; code counts the tool calls | nothing |
-| Write the finding | model + code | `object`, `history`, `pages` | `finding`; code sets `object_id` |
-| Finding grounded? | code | `finding`, `object.name`, `object.details`, `object.addresses`, `object.source_id`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
+| Enough? or cap reached | model + code | `map_object`, `history`; code counts the tool calls | nothing |
+| Write the finding | model + code | `map_object`, `history`, `pages` | `finding`; code sets `map_object_id` |
+| Finding grounded? | code | `finding`, `map_object.name`, `map_object.details`, `map_object.addresses`, `map_object.source_id`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides
 
