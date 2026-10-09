@@ -14,10 +14,6 @@ from out_of_frame import research_scope
 from out_of_frame.config import MODEL
 from out_of_frame.state import Finding, InvestigationState, ToolCall
 
-TASK = """\
-Find out what map object {id} is and whether it is in use. Its map data, source ID {source_id}:
-{map_text}"""
-
 # The API needs every tool that the history uses. TODO: run them in step 5.2.
 TOOLS = [
     {
@@ -36,14 +32,15 @@ TOOLS = [
 def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
     """Ask the model what the investigation found about its map object."""
     map_object = state.map_object
-    template = templates().get_template("finding.md.j2")
     scope = research_scope.load()
-    system = template.render(
+    system = render(
+        "finding.md.j2",
         date=date.isoformat(),
         types=scope.identified_types,
         statuses=scope.finding_statuses,
     )
-    request = [SystemMessage(system), *messages(state), HumanMessage("Write the finding.")]
+    instruction = render("finding_instruction.md.j2", map_object=map_object)
+    request = [SystemMessage(system), *messages(state), HumanMessage(instruction)]
     call = finder().invoke(request).tool_calls[0]
     answer = finding_tool().model_validate(call["args"])
     return Finding.model_validate(answer.model_dump() | {"map_object_id": map_object.id})
@@ -51,11 +48,8 @@ def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
 
 def messages(state: InvestigationState) -> list[BaseMessage]:
     """The investigation as a chat: the task, then each tool call and the pages it returned."""
-    map_object = state.map_object
     pages = {page.id: page for page in state.pages}
-    task = TASK.format(
-        id=map_object.id, source_id=map_object.source_id, map_text=map_object.map_text().strip()
-    )
+    task = render("investigation_task.md.j2", map_object=state.map_object)
     chat: list[BaseMessage] = [HumanMessage(task)]
     for n, entry in enumerate(state.history):
         if isinstance(entry, ToolCall):
@@ -88,6 +82,11 @@ def finding_tool() -> type[BaseModel]:
     ]:
         fields[name] = (Literal[tuple(values)] | None, Finding.model_fields[name])
     return create_model("Finding", __doc__=Finding.__doc__, **fields)
+
+
+def render(template: str, **values) -> str:
+    """A template from prompts/, filled in with the values."""
+    return templates().get_template(template).render(**values)
 
 
 @cache

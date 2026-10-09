@@ -1,0 +1,7 @@
+Write the finding for this map object.
+{% if map_object.addresses %}
+Its addresses: {{ map_object.addresses | join("; ") }}.
+{% endif %}
+{% if map_object.name %}
+Its name: {{ map_object.name }}.
+{% endif %}

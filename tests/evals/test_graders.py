@@ -28,11 +28,10 @@ def finding(**changes) -> Finding:
         outcome="identified",
         identified_type="production",
         status="operating",
-        why_it_matters="A bakery can bring early deliveries.",
         key_facts=["Test GmbH runs a bakery"],
         evidence_ids=["web-1"],
     )
-    return Finding(**fields | changes)
+    return Finding.model_validate(fields | changes)
 
 
 def test_result_passes_when_outcome_type_and_status_match():

@@ -54,7 +54,6 @@ def abstain(inputs: Inputs, date: dt.date) -> Trial:
         outcome="unidentified",
         identified_type=None,
         status=None,
-        why_it_matters="",
         key_facts=[],
         evidence_ids=[],
     )

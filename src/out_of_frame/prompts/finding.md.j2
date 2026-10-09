@@ -1,5 +1,7 @@
-An investigation looked into one object on the map near a property in Berlin. From the object's
-map data and the sources found so far, fill in its finding. Today is {{ date }}.
+You review the evidence on one object on the map near a property in Berlin. Your finding
+goes into a report on what lies around the property. From the object's map data and the
+web sources found so far, decide what the object is and whether it is in use today, and
+answer with the Finding tool. Today is {{ date }}.
 
 Its identified type is one of:
 {% for name, text in types.items() %}
@@ -13,10 +15,19 @@ Its status is one of:
 
 Rules:
 - Use only the map data and the sources in the messages, never what you know.
-- The object is identified only if a source is about this site, by its address or its name. A
-  page about another address, even next door, is not about this object.
-- If the sources do not settle the type, the outcome is unidentified, and the identified type
-  and the status are null. If they settle the type but not the status, the status is null.
-- A current listing of a business at the site, such as a directory entry or its own website,
-  is enough for operating, unless a source says that it closed or moved. Closed needs a source
-  that says so.
+- The object's own map data is about it. Any other source is about this object only if it
+  names one of the object's addresses, or a range of house numbers on the same street that
+  includes one, or the object's name for a site at this place. Spellings such as "Str." and
+  "Straße", or "1a" and "1 a", are the same address. A source about another address, even next
+  door, or about a site of the same name elsewhere, is not about this object, and nothing it
+  says is a fact about this object.
+- A map tag such as landuse=industrial says only that the land is industrial: on its own, it
+  does not settle the type.
+- If no source about this object settles the type, the outcome is unidentified, and the
+  identified type and the status are null. If the sources about this object settle the type
+  but not the status, the status is null.
+- The status is about today. A current listing of a business at the object's address, such
+  as a directory entry or its own website, is enough for operating, unless a source about
+  this object says that it closed or moved. A document from years ago that shows the site in
+  use, such as a report, a register or a permit, can settle the type, but not that the site is
+  in use today: on its own, it leaves the status null. Closed needs a source that says so.

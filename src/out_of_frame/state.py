@@ -41,9 +41,11 @@ class MapObject(Record):
     source_id: str  # the ID of the Source: the map or plan response the object comes from
 
     def map_text(self) -> str:
-        """The object's own data as text: its name, details and addresses. A key fact that a
-        finding takes from the map must appear in it."""
-        lines = [self.name or ""] + [f"{key}={value}" for key, value in self.details.items()]
+        """The object's own data as text: its name, details and addresses. The category is left
+        out: it is the agent's own fetch class, not data from the map. A key fact that a
+        finding takes from the map must appear in this text."""
+        details = [f"{key}={value}" for key, value in self.details.items() if key != "category"]
+        lines = [self.name or ""] + details
         return "\n".join(lines + self.addresses)
 
 
@@ -53,25 +55,27 @@ class Finding(Record):
     # The descriptions are also the model's instructions for each field: see finding.py.
     map_object_id: str  # the ID of the MapObject; set by code, never by the model
     outcome: Literal["identified", "unidentified"] = Field(
-        description="identified if a source settles what the object is"
+        description="identified if a source about this object settles what it is; the rules "
+        "say which sources are about it"
     )
     identified_type: str | None = Field(
-        description="One of the listed types; other if the sources settle what the object is "
-        "and no listed type fits; null if they do not settle it."
+        description="One of the listed types; other if the sources about this object settle "
+        "what it is and no listed type fits; null if they do not settle it."
     )
     status: str | None = Field(
-        description="One of the listed statuses; null if the sources do not settle it."
-    )
-    why_it_matters: str = Field(
-        description="One sentence on what the object means for someone living at the "
-        "property. Empty if the object is unidentified."
+        description="One of the listed statuses, for today; null if the sources do not settle "
+        "it for today."
     )
     key_facts: list[str] = Field(
-        description="Short quotes, copied word for word from a cited source or the map data."
+        description="Short quotes about this object, each copied word for word from one cited "
+        "source or the map data, without added words or '...': only the words that show the "
+        "fact, such as a name or an address, never a whole snippet or page. At least one if "
+        "the object is identified."
     )
     evidence_ids: list[str] = Field(
-        description="The IDs of the sources that the key facts come from, such as web-1 or "
-        "the map's source ID, without brackets."
+        description="The IDs of the sources that the key facts come from, such as web-1, or "
+        "the map's source ID for a quote from the map data, without brackets. At least one if "
+        "the object is identified."
     )
 
 

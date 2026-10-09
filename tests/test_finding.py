@@ -56,7 +56,6 @@ ANSWER = {
     "outcome": "identified",
     "identified_type": "production",
     "status": "operating",
-    "why_it_matters": "",
     "key_facts": ["Test GmbH makes parts"],
     "evidence_ids": ["web-1"],
 }
@@ -77,13 +76,16 @@ class FakeModel:
 def test_the_history_becomes_tool_calls_and_their_results():
     task, search, snippets, extract, page = finding.messages(STATE)
     assert isinstance(task, HumanMessage) and "map-1" in task.content
+    assert isinstance(search, AIMessage) and isinstance(extract, AIMessage)
     assert search.tool_calls[0]["args"] == {"query": "Teststraße 1 Berlin"}
     assert extract.tool_calls[0]["args"] == {"url": "https://example.org"}
-    for call, result in [(search, snippets), (extract, page)]:
-        assert isinstance(result, ToolMessage)
+    for call, result, first_line in [
+        (search, snippets, "[web-1] https://example.org\n"),
+        (extract, page, "[web-2] https://example.org\n"),
+    ]:
+        assert isinstance(result, ToolMessage) and isinstance(result.content, str)
         assert result.tool_call_id == call.tool_calls[0]["id"]
-    assert snippets.content.startswith("[web-1] https://example.org\n")
-    assert page.content.startswith("[web-2] https://example.org\n")
+        assert result.content.startswith(first_line)
 
 
 def test_the_finding_tool_allows_only_a_listed_type_or_status():
@@ -105,13 +107,31 @@ def test_the_request_has_the_prompt_the_history_and_the_last_instruction(monkeyp
     assert isinstance(system, SystemMessage)
     assert "2026-10-03" in system.content and "- production:" in system.content
     assert chat == finding.messages(STATE)
-    assert last == HumanMessage("Write the finding.")
+    assert isinstance(last, HumanMessage)
+    assert "Teststraße 1, 13597 Berlin" in last.content
+
+
+@pytest.mark.parametrize(
+    "name, addresses",
+    [
+        (None, ["Teststraße 1, 13597 Berlin"]),
+        ("Test GmbH", []),
+        ("Test GmbH", ["Teststraße 1, 13597 Berlin", "Teststraße 3, 13597 Berlin"]),
+        (None, []),
+    ],
+)
+def test_the_last_message_names_the_object(name, addresses):
+    map_object = MAP_OBJECT.model_copy(update={"name": name, "addresses": addresses})
+    text = finding.render("finding_instruction.md.j2", map_object=map_object)
+    assert all(address in text for address in addresses)
+    assert ("Its name: Test GmbH." in text) == (name is not None)
+    assert "\n\n" not in text
 
 
 def test_the_finding_is_the_answer_with_the_map_object_id_from_code(monkeypatch):
     monkeypatch.setattr(finding, "finder", lambda: FakeModel(ANSWER | {"map_object_id": "obj-2"}))
     result = finding.draft_finding(STATE, dt.date(2026, 10, 3))
-    assert result == Finding(map_object_id="obj-1", **ANSWER)
+    assert result == Finding.model_validate(ANSWER | {"map_object_id": "obj-1"})
 
 
 def test_an_answer_with_an_unlisted_type_fails(monkeypatch):

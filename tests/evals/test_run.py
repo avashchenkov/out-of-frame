@@ -33,7 +33,6 @@ def identify(inputs, date):
         outcome="identified",
         identified_type="production",
         status="operating",
-        why_it_matters="",
         key_facts=["Test GmbH"],
         evidence_ids=["map-1"],
     )
@@ -100,7 +99,6 @@ def test_a_fixed_task_ignores_sources_the_agent_adds(tmp_path):
             outcome="identified",
             identified_type="production",
             status="operating",
-            why_it_matters="",
             key_facts=["chemical plant"],
             evidence_ids=["web-1"],
         )
