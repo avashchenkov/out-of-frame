@@ -16,6 +16,10 @@ from out_of_frame.state import Finding, InvestigationState, ToolCall
 from out_of_frame.web_search import TOOLS
 
 
+class MissingFindingError(Exception):
+    """The model answered without the Finding tool, which it may do since it is not forced."""
+
+
 def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
     """Ask the model what the investigation found about its map object."""
     map_object = state.map_object
@@ -28,8 +32,10 @@ def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
     )
     instruction = render("finding_instruction.md.j2", map_object=map_object)
     request = [SystemMessage(system), *messages(state), HumanMessage(instruction)]
-    call = finder().invoke(request).tool_calls[0]
-    answer = finding_tool().model_validate(call["args"])
+    calls = [call for call in finder().invoke(request).tool_calls if call["name"] == "Finding"]
+    if not calls:
+        raise MissingFindingError(f"no finding for {map_object.id}")
+    answer = finding_tool().model_validate(calls[0]["args"])
     return Finding.model_validate(answer.model_dump() | {"map_object_id": map_object.id})
 
 
@@ -50,10 +56,15 @@ def messages(state: InvestigationState) -> list[BaseMessage]:
 
 @cache
 def finder():
-    """The model, with the Finding tool it must answer with. The web tools are bound too, though
-    never called here: the API needs every tool that the history uses."""
+    """The model, with the Finding tool to answer with. The web tools are bound too, though not
+    meant for this call: the API needs every tool that the history uses.
+
+    The prompt asks for the Finding tool, but does not force it: a forced tool call starts the
+    answer at once and leaves out the model's thinking, which then misjudges the type."""
     tools = [*TOOLS.values(), finding_tool()]
-    return ChatAnthropic(model=MODEL).bind_tools(tools, tool_choice="Finding")
+    return ChatAnthropic(model=MODEL).bind_tools(
+        tools, tool_choice="auto", parallel_tool_calls=False
+    )
 
 
 def finding_tool() -> type[BaseModel]:

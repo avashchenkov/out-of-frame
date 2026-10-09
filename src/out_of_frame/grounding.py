@@ -32,17 +32,33 @@ def grounding_errors(finding: Finding, map_object: MapObject, sources: list[Sour
     return errors
 
 
-def normalise(text: str) -> str:
-    """One Unicode form and single spaces: the same words written with other code points match.
+# A number with its decimal or thousands separators, a word, or any other character.
+TOKEN = re.compile(r"\w*\d(?:[.,]\d+)+\w*|\w+|[^\w\s]")
+MARKUP = "|`"  # table and code markup, which pages use for layout
 
-    This covers a decomposed "ü" and a no-break space, which pages often use.
+
+def words(text: str) -> list[str]:
+    """The text's words, numbers and symbols, in one Unicode form and in lower case.
+
+    Spaces, punctuation and markup between them are left out: a page's typography is not a
+    fact. A symbol such as ✓ or < can change a fact, so it stays, and so do a number's
+    separators: 660.000 is not 660 000. Case is lowered word by word, and not casefolded, so
+    that Maße stays apart from Masse.
     """
-    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text)).strip()
+    tokens = TOKEN.findall(unicodedata.normalize("NFC", text))
+    return [token.lower() for token in tokens if is_word_or_symbol(token)]
+
+
+def is_word_or_symbol(token: str) -> bool:
+    """A word or a number, or a symbol that is not markup; punctuation is neither."""
+    if re.match(r"\w", token):
+        return True
+    return unicodedata.category(token).startswith("S") and token not in MARKUP
 
 
 def appears_in(fact: str, text: str) -> bool:
-    """The fact appears as whole words: "Klärwerkstraße 1" is not in "Klärwerkstraße 1a"."""
-    fact = normalise(fact)
-    before = r"(?<!\w)" if re.match(r"\w", fact[:1]) else ""
-    after = r"(?!\w)" if re.match(r"\w", fact[-1:]) else ""
-    return re.search(before + re.escape(fact) + after, normalise(text)) is not None
+    """The fact's words appear in the text in the same order, as whole words: "Gmbh -
+    Klärwerkstraße 3" has "GmbH, Klärwerkstraße 3", but "Klärwerkstraße 1a" has not
+    "Klärwerkstraße 1"."""
+    fact_words = words(fact)
+    return bool(fact_words) and f" {' '.join(fact_words)} " in f" {' '.join(words(text))} "

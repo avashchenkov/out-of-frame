@@ -383,8 +383,10 @@ Other rules:
 
 Code gives an ID to each source response and to each snippet or page from Tavily. A snippet or
 page reaches the run state only if a finding cites it. A finding cites the IDs it uses and its
-key facts (a name, a date, a status), copied exactly from the source. Code checks that each ID
-exists and each fact appears in the stored text; for the object's own map or plan data, that
+key facts (a name, a date, a status), copied word for word from the source. Code checks that
+each ID exists and each fact's words, numbers and symbols appear in the stored text in the
+same order, whatever the case, spacing and punctuation between them; for the object's own map
+or plan data, that
 text is the object's name, details without the category, and addresses. If not, the finding is rejected,
 and the object is marked unidentified. The check runs inside the investigation, so only a
 finding that passes it, or an unidentified one after a rejection or a web search failure, goes

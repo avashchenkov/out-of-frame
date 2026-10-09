@@ -4,6 +4,7 @@ import datetime as dt
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.runnables import RunnableBinding
 from pydantic import ValidationError
 
 from out_of_frame import finding
@@ -138,3 +139,22 @@ def test_an_answer_with_an_unlisted_type_fails(monkeypatch):
     monkeypatch.setattr(finding, "finder", lambda: FakeModel(ANSWER | {"identified_type": "x"}))
     with pytest.raises(ValidationError):
         finding.draft_finding(STATE, dt.date(2026, 10, 3))
+
+
+def test_an_answer_without_the_finding_tool_fails(monkeypatch):
+    class SearchingModel:
+        def invoke(self, request):
+            call = {"name": "search", "args": {"query": "Teststraße 1"}, "id": "call-s"}
+            return AIMessage("", tool_calls=[call])
+
+    monkeypatch.setattr(finding, "finder", lambda: SearchingModel())
+    with pytest.raises(finding.MissingFindingError):
+        finding.draft_finding(STATE, dt.date(2026, 10, 3))
+
+
+def test_the_finding_tool_is_asked_for_but_not_forced_so_that_the_model_can_think():
+    finding.finder.cache_clear()
+    bound = finding.finder()
+    assert isinstance(bound, RunnableBinding)
+    assert bound.kwargs["tool_choice"] == {"type": "auto", "disable_parallel_tool_use": True}
+    assert [tool["name"] for tool in bound.kwargs["tools"]] == ["search", "extract", "Finding"]

@@ -67,10 +67,11 @@ class Finding(Record):
         "it for today."
     )
     key_facts: list[str] = Field(
-        description="Short quotes about this object, each copied word for word from one cited "
-        "source or the map data, without added words or '...': only the words that show the "
-        "fact, such as a name or an address, never a whole snippet or page. At least one if "
-        "the object is identified."
+        description="One to three short quotes about this object, those that best settle what "
+        "it is and whether it is in use. Each is copied word for word from one cited source or "
+        "the map data, without added words or '...': only the words that show the fact, such as "
+        "a name or an address, never a whole snippet or page, and never several lines joined "
+        "into one. At least one if the object is identified."
     )
     evidence_ids: list[str] = Field(
         description="The IDs of the sources that the key facts come from, such as web-1, or "

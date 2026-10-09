@@ -27,7 +27,8 @@ identified_types:
     recycling.
   production: Makes or repairs things, such as a factory or a workshop.
   logistics: Stores or moves goods, such as a warehouse or a depot.
-  commercial: Offices, services or several businesses on one site.
+  commercial: Offices, shops or services that make or repair nothing, whether one business or
+    several share the site.
   other: The evidence settles what the object is, and no type above fits.
 
 categories:
