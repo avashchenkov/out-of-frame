@@ -51,7 +51,7 @@ flowchart TD
             TAV[["Tavily<br/>search and extract API"]]:::ext
             K["Check each snippet and page<br/>for prompt injection<br/>code drops what is flagged"]:::model
             D{"Enough?<br/>or cap reached"}:::model
-            F["Write the finding<br/>type, status, why it matters<br/>with its evidence and key facts<br/>or unidentified"]:::model
+            F["Write the finding<br/>type and status<br/>with its evidence and key facts<br/>or unidentified"]:::model
             GC{"Finding grounded?"}:::code
         end
         JN(["Research complete<br/><i>when every branch and<br/>every investigation has ended</i>"]):::milestone
@@ -83,7 +83,7 @@ flowchart TD
     subgraph REPORT["Phase 3: Report"]
         direction TB
         RS(["Report starts"]):::milestone
-        W["Write the report<br/>from the state, with its own prompt<br/>unidentified and not investigated<br/>objects at the end"]:::model
+        W["Write the report<br/>from the state, with its own prompt<br/>why each object matters, from its type<br/>unidentified and not investigated<br/>objects at the end"]:::model
         REF["Fill in the references<br/>from the evidence"]:::code
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
@@ -153,7 +153,7 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    development plan). Code fetches objects by the categories of the research scope; each
    category is searched in a circle around the property, with the category's own radius. The
    object has no category field: code puts the category into its `details`, next to the
-   fields of its source. An object is in the circle if its nearest edge
+   fields of its source; no model sees it. An object is in the circle if its nearest edge
    is; distances are always measured to the nearest edge. An object without a finding is
    unclear. Unclear objects are investigated nearest first, at most five per category. This limit
    covers objects sent by code and by triage; the rest are listed as not investigated. An
@@ -271,7 +271,6 @@ classDiagram
         outcome: identified | unidentified
         identified_type: from the research scope's list, or null
         status: from a fixed list, or null
-        why_it_matters: text
         key_facts: list of text
         evidence_ids: list of Source ID
     }
@@ -327,18 +326,18 @@ message is the input of the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
-| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_ids` |
+| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the `sources` it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects`, `findings`, `failures`; on a retry, the unknown IDs (code) | `report` |
+| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs (code) | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
 
 Each investigation is a LangGraph subgraph with its own state. Code starts one run per unclear
 object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets only
-its object. The model sees the object's name, details and addresses, not its coordinates or
+its object. The model sees the object's name, details without the category, and addresses, not its coordinates or
 distance: it searches by address. The run's field names differ from the run state's, so nothing passes between them by
 accident. When it ends, code writes its finding into `findings`, the snippets and pages the
 finding cites into `sources`, and web search into `failures` if it failed.
@@ -385,7 +384,7 @@ Code gives an ID to each source response and to each snippet or page from Tavily
 page reaches the run state only if a finding cites it. A finding cites the IDs it uses and its
 key facts (a name, a date, a status), copied exactly from the source. Code checks that each ID
 exists and each fact appears in the stored text; for the object's own map or plan data, that
-text is the object's name, details and addresses. If not, the finding is rejected: the agent searches more, within
+text is the object's name, details without the category, and addresses. If not, the finding is rejected: the agent searches more, within
 the object's cap, or marks the object unidentified. The check runs inside the investigation, so
 only a finding that passes it, or an unidentified one at the cap or after a web search failure,
 goes into `findings`. Triage findings are not checked: in triage the model may use what it

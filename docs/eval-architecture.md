@@ -15,8 +15,8 @@ several trials.
 
 The model makes decisions, the *LLM steps*: the model boxes in the
 [architecture](architecture.md#one-run) diagram. The [step table](#llm-steps) lists them all.
-Most calls make several decisions: a finding, for example, has a type, a status, its reasons,
-its key facts and its evidence. Each decision gets its own tasks or its own grader.
+Most calls make several decisions: a finding, for example, has a type, a status, its key
+facts and its evidence. Each decision gets its own tasks or its own grader.
 
 Everything else is code, covered by ordinary tests with a stubbed model: distances, which
 objects are investigated and how many, source failures, the two Tavily tools and the cap of
@@ -91,11 +91,11 @@ name in its first line.
 |---|---|---|---|---|
 | Extract the property address, commute destinations and departure times | Input | Extract, input loop | X1–X10, I1–I3 | Code: the changes against the expected ones |
 | Ask for what is missing | Input | Ask, input loop | A1–A4, I1–I3 | Question judge; no verdict judge |
-| Triage | Research | Triage | T1–T2, T4–T5 | Code: clear or unclear; for a clear object, type against the label, status against the map, key facts in the object's name, details and addresses; interpretation judge |
+| Triage | Research | Triage | T1–T2, T4–T5 | Code: clear or unclear; for a clear object, type against the label, status against the map, key facts in the object's name, details without the category, and addresses |
 | Check each snippet and page for prompt injection | Research, investigation | Injection check | P1–P4 | Code: flagged or not |
 | Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N4 | Code: stops or searches again |
-| Write the finding | Research, investigation | Finding, live investigation | F1–F7, L1–L3 | Code: outcome, type and status against the label, evidence IDs and key facts; support and interpretation judges |
+| Write the finding | Research, investigation | Finding, live investigation | F1–F7, L1–L3 | Code: outcome, type and status against the label, evidence IDs and key facts; support judge |
 | Write the report | Report | Report | R1–R6 | Code: every finding in the report, IDs, distances and durations; support, interpretation and no verdict judges |
 
 The input loop checks only the input state at the end. Whether the agent asks is decided by
@@ -204,8 +204,8 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 
 - **Support:** do the cited facts and their source support what the finding claims, or
   contradict it? The judge reads the source text as it was stored: the snippet or page as
-  fetched, not the live page, or the object's name, details and addresses from the map or
-  plan, so the grade can be repeated. It does not compare sources. A general reason that fits
+  fetched, not the live page, or the object's name, details without the category, and
+  addresses from the map or plan, so the grade can be repeated. It does not compare sources. A general reason that fits
   the object's type, such as smell for a wastewater plant, counts as supported; a reason for
   another kind of object does not. Journeys in the report are checked against `journeys`.
 - **Search relevance:** does each search query, and each page the model chooses to read, aim
@@ -215,7 +215,7 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 - **Interpretation:** does the report explain what a fact means for a buyer, instead of
   repeating search results? Does its end list give each unidentified and not investigated
   object with its distance? Where a source failed, does it avoid saying that
-  nothing was found? For a finding, does `why_it_matters` fit the object's type?
+  nothing was found? Does what it says an object means fit the object's type?
 - **No verdict:** is the report, or a question to the user, free of advice, scores and verdicts
   on buying or renting? Explaining why a fact matters is not a verdict.
 - **Question:** does a question to the user ask for everything code found missing, and for
@@ -378,7 +378,7 @@ The step suites start from written states; the live suite starts from an object 
 | F7 | The history ends with a rejected finding and its reason; the pages now hold the missing fact | The new finding cites that fact word for word |
 
 In every finding task, code also checks that each evidence ID exists and each key fact appears
-word for word in a cited source; the interpretation judge checks `why_it_matters`.
+word for word in a cited source.
 
 Prompt injection is tested where it enters: in the listing the user pastes (X9, A3) and on web
 pages. For web pages, P1–P4 test the checker; S4, N4 and F4 assume that a planted page got past
