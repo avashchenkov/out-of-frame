@@ -16,13 +16,14 @@ from out_of_frame import research_scope
 from out_of_frame.config import TOOL_CAP
 from out_of_frame.record import Record
 from out_of_frame.state import Coordinates, InvestigationState, MapObject, ToolCall
+from out_of_frame.web_search import PageText
 
 EVALS = Path(__file__).parent
 TASKS = EVALS / "tasks"
 STATES = EVALS / "states"
 FIXTURES = EVALS / "fixtures"
 
-type Inputs = MapObject | InvestigationState
+type Inputs = MapObject | InvestigationState | PageText
 
 
 class TaskFormatError(Exception):
@@ -54,12 +55,14 @@ class Label(Record):
 
 
 class TaskExpected(Record):
-    """Either the label of a real object, or the result that follows a written state."""
+    """The label of a real object, the result that follows a written state, or whether the
+    injection check should flag a page."""
 
     label: Label | None = None
     outcome: Literal["identified", "unidentified"] | None = None
     identified_type: str | None = None
     status: str | None = None
+    flagged: bool | None = None
 
     @model_validator(mode="after")
     def check_one_kind(self) -> Self:
@@ -68,13 +71,15 @@ class TaskExpected(Record):
             "identified_type",
             "status",
         } & self.model_fields_set  # null counts as given
-        if self.label is not None and written:
-            raise ValueError("give a label, or outcome, identified_type and status, not both")
-        if self.label is None and len(written) < 3:
-            raise ValueError("without a label, give outcome, identified_type and status")
+        if (self.label is not None) + bool(written) + (self.flagged is not None) != 1:
+            raise ValueError("give a label, or outcome, identified_type and status, or flagged")
+        if written and len(written) < 3:
+            raise ValueError("give outcome, identified_type and status together")
         return self
 
-    def result(self) -> Expected:
+    def result(self) -> Expected | bool:
+        if self.flagged is not None:
+            return self.flagged
         if self.label:
             outcome = "unidentified" if self.label.identified_type is None else "identified"
             return Expected(outcome, self.label.identified_type, self.label.status)
@@ -85,11 +90,12 @@ class TaskInput(Record):
     map_object: MapObject | None = None
     sources: list[RecordedSource] = []
     state: str | None = None
+    page: PageText | None = None  # a snippet or page for the injection check
 
 
 class TaskFile(Record):
     id: str
-    suite: Literal["finding", "live investigation"]
+    suite: Literal["finding", "live investigation", "injection check"]
     covers: str
     date: dt.date | Literal["today"]
     input: TaskInput
@@ -102,7 +108,7 @@ class Task:
     suite: str
     date: dt.date | None  # None: the date of the trial
     inputs: Inputs
-    expected: Expected
+    expected: Expected | bool  # bool: whether the injection check should flag the page
 
 
 def load_all() -> list[Task]:
@@ -125,19 +131,33 @@ def load(path: Path) -> Task:
     except (ValidationError, OSError, yaml.YAMLError) as e:
         fail(str(e))
 
-    match task.suite, task.input.map_object, state:
-        case "live investigation", MapObject() as map_object, None:
+    match task.suite, task.input.map_object, state, task.input.page:
+        case "live investigation", MapObject() as map_object, None, None:
             if map_object.source_id not in [source.id for source in task.input.sources]:
                 fail("the map object's source is not among the task's sources")
             inputs = map_object
-        case "finding", None, InvestigationState():
-            map_object = state.map_object
+        case "finding", None, InvestigationState(), None:
             check_state(state, fail)
             inputs = state
+        case "injection check", None, None, PageText() as page:
+            inputs = page
         case _:
-            fail("a live investigation task gives a map object, a finding task gives a state")
+            fail(
+                "a live investigation task gives a map object, a finding task a state, an "
+                "injection check task a page"
+            )
 
     expected = task.expected.result()
+    if isinstance(expected, bool) != (task.suite == "injection check"):
+        fail("an injection check task, and only it, expects flagged")
+    if isinstance(expected, Expected):
+        check_expected(expected, fail)
+    if task.date == "today" and task.suite != "live investigation":
+        fail("only a live task runs with the date of the trial")
+    return Task(task.id, task.suite, None if task.date == "today" else task.date, inputs, expected)
+
+
+def check_expected(expected: Expected, fail) -> None:
     scope = research_scope.load()
     if expected.identified_type not in [*scope.identified_types, None]:
         fail(f"unknown identified type {expected.identified_type!r}")
@@ -145,9 +165,6 @@ def load(path: Path) -> Task:
         fail(f"unknown status {expected.status!r}")
     if (expected.outcome == "unidentified") != (expected.identified_type is None):
         fail("an object is unidentified exactly when it has no type")
-    if task.date == "today" and task.suite != "live investigation":
-        fail("only a live task runs with the date of the trial")
-    return Task(task.id, task.suite, None if task.date == "today" else task.date, inputs, expected)
 
 
 def check_state(state: InvestigationState, fail) -> None:

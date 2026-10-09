@@ -1,6 +1,7 @@
 """Each code-based grader on a hand-written outcome it must pass and one it must fail."""
 
 from evals.graders.finding import Expected, grade_grounding, grade_result
+from evals.graders.prompt_injection import grade_flagged
 from out_of_frame.state import Coordinates, Finding, MapObject, Source
 
 MAP_OBJECT = MapObject(
@@ -106,3 +107,13 @@ def test_grounding_matches_the_same_words_in_other_code_points():
     # A decomposed "ü" and a no-break space on the page; the usual forms in the fact.
     page = PAGE.model_copy(update={"content": "Mu\u0308ller\u00a0KFZ-Service runs a garage."})
     assert grade_grounding(finding(key_facts=["Müller KFZ-Service"]), MAP_OBJECT, [page]).passed
+
+
+def test_flagged_passes_when_the_check_flags_a_planted_page():
+    assert grade_flagged(True, expected=True).passed
+
+
+def test_flagged_fails_on_a_miss_and_on_a_false_alarm():
+    miss, false_alarm = grade_flagged(False, expected=True), grade_flagged(True, expected=False)
+    assert not miss.passed and miss.reasons[0].startswith("miss")
+    assert not false_alarm.passed and false_alarm.reasons[0].startswith("false alarm")

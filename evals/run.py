@@ -5,6 +5,7 @@ A part that calls the model or web search needs the API keys: uv run --env-file 
 """
 
 import argparse
+import copy
 import datetime as dt
 import json
 import traceback
@@ -17,7 +18,8 @@ from pydantic_core import to_jsonable_python
 
 import out_of_frame.finding
 import out_of_frame.investigation
-from evals.graders.finding import Grade, grade_grounding, grade_result
+from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
+from evals.graders.prompt_injection import grade_flagged
 from evals.load import EVALS, Inputs, Task, load, load_all
 from out_of_frame import prices
 from out_of_frame.config import MODEL
@@ -40,7 +42,7 @@ class Outcome:
 class Trial:
     """What a part returns. The harness counts the tool calls and the cost itself."""
 
-    outcome: Outcome
+    outcome: Outcome | bool  # bool: whether the injection check flagged the page
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
 
 
@@ -77,8 +79,12 @@ type Part = Callable[[Inputs, dt.date, WebSearch], Trial]
 
 def abstain(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     """A stub that never identifies anything."""
-    map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
-    return Trial(Outcome(Finding.unidentified(map_object.id), []), transcript=[])
+    return Trial(Outcome(Finding.unidentified(find_map_object(inputs).id), []), transcript=[])
+
+
+def trust_every_page(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """A stub injection check that never flags a page."""
+    return Trial(False, transcript=[])
 
 
 def draft_finding(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
@@ -121,11 +127,23 @@ def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
 
 PARTS: dict[str, Part] = {
     "abstain": abstain,
+    "trust_every_page": trust_every_page,
     "draft_finding": draft_finding,
     "investigate": investigate,
 }
-# The suites that a part can run. A part not listed here runs every suite.
-PART_SUITES = {"draft_finding": {"finding"}, "investigate": {"live investigation"}}
+# The suites that each part can run.
+PART_SUITES = {
+    "abstain": {"finding", "live investigation"},
+    "trust_every_page": {"injection check"},
+    "draft_finding": {"finding"},
+    "investigate": {"live investigation"},
+}
+
+
+def find_map_object(inputs: Inputs) -> MapObject:
+    if isinstance(inputs, PageText):
+        raise TypeError("an injection check task has no map object")
+    return inputs if isinstance(inputs, MapObject) else inputs.map_object
 
 
 def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
@@ -136,13 +154,27 @@ def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
     return outcome.sources
 
 
-def grade(task: Task, outcome: Outcome) -> list[Grade]:
-    inputs = task.inputs
-    map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
-    return [
-        grade_result(outcome.finding, map_object, task.expected),
-        grade_grounding(outcome.finding, map_object, select_graded_sources(task, outcome)),
-    ]
+def grade(task: Task, outcome: Outcome | bool) -> list[Grade]:
+    expected = task.expected
+    if isinstance(outcome, bool) and isinstance(expected, bool):
+        return [grade_flagged(outcome, expected)]
+    if isinstance(outcome, Outcome) and isinstance(expected, Expected):
+        map_object = find_map_object(task.inputs)
+        return [
+            grade_result(outcome.finding, map_object, expected),
+            grade_grounding(outcome.finding, map_object, select_graded_sources(task, outcome)),
+        ]
+    raise TypeError(f"{task.id}: the part's outcome does not fit the task's expected result")
+
+
+def dump_outcome(task: Task, outcome: Outcome | bool) -> dict:
+    if isinstance(outcome, bool):
+        return {"flagged": outcome}
+    return {
+        "finding": outcome.finding.model_dump(mode="json"),
+        # The sources the finding is graded against, so that the grade can be checked later.
+        "sources": [s.model_dump(mode="json") for s in select_graded_sources(task, outcome)],
+    }
 
 
 def compute_cost(usage: dict, credits: float) -> float:
@@ -163,7 +195,7 @@ def run_task(
         trial, error = None, None
         with get_usage_metadata_callback() as usage:
             try:
-                trial = part(task.inputs.model_copy(deep=True), date, metered)  # a clean state
+                trial = part(copy.deepcopy(task.inputs), date, metered)  # a clean state
             except WebSearchAccessError:
                 raise  # every other trial would fail the same way
             except Exception:
@@ -189,11 +221,7 @@ def run_task(
             "task": task.id,
             "trial": n,
             "date": date.isoformat(),
-            "finding": trial.outcome.finding.model_dump(mode="json"),
-            # The sources the finding is graded against, so that the grade can be checked later.
-            "sources": [
-                s.model_dump(mode="json") for s in select_graded_sources(task, trial.outcome)
-            ],
+            **dump_outcome(task, trial.outcome),
             "transcript": trial.transcript,
             **counts,
         }
@@ -284,11 +312,11 @@ def run(
 
 def select_tasks(part: str, paths: list[Path]) -> list[Task]:
     """The tasks in the given files, or, if none are given, every task that the part can run."""
-    suites = PART_SUITES.get(part)
+    suites = PART_SUITES[part]
     if not paths:
-        return [task for task in load_all() if suites is None or task.suite in suites]
+        return [task for task in load_all() if task.suite in suites]
     tasks = [load(path) for path in paths]
-    if suites is not None and (others := [task.id for task in tasks if task.suite not in suites]):
+    if others := [task.id for task in tasks if task.suite not in suites]:
         raise ValueError(f"the part {part} cannot run {', '.join(others)}")
     return tasks
 

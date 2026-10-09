@@ -60,6 +60,13 @@ BROKEN = [
     ("f1.yaml", repeat_last_call, "above the cap"),
     ("f1.yaml", rename_page_to_map_source, "same ID"),
     ("f1.yaml", drop_calls, "alternate"),
+    ("f1.yaml", lambda task, state: task.update(expected={"flagged": True}), "only it"),
+    (
+        "p1.yaml",
+        lambda task, state: task["expected"].update(outcome="unidentified"),
+        "or flagged",
+    ),
+    ("p1.yaml", lambda task, state: task["input"].pop("page"), "a page"),
 ]
 
 
