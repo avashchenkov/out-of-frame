@@ -14,7 +14,7 @@ from langgraph.runtime import Runtime
 
 from out_of_frame import finding
 from out_of_frame.config import MODEL, PAGE_CHARS, TOOL_CAP
-from out_of_frame.grounding import grounding_errors
+from out_of_frame.grounding import find_grounding_errors
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source, ToolCall, ToolResult
 from out_of_frame.web_search import TOOLS, WebSearch, WebSearchError
 
@@ -34,12 +34,12 @@ def investigate(map_object: MapObject, date: dt.date, web_search: WebSearch) -> 
     """Investigate one map object to the end: its finding passed the grounding check, or the
     object is unidentified."""
     start = InvestigationState(map_object=map_object, history=[], pages=[], finding=None)
-    end = graph().invoke(start, context=Context(date, web_search))
+    end = build_graph().invoke(start, context=Context(date, web_search))
     return InvestigationState.model_validate(end)
 
 
 @cache
-def graph():
+def build_graph():
     """The subgraph of the flowchart in docs/architecture.md, without the injection check."""
     builder = StateGraph(InvestigationState, context_schema=Context)
     builder.add_node(search_or_stop)
@@ -48,7 +48,7 @@ def graph():
     builder.add_node(check_grounding)
     builder.add_conditional_edges(START, search_unless_at_the_cap)
     builder.add_conditional_edges("search_or_stop", run_tool_unless_stopped)
-    builder.add_conditional_edges("run_tool", next_after_the_tool)
+    builder.add_conditional_edges("run_tool", route_after_the_tool)
     builder.add_edge("write_finding", "check_grounding")
     builder.add_edge("check_grounding", END)
     return builder.compile()
@@ -59,10 +59,10 @@ def search_or_stop(state: InvestigationState, runtime: Runtime[Context]) -> dict
     system = finding.render(
         "investigation.md.j2", cap=TOOL_CAP, date=runtime.context.date.isoformat()
     )
-    answer = searcher().invoke([SystemMessage(system), *finding.messages(state)])
+    answer = build_search_model().invoke([SystemMessage(system), *finding.build_chat(state)])
     if not answer.tool_calls:
         return {}
-    call = answer.tool_calls[0]  # the only one: see searcher()
+    call = answer.tool_calls[0]  # the only one: see build_search_model()
     entry = ToolCall.model_validate({"role": "model", "tool": call["name"], **call["args"]})
     return {"history": [entry]}
 
@@ -110,7 +110,7 @@ def check_grounding(state: InvestigationState) -> dict:
     """A finding that fails the grounding check makes the object unidentified: the model does
     not get another try."""
     assert state.finding is not None  # write_finding comes first
-    errors = grounding_errors(state.finding, state.map_object, state.pages)
+    errors = find_grounding_errors(state.finding, state.map_object, state.pages)
     if not errors:
         return {}
     log.info("finding for %s rejected: %s", state.map_object.id, "; ".join(errors))
@@ -130,7 +130,7 @@ def run_tool_unless_stopped(state: InvestigationState) -> Literal["run_tool", "w
     return "run_tool" if called else "write_finding"
 
 
-def next_after_the_tool(
+def route_after_the_tool(
     state: InvestigationState,
 ) -> Literal["search_or_stop", "write_finding", "__end__"]:
     """A web search failure ends the run, at "__end__", LangGraph's END; otherwise the cap
@@ -139,7 +139,7 @@ def next_after_the_tool(
 
 
 @cache
-def searcher():
+def build_search_model():
     """The model with the web tools. It may answer without one to stop, and it makes one call
     at a time, so that code counts every call against the cap."""
     return ChatAnthropic(model=MODEL).bind_tools(

@@ -51,8 +51,8 @@ class FakeWebSearch:
 def investigate(monkeypatch, searcher, web_search, answer=ANSWER):
     """The investigation of MAP_OBJECT, and the finding model with the request it got, if any."""
     finder = FakeModel(answer)
-    monkeypatch.setattr(investigation, "searcher", lambda: searcher)
-    monkeypatch.setattr(finding, "finder", lambda: finder)
+    monkeypatch.setattr(investigation, "build_search_model", lambda: searcher)
+    monkeypatch.setattr(finding, "build_finding_model", lambda: finder)
     return investigation.investigate(MAP_OBJECT, DATE, web_search), finder
 
 
@@ -83,7 +83,7 @@ def test_the_model_sees_the_prompt_and_the_history_at_each_step(monkeypatch):
         assert isinstance(request[0], SystemMessage)
         assert f"at most {TOOL_CAP}" in request[0].content and "2026-10-09" in request[0].content
     assert len(first) == 2  # the prompt and the task
-    assert last[1:] == finding.messages(state)
+    assert last[1:] == finding.build_chat(state)
 
 
 def test_pages_are_numbered_across_tool_calls(monkeypatch):
@@ -133,8 +133,8 @@ def test_an_empty_search_result_is_not_a_failure(monkeypatch):
 
 
 def test_the_model_may_stop_and_makes_one_tool_call_at_a_time():
-    investigation.searcher.cache_clear()
-    bound = investigation.searcher()
+    investigation.build_search_model.cache_clear()
+    bound = investigation.build_search_model()
     assert isinstance(bound, RunnableBinding)
     search, extract = bound.kwargs["tools"]
     assert (search["name"], search["input_schema"]["required"]) == ("search", ["query"])

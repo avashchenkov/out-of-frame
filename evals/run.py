@@ -21,7 +21,7 @@ from evals.graders.finding import Grade, grade_grounding, grade_result
 from evals.load import EVALS, Inputs, Task, load, load_all
 from out_of_frame import prices
 from out_of_frame.config import MODEL
-from out_of_frame.grounding import grounding_errors
+from out_of_frame.grounding import find_grounding_errors
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source
 from out_of_frame.web_search import PageText, TavilyWebSearch, WebSearch, WebSearchAccessError
 
@@ -96,7 +96,7 @@ def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
         raise TypeError("investigate needs a task with a map object")
     start = InvestigationState(map_object=inputs, history=[], pages=[], finding=None)
     context = out_of_frame.investigation.Context(date, web_search)
-    steps = out_of_frame.investigation.graph().stream(
+    steps = out_of_frame.investigation.build_graph().stream(
         start, context=context, stream_mode=["updates", "values"]
     )
     transcript: list[dict] = []
@@ -113,8 +113,8 @@ def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     state = InvestigationState.model_validate(end)
     assert state.finding is not None  # every path through the subgraph ends with a finding
     if draft is not None and draft != state.finding:
-        errors = grounding_errors(draft, state.map_object, state.pages)
-        transcript.append({"grounding_errors": errors})
+        errors = find_grounding_errors(draft, state.map_object, state.pages)
+        transcript.append({"find_grounding_errors": errors})
     cited = [page for page in state.pages if page.id in state.finding.evidence_ids]
     return Trial(Outcome(state.finding, cited), transcript)
 
@@ -128,7 +128,7 @@ PARTS: dict[str, Part] = {
 PART_SUITES = {"draft_finding": {"finding"}, "investigate": {"live investigation"}}
 
 
-def graded_sources(task: Task, outcome: Outcome) -> list[Source]:
+def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
     """A task from a written state is graded against its own pages only, so the agent cannot add
     or change evidence. A live task is graded against the sources the agent stored."""
     if isinstance(task.inputs, InvestigationState):
@@ -141,16 +141,16 @@ def grade(task: Task, outcome: Outcome) -> list[Grade]:
     map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
     return [
         grade_result(outcome.finding, map_object, task.expected),
-        grade_grounding(outcome.finding, map_object, graded_sources(task, outcome)),
+        grade_grounding(outcome.finding, map_object, select_graded_sources(task, outcome)),
     ]
 
 
-def cost(usage: dict, credits: float) -> float:
+def compute_cost(usage: dict, credits: float) -> float:
     """USD for the model's tokens and the Tavily credits. The usage is keyed by the API's model
     snapshot, not by MODEL, but a run uses one model."""
     input_tokens = sum(u["input_tokens"] for u in usage.values())
     output_tokens = sum(u["output_tokens"] for u in usage.values())
-    return prices.load().cost(MODEL, input_tokens, output_tokens, credits)
+    return prices.load().compute_cost(MODEL, input_tokens, output_tokens, credits)
 
 
 def run_task(
@@ -170,7 +170,7 @@ def run_task(
                 error = traceback.format_exc()
         counts = {
             "tool_calls": metered.tool_calls,
-            "cost_usd": cost(usage.usage_metadata, metered.credits),
+            "cost_usd": compute_cost(usage.usage_metadata, metered.credits),
         }
         if trial is None:
             failed = {
@@ -191,7 +191,9 @@ def run_task(
             "date": date.isoformat(),
             "finding": trial.outcome.finding.model_dump(mode="json"),
             # The sources the finding is graded against, so that the grade can be checked later.
-            "sources": [s.model_dump(mode="json") for s in graded_sources(task, trial.outcome)],
+            "sources": [
+                s.model_dump(mode="json") for s in select_graded_sources(task, trial.outcome)
+            ],
             "transcript": trial.transcript,
             **counts,
         }

@@ -7,7 +7,9 @@ import unicodedata
 from out_of_frame.state import Finding, MapObject, Source
 
 
-def grounding_errors(finding: Finding, map_object: MapObject, sources: list[Source]) -> list[str]:
+def find_grounding_errors(
+    finding: Finding, map_object: MapObject, sources: list[Source]
+) -> list[str]:
     """Why the finding is not grounded; empty if it is. Each evidence ID must exist, and each
     key fact must appear word for word in a cited source.
 
@@ -37,7 +39,7 @@ TOKEN = re.compile(r"\w*\d(?:[.,]\d+)+\w*|\w+|[^\w\s]")
 MARKUP = "|`"  # table and code markup, which pages use for layout
 
 
-def words(text: str) -> list[str]:
+def split_into_words(text: str) -> list[str]:
     """The text's words, numbers and symbols, in one Unicode form and in lower case.
 
     Spaces, punctuation and markup between them are left out: a page's typography is not a
@@ -60,5 +62,7 @@ def appears_in(fact: str, text: str) -> bool:
     """The fact's words appear in the text in the same order, as whole words: "Gmbh -
     Klärwerkstraße 3" has "GmbH, Klärwerkstraße 3", but "Klärwerkstraße 1a" has not
     "Klärwerkstraße 1"."""
-    fact_words = words(fact)
-    return bool(fact_words) and f" {' '.join(fact_words)} " in f" {' '.join(words(text))} "
+    fact_words = split_into_words(fact)
+    return (
+        bool(fact_words) and f" {' '.join(fact_words)} " in f" {' '.join(split_into_words(text))} "
+    )

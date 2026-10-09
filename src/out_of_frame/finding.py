@@ -31,15 +31,16 @@ def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
         statuses=scope.finding_statuses,
     )
     instruction = render("finding_instruction.md.j2", map_object=map_object)
-    request = [SystemMessage(system), *messages(state), HumanMessage(instruction)]
-    calls = [call for call in finder().invoke(request).tool_calls if call["name"] == "Finding"]
+    request = [SystemMessage(system), *build_chat(state), HumanMessage(instruction)]
+    reply = build_finding_model().invoke(request)
+    calls = [call for call in reply.tool_calls if call["name"] == "Finding"]
     if not calls:
         raise MissingFindingError(f"no finding for {map_object.id}")
-    answer = finding_tool().model_validate(calls[0]["args"])
+    answer = build_finding_tool().model_validate(calls[0]["args"])
     return Finding.model_validate(answer.model_dump() | {"map_object_id": map_object.id})
 
 
-def messages(state: InvestigationState) -> list[BaseMessage]:
+def build_chat(state: InvestigationState) -> list[BaseMessage]:
     """The investigation as a chat: the task, then each tool call and the pages it returned."""
     pages = {page.id: page for page in state.pages}
     task = render("investigation_task.md.j2", map_object=state.map_object)
@@ -55,19 +56,19 @@ def messages(state: InvestigationState) -> list[BaseMessage]:
 
 
 @cache
-def finder():
+def build_finding_model():
     """The model, with the Finding tool to answer with. The web tools are bound too, though not
     meant for this call: the API needs every tool that the history uses.
 
     The prompt asks for the Finding tool, but does not force it: a forced tool call starts the
     answer at once and leaves out the model's thinking, which then misjudges the type."""
-    tools = [*TOOLS.values(), finding_tool()]
+    tools = [*TOOLS.values(), build_finding_tool()]
     return ChatAnthropic(model=MODEL).bind_tools(
         tools, tool_choice="auto", parallel_tool_calls=False
     )
 
 
-def finding_tool() -> type[BaseModel]:
+def build_finding_tool() -> type[BaseModel]:
     """The Finding fields that the model fills in, with their descriptions. The type and the
     status are limited to the research scope's lists, or null: the model sees only these, and
     draft_finding rejects any other. The map object's ID is left out: code sets it."""
@@ -84,11 +85,11 @@ def finding_tool() -> type[BaseModel]:
 
 def render(template: str, **values) -> str:
     """A template from prompts/, filled in with the values."""
-    return templates().get_template(template).render(**values)
+    return load_templates().get_template(template).render(**values)
 
 
 @cache
-def templates() -> jinja2.Environment:
+def load_templates() -> jinja2.Environment:
     """The prompt templates in prompts/."""
     return jinja2.Environment(
         loader=jinja2.PackageLoader("out_of_frame", "prompts"),

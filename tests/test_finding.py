@@ -75,7 +75,7 @@ class FakeModel:
 
 
 def test_the_history_becomes_tool_calls_and_their_results():
-    task, search, snippets, extract, page = finding.messages(STATE)
+    task, search, snippets, extract, page = finding.build_chat(STATE)
     assert isinstance(task, HumanMessage) and "map-1" in task.content
     assert isinstance(search, AIMessage) and isinstance(extract, AIMessage)
     assert search.tool_calls[0]["args"] == {"query": "Teststraße 1 Berlin"}
@@ -90,7 +90,7 @@ def test_the_history_becomes_tool_calls_and_their_results():
 
 
 def test_the_finding_tool_allows_only_a_listed_type_or_status():
-    tool = finding.finding_tool()
+    tool = finding.build_finding_tool()
     assert "map_object_id" not in tool.model_fields
     tool.model_validate(ANSWER)
     tool.model_validate(ANSWER | {"identified_type": None, "status": None})
@@ -102,12 +102,12 @@ def test_the_finding_tool_allows_only_a_listed_type_or_status():
 
 def test_the_request_has_the_prompt_the_history_and_the_last_instruction(monkeypatch):
     model = FakeModel(ANSWER)
-    monkeypatch.setattr(finding, "finder", lambda: model)
+    monkeypatch.setattr(finding, "build_finding_model", lambda: model)
     finding.draft_finding(STATE, dt.date(2026, 10, 3))
     system, *chat, last = model.request
     assert isinstance(system, SystemMessage)
     assert "2026-10-03" in system.content and "- production:" in system.content
-    assert chat == finding.messages(STATE)
+    assert chat == finding.build_chat(STATE)
     assert isinstance(last, HumanMessage)
     assert "Teststraße 1, 13597 Berlin" in last.content
 
@@ -130,13 +130,17 @@ def test_the_last_message_names_the_object(name, addresses):
 
 
 def test_the_finding_is_the_answer_with_the_map_object_id_from_code(monkeypatch):
-    monkeypatch.setattr(finding, "finder", lambda: FakeModel(ANSWER | {"map_object_id": "obj-2"}))
+    monkeypatch.setattr(
+        finding, "build_finding_model", lambda: FakeModel(ANSWER | {"map_object_id": "obj-2"})
+    )
     result = finding.draft_finding(STATE, dt.date(2026, 10, 3))
     assert result == Finding.model_validate(ANSWER | {"map_object_id": "obj-1"})
 
 
 def test_an_answer_with_an_unlisted_type_fails(monkeypatch):
-    monkeypatch.setattr(finding, "finder", lambda: FakeModel(ANSWER | {"identified_type": "x"}))
+    monkeypatch.setattr(
+        finding, "build_finding_model", lambda: FakeModel(ANSWER | {"identified_type": "x"})
+    )
     with pytest.raises(ValidationError):
         finding.draft_finding(STATE, dt.date(2026, 10, 3))
 
@@ -147,14 +151,14 @@ def test_an_answer_without_the_finding_tool_fails(monkeypatch):
             call = {"name": "search", "args": {"query": "Teststraße 1"}, "id": "call-s"}
             return AIMessage("", tool_calls=[call])
 
-    monkeypatch.setattr(finding, "finder", lambda: SearchingModel())
+    monkeypatch.setattr(finding, "build_finding_model", lambda: SearchingModel())
     with pytest.raises(finding.MissingFindingError):
         finding.draft_finding(STATE, dt.date(2026, 10, 3))
 
 
 def test_the_finding_tool_is_asked_for_but_not_forced_so_that_the_model_can_think():
-    finding.finder.cache_clear()
-    bound = finding.finder()
+    finding.build_finding_model.cache_clear()
+    bound = finding.build_finding_model()
     assert isinstance(bound, RunnableBinding)
     assert bound.kwargs["tool_choice"] == {"type": "auto", "disable_parallel_tool_use": True}
     assert [tool["name"] for tool in bound.kwargs["tools"]] == ["search", "extract", "Finding"]

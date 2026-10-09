@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from out_of_frame.grounding import grounding_errors
+from out_of_frame.grounding import find_grounding_errors
 from out_of_frame.state import Finding, MapObject, Source
 
 
@@ -38,6 +38,6 @@ def grade_result(finding: Finding, map_object: MapObject, expected: Expected) ->
 
 
 def grade_grounding(finding: Finding, map_object: MapObject, sources: list[Source]) -> Grade:
-    """The agent's own grounding check, see out_of_frame.grounding.grounding_errors."""
-    errors = grounding_errors(finding, map_object, sources)
+    """The agent's own grounding check, see out_of_frame.grounding.find_grounding_errors."""
+    errors = find_grounding_errors(finding, map_object, sources)
     return Grade("grounding", not errors, tuple(errors))

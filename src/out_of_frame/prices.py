@@ -26,7 +26,9 @@ class Prices(Record):
     models: dict[str, ModelPrice]  # by model name, such as claude-haiku-5-5
     tavily: TavilyPrice
 
-    def cost(self, model: str, input_tokens: int, output_tokens: int, credits: float) -> float:
+    def compute_cost(
+        self, model: str, input_tokens: int, output_tokens: int, credits: float
+    ) -> float:
         """USD for the model's tokens and the Tavily credits."""
         price = self.models[model]
         tokens = input_tokens * price.input_per_mtok + output_tokens * price.output_per_mtok

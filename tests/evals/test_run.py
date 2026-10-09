@@ -239,7 +239,9 @@ def test_the_harness_counts_the_tool_calls_and_the_cost(tmp_path):
     tavily = prices.load().tavily
     credits = tavily.search_credits + tavily.page_credits
     assert summary["tool_calls"] == 2
-    assert summary["cost_usd"] == pytest.approx(prices.load().cost(MODEL, 1000, 100, credits))
+    assert summary["cost_usd"] == pytest.approx(
+        prices.load().compute_cost(MODEL, 1000, 100, credits)
+    )
 
 
 def test_a_failed_trial_keeps_what_it_spent(tmp_path):
@@ -275,8 +277,8 @@ def test_a_refused_web_key_stops_the_run(tmp_path):
 
 
 def stub_the_model(monkeypatch, searcher, answer):
-    monkeypatch.setattr(investigation, "searcher", lambda: searcher)
-    monkeypatch.setattr(finding, "finder", lambda: FakeModel(answer))
+    monkeypatch.setattr(investigation, "build_search_model", lambda: searcher)
+    monkeypatch.setattr(finding, "build_finding_model", lambda: FakeModel(answer))
 
 
 def test_investigate_keeps_each_step_and_the_cited_pages(monkeypatch):
@@ -301,6 +303,6 @@ def test_investigate_keeps_a_rejected_finding_and_why(monkeypatch):
     assert trial.outcome.finding == Finding.unidentified("obj-1")
     drafted = next(step["write_finding"] for step in trial.transcript if "write_finding" in step)
     assert drafted["finding"]["key_facts"] == ["Test GmbH brews"]
-    assert "Test GmbH brews" in trial.transcript[-1]["grounding_errors"][0]
+    assert "Test GmbH brews" in trial.transcript[-1]["find_grounding_errors"][0]
     with pytest.raises(TypeError):
         investigate(STATE, dt.date(2026, 10, 9), FakeWebSearch())
