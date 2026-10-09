@@ -39,10 +39,10 @@ calibration.
    1. ✅ The call that drafts the finding: its prompt and model call. Run F1 against it, and F5
       as a positive control: a prompt that never identifies anything also passes F1. The runner
       records an error of the part as a failed trial.
-   2. The investigation subgraph in LangGraph ([ADR 1](adr/0001-langgraph.md)): search, the
+   2. ✅ The investigation subgraph in LangGraph ([ADR 1](adr/0001-langgraph.md)): search, the
       stopping decision, the tool cap, the finding, the grounding check and a web search
       failure. Code tests with a stubbed model and Tavily.
-   3. Live Tavily. Run L1 on the live web.
+   3. Live Tavily. Run L1 on the live web; the harness counts the tool calls and the cost.
    4. The injection guards: prepare P1–P4 and F4, then build the checker.
    5. The CLI path: Nominatim, Overpass, the object choice and the report with sources. Check
       the whole path with replayed sources and a stubbed model.
