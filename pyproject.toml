@@ -10,6 +10,7 @@ requires-python = ">=3.14"
 dependencies = [
     "jinja2>=3.1.6",
     "langchain-anthropic>=1.7.5",
+    "langgraph>=1.2.14",
     "pydantic>=2.13.5",
     "pyyaml>=6.0.3",
 ]

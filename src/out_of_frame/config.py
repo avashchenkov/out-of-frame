@@ -4,3 +4,6 @@ import os
 
 # One model for every call in the MVP; the evals show if it is not enough.
 MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
+
+# Tool calls in one investigation, Tavily searches and page reads together.
+TOOL_CAP = int(os.environ.get("OUT_OF_FRAME_TOOL_CAP", "3"))

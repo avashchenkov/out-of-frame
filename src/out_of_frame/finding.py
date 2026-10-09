@@ -1,5 +1,5 @@
-"""Draft the finding of an investigation: one model call. The grounding check then accepts or
-rejects the draft, see docs/architecture.md#the-investigation-subgraph."""
+"""Draft the finding of an investigation: one model call. The grounding check then accepts the
+draft or makes the object unidentified, see docs/architecture.md#the-investigation-subgraph."""
 
 import datetime as dt
 from functools import cache
@@ -14,17 +14,26 @@ from out_of_frame import research_scope
 from out_of_frame.config import MODEL
 from out_of_frame.state import Finding, InvestigationState, ToolCall
 
-# The API needs every tool that the history uses. TODO: run them in step 5.2.
+# The investigation's web tools, run by code in investigation.py. The finding call has them too:
+# the API needs every tool that the history uses.
 TOOLS = [
     {
         "name": "search",
         "description": "Search the web. Returns short snippets.",
-        "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}},
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
+        },
     },
     {
         "name": "extract",
         "description": "Read the full text of one web page.",
-        "input_schema": {"type": "object", "properties": {"url": {"type": "string"}}},
+        "input_schema": {
+            "type": "object",
+            "properties": {"url": {"type": "string"}},
+            "required": ["url"],
+        },
     },
 ]
 

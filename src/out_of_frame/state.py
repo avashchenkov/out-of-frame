@@ -1,10 +1,10 @@
 """The run state as a logical data model, see docs/architecture.md#the-state.
 
 TODO: Message, Address, Destination, Journey and the run state itself, with the steps that
-use them. A rejected finding and its reason in the investigation history come with the
-grounding check in step 5.
+use them.
 """
 
+import operator
 from typing import Annotated, Literal, Self
 
 from pydantic import ConfigDict, Field, model_validator
@@ -78,6 +78,18 @@ class Finding(Record):
         "the object is identified."
     )
 
+    @classmethod
+    def unidentified(cls, map_object_id: str) -> Self:
+        """A finding that says nothing about the object: no type, no status, no evidence."""
+        return cls(
+            map_object_id=map_object_id,
+            outcome="unidentified",
+            identified_type=None,
+            status=None,
+            key_facts=[],
+            evidence_ids=[],
+        )
+
 
 class ToolCall(Record):
     role: Literal["model"]
@@ -93,6 +105,13 @@ class ToolCall(Record):
             raise ValueError(f"a {self.tool} call takes only a {wanted}")
         return self
 
+    @property
+    def argument(self) -> str:
+        """The query of a search or the URL of a page read."""
+        argument = self.query if self.tool == "search" else self.url
+        assert argument is not None  # check_argument makes sure that it is set
+        return argument
+
 
 class ToolResult(Record):
     """The pages a tool call showed, by ID; their text is in the state's pages."""
@@ -105,12 +124,11 @@ HistoryEntry = Annotated[ToolCall | ToolResult, Field(discriminator="role")]
 
 
 class InvestigationState(Record):
-    """The state of one investigation subgraph run.
-
-    TODO: in step 5, each model call sees the history with the text of the pages it shows.
-    """
+    """The state of one investigation subgraph run. LangGraph appends a node's history and pages
+    to the lists, and replaces the other fields."""
 
     map_object: MapObject
-    history: list[HistoryEntry]
-    pages: list[Source]
+    history: Annotated[list[HistoryEntry], operator.add]
+    pages: Annotated[list[Source], operator.add]
     finding: Finding | None
+    web_search_failed: bool = False  # the finding is then unidentified; written states omit it

@@ -13,7 +13,7 @@ from pydantic import ValidationError, model_validator
 
 from evals.graders.finding import Expected
 from out_of_frame import research_scope
-from out_of_frame.investigation import TOOL_CAP
+from out_of_frame.config import TOOL_CAP
 from out_of_frame.record import Record
 from out_of_frame.state import Coordinates, InvestigationState, MapObject, ToolCall
 

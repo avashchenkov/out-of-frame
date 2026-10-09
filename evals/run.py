@@ -32,7 +32,7 @@ class Outcome:
 class Trial:
     """What a part returns.
 
-    TODO: in step 5, the harness gives the part model and Tavily clients that count the tool
+    TODO: in step 5.3, the harness gives the part model and Tavily clients that count the tool
     calls and the cost and record the sources, instead of trusting the part's own report.
     """
 
@@ -49,14 +49,7 @@ type Part = Callable[[Inputs, dt.date], Trial]
 def abstain(inputs: Inputs, date: dt.date) -> Trial:
     """A stub that never identifies anything."""
     map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
-    finding = Finding(
-        map_object_id=map_object.id,
-        outcome="unidentified",
-        identified_type=None,
-        status=None,
-        key_facts=[],
-        evidence_ids=[],
-    )
+    finding = Finding.unidentified(map_object.id)
     return Trial(Outcome(finding, []), transcript=[], tool_calls=0, cost_usd=0.0)
 
 
