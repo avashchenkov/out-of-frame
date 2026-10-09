@@ -60,10 +60,11 @@ trams included, without an access agreement.
 
 ## Tavily
 
-A web search API. The model calls `TavilySearch` and `TavilyExtract` from `langchain-tavily`.
-Search returns pages with their URL, title and a short snippet; by default it does not return
-the full text. Extract returns the full text of one URL. The package also offers crawl; this
-project does not use it.
+A web search API. The model calls it through the agent's own two tools, search and extract,
+which take only a query or a URL; code calls Tavily behind them with fixed settings. Search
+returns pages with their URL, title and a short snippet; by default it does not return the
+full text. Extract returns the full text of one URL. Tavily also offers crawl; this project
+does not use it.
 
 ## Data rights
 

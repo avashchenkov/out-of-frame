@@ -70,8 +70,7 @@ flowchart TD
         D -.->|"search again"| S
         D -.->|"stop"| F
         F --> GC
-        GC -.->|"no, under the cap:<br/>search again"| S
-        GC -.->|"no, at the cap:<br/>unidentified"| JN
+        GC -.->|"no: unidentified"| JN
         T --> JN
         PL --> JN
         GC -.->|"yes"| JN
@@ -157,9 +156,9 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    is; distances are always measured to the nearest edge. An object without a finding is
    unclear. Unclear objects are investigated nearest first, at most five per category. This limit
    covers objects sent by code and by triage; the rest are listed as not investigated. An
-   investigation stops when its evidence is enough and passes the grounding check, or when it
-   reaches its cap of tool calls; one source can be enough. Every branch runs to its end, even
-   with nothing to do; its result is then empty.
+   investigation stops when its evidence is enough, or when it reaches its cap of tool calls;
+   one source can be enough. Every branch runs to its end, even with nothing to do; its result
+   is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each category
      within the category's circle, and the addresses of the buildings inside each area. Code
      groups the elements into objects (one site or one road can be several elements), gives
@@ -342,25 +341,27 @@ distance: it searches by address. The run's field names differ from the run stat
 accident. When it ends, code writes its finding into `findings`, the snippets and pages the
 finding cites into `sources`, and web search into `failures` if it failed.
 
-The model has two Tavily tools: search, which returns short snippets, and extract, which
-returns the full text of one page it chooses. A separate model call checks every snippet and
-page for prompt injection before it is stored, and code drops what it flags (see
+The model has two tools, which code runs with Tavily: search, which returns short snippets,
+and extract, which returns the full text of one page it chooses. One model call makes both choices: it calls a
+tool to search again, or answers without one to stop. A separate model call checks every
+snippet and page for prompt injection before it is stored, and code drops what it flags (see
 [Prompt injection](#prompt-injection)); the model never sees flagged content.
 
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
 | `map_object` | MapObject | The object under investigation | Replace |
-| `history` | list of messages | The model's tool calls, the results it was shown, and why a finding was rejected | Append |
+| `history` | list of messages | The model's tool calls and the results it was shown | Append |
 | `pages` | list of Source | Snippets and pages that passed the check, each with an ID | Append |
-| `finding` | Finding, or null | The latest finding; a rejected one is replaced | Replace |
+| `finding` | Finding, or null | The finding; a rejected one is replaced with an unidentified one | Replace |
+| `web_search_failed` | bool | Whether web search failed; the finding is then unidentified | Replace |
 
 | Step | Who | Reads | Writes |
 |---|---|---|---|
-| Search the web or read a page | model + code | `map_object`, `history` | `history`: the tool call, which code runs |
+| Search the web or read a page | model + code | `map_object`, `history`, `pages` | `history`: the tool call, which code runs; if web search fails, `web_search_failed` and `finding` as unidentified |
 | Check each snippet and page for prompt injection | model + code | each snippet and page the tool returned | `history` and `pages`: only what passes (code) |
-| Enough? or cap reached | model + code | `map_object`, `history`; code counts the tool calls | nothing |
+| Enough? or cap reached | model + code | `map_object`, `history`, `pages`; code counts the tool calls | nothing |
 | Write the finding | model + code | `map_object`, `history`, `pages` | `finding`; code sets `map_object_id` |
-| Finding grounded? | code | `finding`, `map_object.name`, `map_object.details`, `map_object.addresses`, `map_object.source_id`, `pages`, `history`; code counts the tool calls | `history`: why the finding was rejected; at the cap, `finding` as unidentified; at the end, the three run-state fields |
+| Finding grounded? | code | `finding`, `map_object.name`, `map_object.details`, `map_object.addresses`, `map_object.source_id`, `pages` | if not, `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides
 
@@ -384,10 +385,10 @@ Code gives an ID to each source response and to each snippet or page from Tavily
 page reaches the run state only if a finding cites it. A finding cites the IDs it uses and its
 key facts (a name, a date, a status), copied exactly from the source. Code checks that each ID
 exists and each fact appears in the stored text; for the object's own map or plan data, that
-text is the object's name, details without the category, and addresses. If not, the finding is rejected: the agent searches more, within
-the object's cap, or marks the object unidentified. The check runs inside the investigation, so
-only a finding that passes it, or an unidentified one at the cap or after a web search failure,
-goes into `findings`. Triage findings are not checked: in triage the model may use what it
+text is the object's name, details without the category, and addresses. If not, the finding is rejected,
+and the object is marked unidentified. The check runs inside the investigation, so only a
+finding that passes it, or an unidentified one after a rejection or a web search failure, goes
+into `findings`. Triage findings are not checked: in triage the model may use what it
 knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
