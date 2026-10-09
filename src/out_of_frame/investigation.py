@@ -5,7 +5,7 @@ import datetime as dt
 import logging
 from dataclasses import dataclass
 from functools import cache
-from typing import Literal, NamedTuple, Protocol
+from typing import Literal
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage
@@ -13,29 +13,12 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
 from out_of_frame import finding
-from out_of_frame.config import MODEL, TOOL_CAP
+from out_of_frame.config import MODEL, PAGE_CHARS, TOOL_CAP
 from out_of_frame.grounding import grounding_errors
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source, ToolCall, ToolResult
+from out_of_frame.web_search import TOOLS, WebSearch, WebSearchError
 
 log = logging.getLogger(__name__)
-
-
-class WebText(NamedTuple):
-    url: str
-    content: str  # a snippet from a search, or the full text of a page
-
-
-class WebSearchFailed(Exception):
-    """Web search or a page read failed, after the client's own retries."""
-
-
-class Web(Protocol):
-    """The web behind the model's two tools: Tavily from step 5.3, a stub in the tests. Each
-    method raises WebSearchFailed if the service fails; nothing found is an empty list."""
-
-    def search(self, query: str) -> list[WebText]: ...
-
-    def extract(self, url: str) -> list[WebText]: ...
 
 
 @dataclass(frozen=True)
@@ -44,14 +27,14 @@ class Context:
     docs/architecture.md#who-decides."""
 
     date: dt.date
-    web: Web
+    web_search: WebSearch
 
 
-def investigate(map_object: MapObject, date: dt.date, web: Web) -> InvestigationState:
+def investigate(map_object: MapObject, date: dt.date, web_search: WebSearch) -> InvestigationState:
     """Investigate one map object to the end: its finding passed the grounding check, or the
     object is unidentified."""
     start = InvestigationState(map_object=map_object, history=[], pages=[], finding=None)
-    end = graph().invoke(start, context=Context(date, web))
+    end = graph().invoke(start, context=Context(date, web_search))
     return InvestigationState.model_validate(end)
 
 
@@ -84,7 +67,7 @@ def search_or_stop(state: InvestigationState, runtime: Runtime[Context]) -> dict
     return {"history": [entry]}
 
 
-def run_tool(state: InvestigationState, runtime: Runtime[Context]) -> dict:
+def run_tool(state: InvestigationState) -> dict:
     """Code runs the model's tool call and gives each snippet or page an ID.
 
     TODO: in step 5.4, the prompt injection check drops flagged texts here, before they are
@@ -92,10 +75,9 @@ def run_tool(state: InvestigationState, runtime: Runtime[Context]) -> dict:
     """
     call = state.history[-1]
     assert isinstance(call, ToolCall)  # run_tool_unless_stopped sends only a call here
-    web = runtime.context.web
     try:
-        texts = web.search(call.argument) if call.tool == "search" else web.extract(call.argument)
-    except WebSearchFailed as error:
+        texts = TOOLS[call.tool].invoke(call.args)
+    except WebSearchError as error:
         log.warning("web search failed for %s: %s", state.map_object.id, error)
         return {"web_search_failed": True, "finding": Finding.unidentified(state.map_object.id)}
     first = len(state.pages) + 1
@@ -105,11 +87,19 @@ def run_tool(state: InvestigationState, runtime: Runtime[Context]) -> dict:
             kind="web search",
             request=call.argument,
             url=text.url,
-            content=text.content,
+            content=cut_page(text.content),
         )
         for n, text in enumerate(texts)
     ]
     return {"history": [ToolResult(role="tool", pages=[page.id for page in pages])], "pages": pages}
+
+
+def cut_page(text: str) -> str:
+    """The text up to PAGE_CHARS, so that a prompt stays short. The model is told when the rest
+    is cut, so that it does not take a fact it cannot see for one that the page lacks."""
+    if len(text) <= PAGE_CHARS:
+        return text
+    return text[:PAGE_CHARS] + f"\n[the page is cut at {PAGE_CHARS} characters]"
 
 
 def write_finding(state: InvestigationState, runtime: Runtime[Context]) -> dict:
@@ -153,5 +143,5 @@ def searcher():
     """The model with the web tools. It may answer without one to stop, and it makes one call
     at a time, so that code counts every call against the cap."""
     return ChatAnthropic(model=MODEL).bind_tools(
-        finding.TOOLS, tool_choice="auto", parallel_tool_calls=False
+        list(TOOLS.values()), tool_choice="auto", parallel_tool_calls=False
     )

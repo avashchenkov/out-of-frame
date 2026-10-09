@@ -1,7 +1,7 @@
 """Run eval tasks: k trials per task, each graded as soon as it is recorded.
 
 See docs/eval-architecture.md#running-the-evals. Run: uv run python -m evals.run --part abstain
-A part that calls the model needs the API key: uv run --env-file .env python -m evals.run ...
+A part that calls the model or web search needs the API keys: uv run --env-file .env python -m ...
 """
 
 import argparse
@@ -12,10 +12,18 @@ from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from langchain_core.callbacks import get_usage_metadata_callback
+from pydantic_core import to_jsonable_python
+
 import out_of_frame.finding
+import out_of_frame.investigation
 from evals.graders.finding import Grade, grade_grounding, grade_result
 from evals.load import EVALS, Inputs, Task, load, load_all
+from out_of_frame import prices
+from out_of_frame.config import MODEL
+from out_of_frame.grounding import grounding_errors
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source
+from out_of_frame.web_search import PageText, TavilyWebSearch, WebSearch, WebSearchAccessError
 
 RESULTS = EVALS / "results"
 
@@ -30,40 +38,94 @@ class Outcome:
 
 @dataclass(frozen=True)
 class Trial:
-    """What a part returns.
-
-    TODO: in step 5.3, the harness gives the part model and Tavily clients that count the tool
-    calls and the cost and record the sources, instead of trusting the part's own report.
-    """
+    """What a part returns. The harness counts the tool calls and the cost itself."""
 
     outcome: Outcome
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
-    tool_calls: int
-    cost_usd: float
 
 
-# The part of the agent a suite runs. It gets only the task's inputs and the date.
-type Part = Callable[[Inputs, dt.date], Trial]
+class MeteredWebSearch:
+    """The web search that a part gets, with the tool calls and the Tavily credits counted by the
+    harness. A run without live web search fails any trial whose part searches."""
+
+    def __init__(self, web_search: WebSearch | None):
+        self.web_search = web_search
+        self.tool_calls = 0
+        self.credits = 0.0
+
+    def search(self, query: str) -> list[PageText]:
+        self.tool_calls += 1
+        texts = self.live().search(query)
+        self.credits += prices.load().tavily.search_credits
+        return texts
+
+    def extract(self, url: str) -> list[PageText]:
+        self.tool_calls += 1
+        texts = self.live().extract(url)
+        self.credits += prices.load().tavily.page_credits * len(texts)
+        return texts
+
+    def live(self) -> WebSearch:
+        if self.web_search is None:
+            raise RuntimeError("this run has no web search: only the investigate part searches")
+        return self.web_search
 
 
-def abstain(inputs: Inputs, date: dt.date) -> Trial:
+# The part of the agent a suite runs. It gets only the task's inputs, the date and web search.
+type Part = Callable[[Inputs, dt.date, WebSearch], Trial]
+
+
+def abstain(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     """A stub that never identifies anything."""
     map_object = inputs if isinstance(inputs, MapObject) else inputs.map_object
-    finding = Finding.unidentified(map_object.id)
-    return Trial(Outcome(finding, []), transcript=[], tool_calls=0, cost_usd=0.0)
+    return Trial(Outcome(Finding.unidentified(map_object.id), []), transcript=[])
 
 
-def draft_finding(inputs: Inputs, date: dt.date) -> Trial:
+def draft_finding(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     """The model call that drafts the finding, on a task from a written state."""
     if not isinstance(inputs, InvestigationState):
         raise TypeError("draft_finding needs a task from a written state")
     finding = out_of_frame.finding.draft_finding(inputs, date)
-    return Trial(Outcome(finding, []), transcript=[], tool_calls=0, cost_usd=0.0)
+    return Trial(Outcome(finding, []), transcript=[])
 
 
-PARTS: dict[str, Part] = {"abstain": abstain, "draft_finding": draft_finding}
+def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """The investigation subgraph on one map object. The transcript has each step's update, so
+    that a finding that the grounding check replaced can still be read, with the reasons."""
+    if not isinstance(inputs, MapObject):
+        raise TypeError("investigate needs a task with a map object")
+    start = InvestigationState(map_object=inputs, history=[], pages=[], finding=None)
+    context = out_of_frame.investigation.Context(date, web_search)
+    steps = out_of_frame.investigation.graph().stream(
+        start, context=context, stream_mode=["updates", "values"]
+    )
+    transcript: list[dict] = []
+    end: dict | InvestigationState = start
+    draft: Finding | None = None
+    for mode, chunk in steps:
+        assert isinstance(chunk, dict)  # an update by node name, or the whole state
+        if mode == "values":
+            end = chunk
+            continue
+        transcript.append(to_jsonable_python(chunk))
+        if written := chunk.get("write_finding"):
+            draft = written["finding"]
+    state = InvestigationState.model_validate(end)
+    assert state.finding is not None  # every path through the subgraph ends with a finding
+    if draft is not None and draft != state.finding:
+        errors = grounding_errors(draft, state.map_object, state.pages)
+        transcript.append({"grounding_errors": errors})
+    cited = [page for page in state.pages if page.id in state.finding.evidence_ids]
+    return Trial(Outcome(state.finding, cited), transcript)
+
+
+PARTS: dict[str, Part] = {
+    "abstain": abstain,
+    "draft_finding": draft_finding,
+    "investigate": investigate,
+}
 # The suites that a part can run. A part not listed here runs every suite.
-PART_SUITES = {"draft_finding": {"finding"}}
+PART_SUITES = {"draft_finding": {"finding"}, "investigate": {"live investigation"}}
 
 
 def graded_sources(task: Task, outcome: Outcome) -> list[Source]:
@@ -83,20 +145,40 @@ def grade(task: Task, outcome: Outcome) -> list[Grade]:
     ]
 
 
-def run_task(task: Task, part: Part, k: int, record: Callable[[dict], None]) -> list[dict]:
+def cost(usage: dict, credits: float) -> float:
+    """USD for the model's tokens and the Tavily credits. The usage is keyed by the API's model
+    snapshot, not by MODEL, but a run uses one model."""
+    input_tokens = sum(u["input_tokens"] for u in usage.values())
+    output_tokens = sum(u["output_tokens"] for u in usage.values())
+    return prices.load().cost(MODEL, input_tokens, output_tokens, credits)
+
+
+def run_task(
+    task: Task, part: Part, k: int, record: Callable[[dict], None], web_search: WebSearch | None
+) -> list[dict]:
     trials = []
     for n in range(1, k + 1):
         date = task.date or dt.date.today()
-        try:
-            trial = part(task.inputs.model_copy(deep=True), date)  # each trial from a clean state
-        except Exception:
+        metered = MeteredWebSearch(web_search)
+        trial, error = None, None
+        with get_usage_metadata_callback() as usage:
+            try:
+                trial = part(task.inputs.model_copy(deep=True), date, metered)  # a clean state
+            except WebSearchAccessError:
+                raise  # every other trial would fail the same way
+            except Exception:
+                error = traceback.format_exc()
+        counts = {
+            "tool_calls": metered.tool_calls,
+            "cost_usd": cost(usage.usage_metadata, metered.credits),
+        }
+        if trial is None:
             failed = {
                 "task": task.id,
                 "trial": n,
                 "date": date.isoformat(),
-                "error": traceback.format_exc(),
-                "tool_calls": 0,  # not known; TODO: counted by the harness, see Trial
-                "cost_usd": 0.0,
+                "error": error,
+                **counts,
                 "passed": False,
                 "grades": [],
             }
@@ -111,8 +193,7 @@ def run_task(task: Task, part: Part, k: int, record: Callable[[dict], None]) -> 
             # The sources the finding is graded against, so that the grade can be checked later.
             "sources": [s.model_dump(mode="json") for s in graded_sources(task, trial.outcome)],
             "transcript": trial.transcript,
-            "tool_calls": trial.tool_calls,
-            "cost_usd": trial.cost_usd,
+            **counts,
         }
         record(recorded)  # before grading, so that a grader failure does not lose the trial
         grades = grade(task, trial.outcome)
@@ -152,15 +233,22 @@ def summarise(suite: str, trials: list[dict]) -> dict:
 
 
 def run(
-    tasks: Iterable[Task], part: Part, k: int, out: Path, name: str | None = None
+    tasks: Iterable[Task],
+    part: Part,
+    k: int,
+    out: Path,
+    name: str | None = None,
+    web_search: WebSearch | None = None,
 ) -> dict[str, dict]:
     """Run every task and write each trial to out at once. A cancelled run is incomplete.
 
-    An error of the part fails its trial, and the run goes on; an error of a grader stops it.
-    TODO: average pass@k and pass^k over each suite.
+    An error of the part fails its trial, and the run goes on; an error of a grader, or a
+    missing or refused web search key, stops it. TODO: average pass@k and pass^k over each suite.
     """
     if k < 1:
         raise ValueError("k must be at least 1")
+    if MODEL not in prices.load().models:
+        raise ValueError(f"no price for {MODEL}: add it to data/prices.yaml")
     tasks = list(tasks)
     ids = [task.id for task in tasks]
     if duplicates := sorted({id for id in ids if ids.count(id) > 1}):
@@ -173,18 +261,19 @@ def run(
             f.write(json.dumps(line, ensure_ascii=False) + "\n")
             f.flush()
 
-        # TODO: record the commit and a hash of each task and state, with the first real runs in
-        # step 5, so that a result can be reproduced after the tasks change.
         record(
             {
                 "part": name or getattr(part, "__name__", repr(part)),
                 "k": k,
                 "started": dt.datetime.now(dt.UTC).isoformat(),
+                "prices_as_of": prices.load().as_of.isoformat(),  # so that stale prices show
             }
         )
         try:
             for task in tasks:
-                summaries[task.id] = summarise(task.suite, run_task(task, part, k, record))
+                summaries[task.id] = summarise(
+                    task.suite, run_task(task, part, k, record, web_search)
+                )
             complete = True
         finally:
             record({"complete": complete, "summaries": summaries})
@@ -215,10 +304,12 @@ def main() -> None:
 
     try:
         tasks = select_tasks(args.part, args.tasks)
-    except ValueError as error:
+        # investigate is the only part that searches
+        web_search = TavilyWebSearch() if args.part == "investigate" else None
+    except (ValueError, WebSearchAccessError) as error:
         parser.error(str(error))
     out = RESULTS / f"{dt.datetime.now(dt.UTC):%Y-%m-%dT%H-%M-%S-%fZ}.jsonl"
-    for task_id, s in run(tasks, PARTS[args.part], args.k, out, args.part).items():
+    for task_id, s in run(tasks, PARTS[args.part], args.k, out, args.part, web_search).items():
         graders = ", ".join(f"{name} {n}/{s['trials']}" for name, n in s["graders"].items())
         if "pass@k" in s:
             result = (
@@ -230,6 +321,7 @@ def main() -> None:
             result += f"; graders: {graders}"
         if s["errors"]:
             result += f"; part errors: {s['errors']}"
+        result += f"; tool calls: {s['tool_calls']}, cost: ${s['cost_usd']:.4f}"
         print(f"{task_id}: {result}")
     print(f"Trials: {out}")
 

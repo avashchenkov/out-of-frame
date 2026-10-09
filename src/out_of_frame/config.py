@@ -7,3 +7,13 @@ MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
 
 # Tool calls in one investigation, Tavily searches and page reads together.
 TOOL_CAP = int(os.environ.get("OUT_OF_FRAME_TOOL_CAP", "3"))
+
+# Results of one web search.
+SEARCH_RESULTS = int(os.environ.get("OUT_OF_FRAME_SEARCH_RESULTS", "5"))
+
+# A longer page is cut, so that a prompt stays short: about 10k tokens a page, and Haiku 5.5
+# costs five times as much for a prompt over 100k tokens.
+PAGE_CHARS = int(os.environ.get("OUT_OF_FRAME_PAGE_CHARS", "40000"))
+
+# Tries of one web search or page read that fails for a while, such as on a timeout.
+WEB_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_WEB_ATTEMPTS", "3"))

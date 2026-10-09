@@ -60,11 +60,12 @@ trams included, without an access agreement.
 
 ## Tavily
 
-A web search API. The model calls it through the agent's own two tools, search and extract,
-which take only a query or a URL; code calls Tavily behind them with fixed settings. Search
+A web search API. The model reaches it only through the agent's own two tools, search and
+extract, which take a query or a URL; code calls Tavily behind them with fixed settings. Search
 returns pages with their URL, title and a short snippet; by default it does not return the
-full text. Extract returns the full text of one URL. Tavily also offers crawl; this project
-does not use it.
+full text. Extract returns the full text of one URL; a page it cannot read is listed as
+failed, and only pages it reads cost credits. Without a key, the Python client quietly falls
+back to Tavily's keyless limits. Tavily also offers crawl; this project does not use it.
 
 ## Data rights
 

@@ -1,0 +1,17 @@
+# Prices in USD, for the cost that a run reports. They are not settings: change them here when a
+# provider changes its prices, and update as_of.
+#
+# Models: https://platform.claude.com/docs/en/about-claude/pricing
+# Claude Haiku 5.5 costs five times as much for a prompt over 100k tokens; the prices here are
+# for a shorter prompt, and the page cut keeps prompts short (see PAGE_CHARS in config.py).
+# Tavily: https://docs.tavily.com/documentation/api-credits
+
+as_of: 2026-10-09
+
+models:
+  claude-haiku-5-5: {input_per_mtok: 0.10, output_per_mtok: 0.50}
+
+tavily:
+  credit: 0.008
+  search_credits: 1.0  # one search at basic depth
+  page_credits: 0.2  # one page read at basic depth; a page that Tavily cannot read is free

@@ -13,29 +13,7 @@ from pydantic import BaseModel, create_model
 from out_of_frame import research_scope
 from out_of_frame.config import MODEL
 from out_of_frame.state import Finding, InvestigationState, ToolCall
-
-# The investigation's web tools, run by code in investigation.py. The finding call has them too:
-# the API needs every tool that the history uses.
-TOOLS = [
-    {
-        "name": "search",
-        "description": "Search the web. Returns short snippets.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"query": {"type": "string"}},
-            "required": ["query"],
-        },
-    },
-    {
-        "name": "extract",
-        "description": "Read the full text of one web page.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"url": {"type": "string"}},
-            "required": ["url"],
-        },
-    },
-]
+from out_of_frame.web_search import TOOLS
 
 
 def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
@@ -62,10 +40,8 @@ def messages(state: InvestigationState) -> list[BaseMessage]:
     chat: list[BaseMessage] = [HumanMessage(task)]
     for n, entry in enumerate(state.history):
         if isinstance(entry, ToolCall):
-            args = {"query": entry.query} if entry.tool == "search" else {"url": entry.url}
-            chat.append(
-                AIMessage("", tool_calls=[{"name": entry.tool, "args": args, "id": f"call-{n}"}])
-            )
+            call = {"name": entry.tool, "args": entry.args, "id": f"call-{n}"}
+            chat.append(AIMessage("", tool_calls=[call]))
         else:  # a result always follows its call, see evals/load.py
             text = "\n\n".join(f"[{id}] {pages[id].url}\n{pages[id].content}" for id in entry.pages)
             chat.append(ToolMessage(text, tool_call_id=f"call-{n - 1}"))
@@ -74,8 +50,10 @@ def messages(state: InvestigationState) -> list[BaseMessage]:
 
 @cache
 def finder():
-    """The model, with the tools that the history uses and the Finding tool it must answer with."""
-    return ChatAnthropic(model=MODEL).bind_tools([*TOOLS, finding_tool()], tool_choice="Finding")
+    """The model, with the Finding tool it must answer with. The web tools are bound too, though
+    never called here: the API needs every tool that the history uses."""
+    tools = [*TOOLS.values(), finding_tool()]
+    return ChatAnthropic(model=MODEL).bind_tools(tools, tool_choice="Finding")
 
 
 def finding_tool() -> type[BaseModel]:

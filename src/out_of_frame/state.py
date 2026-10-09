@@ -112,6 +112,11 @@ class ToolCall(Record):
         assert argument is not None  # check_argument makes sure that it is set
         return argument
 
+    @property
+    def args(self) -> dict[str, str]:
+        """The call's arguments, as the model wrote them."""
+        return {"query" if self.tool == "search" else "url": self.argument}
+
 
 class ToolResult(Record):
     """The pages a tool call showed, by ID; their text is in the state's pages."""
