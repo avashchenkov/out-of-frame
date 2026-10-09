@@ -36,7 +36,7 @@ calibration.
    map object → live Tavily search and page reads → a finding → a report with sources. Until
    triage in step 6, the CLI takes the nearest unnamed object of a checked category. All model
    calls use Claude Haiku 5.5; the evals show if it is not enough. In this order:
-   1. The call that drafts the finding: its prompt and model call. Run F1 against it, and F5
+   1. ✅ The call that drafts the finding: its prompt and model call. Run F1 against it, and F5
       as a positive control: a prompt that never identifies anything also passes F1. The runner
       records an error of the part as a failed trial.
    2. The investigation subgraph in LangGraph ([ADR 1](adr/0001-langgraph.md)): search, the
