@@ -18,6 +18,7 @@ from pydantic_core import to_jsonable_python
 
 import out_of_frame.finding
 import out_of_frame.investigation
+import out_of_frame.prompt_injection
 from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
 from evals.graders.prompt_injection import grade_flagged
 from evals.load import EVALS, Inputs, Task, load, load_all
@@ -87,6 +88,14 @@ def trust_every_page(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Tr
     return Trial(False, transcript=[])
 
 
+def check_page(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """The prompt injection check, on one snippet or page."""
+    if not isinstance(inputs, PageText):
+        raise TypeError("check_page needs a task with a page")
+    [flagged] = out_of_frame.prompt_injection.flag_injections([inputs])
+    return Trial(flagged, transcript=[])
+
+
 def draft_finding(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     """The model call that drafts the finding, on a task from a written state."""
     if not isinstance(inputs, InvestigationState):
@@ -128,6 +137,7 @@ def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
 PARTS: dict[str, Part] = {
     "abstain": abstain,
     "trust_every_page": trust_every_page,
+    "check_page": check_page,
     "draft_finding": draft_finding,
     "investigate": investigate,
 }
@@ -135,6 +145,7 @@ PARTS: dict[str, Part] = {
 PART_SUITES = {
     "abstain": {"finding", "live investigation"},
     "trust_every_page": {"injection check"},
+    "check_page": {"injection check"},
     "draft_finding": {"finding"},
     "investigate": {"live investigation"},
 }

@@ -16,13 +16,14 @@ from evals.run import (
     Outcome,
     Trial,
     abstain,
+    check_page,
     draft_finding,
     investigate,
     run,
     select_tasks,
     trust_every_page,
 )
-from out_of_frame import finding, investigation, prices
+from out_of_frame import finding, investigation, prices, prompt_injection
 from out_of_frame.config import MODEL
 from out_of_frame.state import Coordinates, Finding, InvestigationState, MapObject, Source
 from out_of_frame.web_search import PageText, WebSearchAccessError
@@ -238,6 +239,20 @@ def test_draft_finding_drafts_the_finding_from_the_state(monkeypatch):
         draft_finding(MAP_OBJECT, dt.date(2026, 10, 3), MeteredWebSearch(None))
 
 
+def test_check_page_checks_the_page_alone(monkeypatch):
+    seen = []
+
+    def flag(texts):
+        seen.append(texts)
+        return [True]
+
+    monkeypatch.setattr(prompt_injection, "flag_injections", flag)
+    trial = check_page(PAGE, dt.date(2026, 10, 10), MeteredWebSearch(None))
+    assert seen == [[PAGE]] and trial.outcome is True
+    with pytest.raises(TypeError):
+        check_page(MAP_OBJECT, dt.date(2026, 10, 10), MeteredWebSearch(None))
+
+
 def test_a_part_runs_only_the_tasks_of_its_suites():
     assert {task.suite for task in select_tasks("draft_finding", [])} == {"finding"}
     assert {task.suite for task in select_tasks("investigate", [])} == {"live investigation"}
@@ -313,6 +328,7 @@ def test_a_refused_web_key_stops_the_run(tmp_path):
 def stub_the_model(monkeypatch, searcher, answer):
     monkeypatch.setattr(investigation, "build_search_model", lambda: searcher)
     monkeypatch.setattr(finding, "build_finding_model", lambda: FakeModel(answer))
+    monkeypatch.setattr(prompt_injection, "flag_injections", lambda texts: [False] * len(texts))
 
 
 def test_investigate_keeps_each_step_and_the_cited_pages(monkeypatch):

@@ -17,3 +17,7 @@ PAGE_CHARS = int(os.environ.get("OUT_OF_FRAME_PAGE_CHARS", "40000"))
 
 # Tries of one web search or page read that fails for a while, such as on a timeout.
 WEB_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_WEB_ATTEMPTS", "3"))
+
+# Tries of one prompt injection check whose answer is cut off or does not parse. A page is never
+# shown to the model unchecked, so after the last one the run stops.
+CHECK_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_CHECK_ATTEMPTS", "2"))

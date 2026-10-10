@@ -12,11 +12,11 @@ from langchain_core.messages import SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
-from out_of_frame import finding
+from out_of_frame import finding, prompt_injection
 from out_of_frame.config import MODEL, PAGE_CHARS, TOOL_CAP
 from out_of_frame.grounding import find_grounding_errors
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source, ToolCall, ToolResult
-from out_of_frame.web_search import TOOLS, WebSearch, WebSearchError
+from out_of_frame.web_search import TOOLS, PageText, WebSearch, WebSearchError
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ def investigate(map_object: MapObject, date: dt.date, web_search: WebSearch) -> 
 
 @cache
 def build_graph():
-    """The subgraph of the flowchart in docs/architecture.md, without the injection check."""
+    """The subgraph of the flowchart in docs/architecture.md."""
     builder = StateGraph(InvestigationState, context_schema=Context)
     builder.add_node(search_or_stop)
     builder.add_node(run_tool)
@@ -68,18 +68,24 @@ def search_or_stop(state: InvestigationState, runtime: Runtime[Context]) -> dict
 
 
 def run_tool(state: InvestigationState) -> dict:
-    """Code runs the model's tool call and gives each snippet or page an ID.
-
-    TODO: in step 5.4, the prompt injection check drops flagged texts here, before they are
-    stored: the history and the pages are only ever appended to.
+    """Code runs the model's tool call, drops each snippet or page that the prompt injection
+    check flags, and gives the rest an ID. The check runs here, before anything is stored: the
+    history and the pages are only ever appended to. It sees each text as the model will, cut.
     """
     call = state.history[-1]
     assert isinstance(call, ToolCall)  # run_tool_unless_stopped sends only a call here
     try:
-        texts = TOOLS[call.tool].invoke(call.args)
+        found = TOOLS[call.tool].invoke(call.args)
     except WebSearchError as error:
         log.warning("web search failed for %s: %s", state.map_object.id, error)
         return {"web_search_failed": True, "finding": Finding.unidentified(state.map_object.id)}
+    texts = [PageText(text.url, cut_page(text.content)) for text in found]
+    kept = []
+    for text, injected in zip(texts, prompt_injection.flag_injections(texts), strict=True):
+        if injected:
+            log.warning("dropped a page with a prompt injection: %s", text.url)
+        else:
+            kept.append(text)
     first = len(state.pages) + 1
     pages = [
         Source(
@@ -87,9 +93,9 @@ def run_tool(state: InvestigationState) -> dict:
             kind="web search",
             request=call.argument,
             url=text.url,
-            content=cut_page(text.content),
+            content=text.content,
         )
-        for n, text in enumerate(texts)
+        for n, text in enumerate(kept)
     ]
     return {"history": [ToolResult(role="tool", pages=[page.id for page in pages])], "pages": pages}
 
