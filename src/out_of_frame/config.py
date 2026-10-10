@@ -30,5 +30,10 @@ USER_AGENT = os.environ.get(
     "OUT_OF_FRAME_USER_AGENT", "out-of-frame (github.com/avashchenkov/out-of-frame)"
 )
 
+# The public Overpass instance, which code asks for the map objects around the property.
+OVERPASS_URL = os.environ.get(
+    "OUT_OF_FRAME_OVERPASS_URL", "https://overpass-api.de/api/interpreter"
+)
+
 # Tries of one call to Nominatim or Overpass that fails for a while, such as on a timeout.
 SOURCE_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_SOURCE_ATTEMPTS", "3"))

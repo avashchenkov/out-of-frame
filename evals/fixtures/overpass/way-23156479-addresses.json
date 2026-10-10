@@ -1,0 +1,76 @@
+{
+ "version": 0.6,
+ "generator": "Overpass API 0.7.62.11 87bfad18",
+ "osm3s": {
+  "timestamp_osm_base": "2026-10-10T02:06:57Z",
+  "timestamp_areas_base": "2026-10-08T07:25:51Z",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 2875569604,
+   "tags": {
+    "addr:city": "Berlin",
+    "addr:country": "DE",
+    "addr:housenumber": "1",
+    "addr:postcode": "13597",
+    "addr:street": "Klärwerkstraße",
+    "addr:suburb": "Spandau",
+    "source": "Geoportal Berlin / Hauskoordinaten"
+   }
+  },
+  {
+   "type": "node",
+   "id": 2875570074,
+   "tags": {
+    "addr:city": "Berlin",
+    "addr:country": "DE",
+    "addr:housenumber": "1A",
+    "addr:postcode": "13597",
+    "addr:street": "Klärwerkstraße",
+    "addr:suburb": "Spandau",
+    "source": "Geoportal Berlin / Hauskoordinaten"
+   }
+  },
+  {
+   "type": "node",
+   "id": 5984844892,
+   "tags": {
+    "addr:city": "Berlin",
+    "addr:country": "DE",
+    "addr:housenumber": "1A",
+    "addr:postcode": "13597",
+    "addr:street": "Klärwerkstraße",
+    "addr:suburb": "Spandau",
+    "contact:email": "info@immoeinfach.de",
+    "contact:fax": "+49 30 26587572",
+    "contact:phone": "+49 30 26587570",
+    "contact:website": "https://immoeinfach.de/",
+    "name": "immoeinfach",
+    "office": "estate_agent",
+    "opening_hours": "Mo-Fr 08:00-17:00",
+    "operator": "immoeinfach.de Service GmbH"
+   }
+  },
+  {
+   "type": "node",
+   "id": 7502994426,
+   "tags": {
+    "addr:city": "Berlin",
+    "addr:country": "DE",
+    "addr:housenumber": "1A",
+    "addr:postcode": "13597",
+    "addr:street": "Klärwerkstraße",
+    "addr:suburb": "Spandau",
+    "contact:email": "hello@exapture.de",
+    "contact:phone": "+49 30 209652600",
+    "contact:website": "https://www.exapture.de/",
+    "name": "exapture",
+    "office": "company",
+    "opening_hours": "Mo-Fr 08:00-17:00",
+    "operator": "exapture GmbH"
+   }
+  }
+ ]
+}
