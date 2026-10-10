@@ -1,8 +1,7 @@
-"""One run of the agent, from the property's address to the findings: the LangGraph graph of
+"""One run of the agent, from the property's address to the report: the LangGraph graph of
 docs/architecture.md#one-run.
 
-TODO: the report (step 5.5); the input conversation (step 7); B-Plans (step 8); journeys
-(step 9).
+TODO: the input conversation (step 7); B-Plans (step 8); journeys (step 9).
 """
 
 import datetime as dt
@@ -13,7 +12,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 from langgraph.types import Send
 
-from out_of_frame import geocoding, investigation, map_objects
+from out_of_frame import geocoding, investigation, map_objects, report
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
 from out_of_frame.state import Address, MapObject, RunState
@@ -47,12 +46,14 @@ def build_graph():
     builder.add_node(geocode_property)
     builder.add_node(get_map_objects)
     builder.add_node(investigate_object)
+    builder.add_node(write_report)
     builder.add_edge(START, "geocode_property")
     builder.add_edge("geocode_property", "get_map_objects")
     builder.add_conditional_edges(
-        "get_map_objects", send_each_object_to_investigation, ["investigate_object", END]
+        "get_map_objects", send_each_object_to_investigation, ["investigate_object", "write_report"]
     )
-    builder.add_edge("investigate_object", END)
+    builder.add_edge("investigate_object", "write_report")  # once every investigation has ended
+    builder.add_edge("write_report", END)
     return builder.compile()
 
 
@@ -89,7 +90,7 @@ def choose_object_to_investigate(found: list[MapObject]) -> MapObject | None:
 
 def send_each_object_to_investigation(state: RunState) -> list[Send] | str:
     if not state.map_objects:
-        return END
+        return "write_report"
     return [
         Send("investigate_object", ObjectToInvestigate(map_object=o)) for o in state.map_objects
     ]
@@ -108,3 +109,7 @@ def investigate_object(state: ObjectToInvestigate, runtime: Runtime[Context]) ->
         "sources": cited,
         "failures": ["web search"] if end.web_search_failed else [],
     }
+
+
+def write_report(state: RunState, runtime: Runtime[Context]) -> dict:
+    return {"report": report.write_report(state, runtime.context.date)}

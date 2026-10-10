@@ -37,3 +37,6 @@ OVERPASS_URL = os.environ.get(
 
 # Tries of one call to Nominatim or Overpass that fails for a while, such as on a timeout.
 SOURCE_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_SOURCE_ATTEMPTS", "3"))
+
+# Drafts of one report that cites an ID it was not given, before the run stops.
+REPORT_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_REPORT_ATTEMPTS", "2"))

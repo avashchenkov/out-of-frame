@@ -7,13 +7,22 @@ import json
 import pytest
 
 from evals.load import FIXTURES
-from out_of_frame import agent, finding, geocoding, investigation, map_objects, prompt_injection
+from out_of_frame import (
+    agent,
+    finding,
+    geocoding,
+    investigation,
+    map_objects,
+    prompt_injection,
+    report,
+)
 from out_of_frame.agent import UnclearAddressError
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.map_objects import MapError
 from out_of_frame.state import Coordinates, Finding
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_investigation import SEARCH, SNIPPET, FakeSearcher, FakeWebSearch
+from tests.test_report import FakeWriter
 
 DATE = dt.date(2026, 10, 10)
 FREIHEIT_22 = "Freiheit 22, 13597 Berlin"
@@ -43,6 +52,13 @@ def stub_the_sources(monkeypatch, nominatim="freiheit-22.json", overpass=None):
     monkeypatch.setattr(map_objects, "call_overpass", call_overpass)
 
 
+@pytest.fixture(autouse=True)
+def stub_the_report(monkeypatch):
+    """A report that cites every object it is given."""
+    writer = FakeWriter()
+    monkeypatch.setattr(report, "build_report_model", lambda: writer)
+
+
 def stub_the_models(monkeypatch):
     """One search, then the finding of tests.test_finding; no page is flagged."""
     searcher = FakeSearcher(SEARCH)  # one for the whole run, so that it stops after the search
@@ -63,6 +79,8 @@ def test_the_nearest_unnamed_industrial_area_is_investigated(monkeypatch):
     assert (found.map_object_id, found.outcome) == ("osm-way-23156479", "identified")
     assert [source.id for source in state.sources] == ["overpass-1", "web-1"]  # web-1 is cited
     assert state.failures == []
+    assert state.report is not None
+    assert "An object [1]." in state.report and "1. https://example.org" in state.report
 
 
 def test_an_address_without_one_precise_match_stops_the_run(monkeypatch):
@@ -88,6 +106,7 @@ def test_a_map_failure_is_recorded_and_the_run_goes_on(monkeypatch, failed_query
     state = agent.run(FREIHEIT_22, DATE, FakeWebSearch())
     assert state.failures == ["map"]
     assert state.map_objects == [] and state.findings == []
+    assert state.report is not None  # which says that the map part is missing
 
 
 def test_a_web_search_failure_leaves_the_object_unidentified(monkeypatch):

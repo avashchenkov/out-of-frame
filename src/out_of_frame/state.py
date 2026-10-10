@@ -156,10 +156,11 @@ def add_new(old: list, new: list) -> list:
 class RunState(Record):
     """The state of one run, see docs/architecture.md#the-state. LangGraph appends a node's
     sources, map objects and findings to the lists, adds each new failure, and replaces the
-    property."""
+    property and the report."""
 
     property: Address
     sources: Annotated[list[Source], operator.add] = []
     map_objects: Annotated[list[MapObject], operator.add] = []
     findings: Annotated[list[Finding], operator.add] = []
     failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
+    report: str | None = None  # with its references filled in
