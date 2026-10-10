@@ -34,7 +34,7 @@ flowchart TD
         direction TB
         J(["Research starts<br/><i>branches run in parallel</i>"]):::milestone
         subgraph SUR["Branch: surroundings"]
-            OV["Get map objects in the radius<br/>nearest N per category"]:::code
+            OV["Get map objects in the radius<br/>nearest N per category,<br/>addresses for investigation"]:::code
             OVP[["Overpass API<br/>OpenStreetMap data"]]:::ext
             T["Triage<br/>check the remaining objects"]:::model
         end
@@ -160,10 +160,13 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    one source can be enough. Every branch runs to its end, even with nothing to do; its result
    is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each category
-     within the category's circle, and the addresses of the buildings inside each area. Code
-     groups the elements into objects (one site or one road can be several elements), gives
-     each object the addresses inside it and keeps the nearest N per category. Code sends every `industry` object
-     and any object tagged as proposed or under construction to investigation, within the cap.
+     within the category's circle. Code groups the elements into objects (one site or one road
+     can be several elements) and keeps the nearest N per category. For each object that code
+     sends to investigation, a second query returns the addresses of the buildings inside it;
+     the other objects get none, which spares the busy public instance. TODO: in step 6, decide
+     where an object that triage sends to investigation gets its addresses. Code sends every
+     `industry` object and any object tagged as proposed or under construction to
+     investigation, within the cap.
      The model triages only the rest, one per call, from the name, tags and what it knows.
      If these are enough to fill the finding without conflicts, it writes it with the map's
      status; otherwise it sends the object to investigation. These findings use the map
@@ -299,8 +302,9 @@ A `Journey` has a duration only when its outcome is found. The transit response 
 in the state: code computes the duration from it at once.
 
 `MapObject.addresses` lists the street addresses of the buildings inside a map area, from
-OpenStreetMap. It is empty for a road, a railway or a B-Plan. An unnamed object cannot be found
-on the web by its coordinates, but it can by its address.
+OpenStreetMap, for an object that is investigated. It is empty for any other object, and for
+a road, a railway or a B-Plan. An unnamed object cannot be found on the web by its
+coordinates, but it can by its address.
 
 Only a `Finding` classifies an object: its `identified_type` and `status` come from the lists
 in the research scope.
@@ -324,7 +328,7 @@ message is the input of the run and goes straight into `messages`.
 | Input | Geocode every address | code | `property.text`, `destinations[]` (only `address.text` is geocoded) | `property.coordinates`, `property.source_id`, `destinations[].address.coordinates`, `destinations[].address.source_id`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
-| Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
+| Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, with the addresses of each object that code sends to investigation; `sources`, `failures` |
 | Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_ids` |
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the `sources` it cites, `failures` |

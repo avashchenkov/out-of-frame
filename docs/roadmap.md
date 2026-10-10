@@ -51,8 +51,8 @@ calibration.
 
    The result must demonstrate a supported finding and an honest unidentified outcome when
    evidence is missing; inspect the first report by hand.
-6. **Several objects and triage.** Extend the path to map categories, grouping, nearest-N limits,
-   code routing, triage and parallel investigations. Add the
+6. **Several objects and triage.** Extend the path to map categories, grouping, nearest-N limits
+   (five per category), code routing, triage and parallel investigations. Add the
    [labelling script](eval-architecture.md#ground-truth-labels), which uses the grouping code.
    Check T1–T2, F2, F6 and R2–R4, plus
    code tests for routing (T3), grouping, distances, caps and failures. The report must preserve
