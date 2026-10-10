@@ -1,7 +1,7 @@
 """The run state as a logical data model, see docs/architecture.md#the-state.
 
-TODO: Message, Address, Destination, Journey and the run state itself, with the steps that
-use them.
+TODO: Message, Destination and Journey, and the run state's fields for them, with the steps
+that use them.
 """
 
 import operator
@@ -15,6 +15,11 @@ from out_of_frame.record import Record
 class Coordinates(Record):
     lat: float
     lon: float
+
+
+class Address(Record):
+    text: str  # as the user gave it; code never changes it
+    coordinates: Coordinates | None = None  # only for exactly one precise match
 
 
 class Source(Record):
@@ -138,3 +143,23 @@ class InvestigationState(Record):
     pages: Annotated[list[Source], operator.add]
     finding: Finding | None
     web_search_failed: bool = False  # the finding is then unidentified; written states omit it
+
+
+type Service = Literal["map", "web search"]  # TODO: plans and transit, with their steps
+
+
+def add_new(old: list, new: list) -> list:
+    """The old list with each new entry that it does not have yet."""
+    return old + [entry for entry in new if entry not in old]
+
+
+class RunState(Record):
+    """The state of one run, see docs/architecture.md#the-state. LangGraph appends a node's
+    sources, map objects and findings to the lists, adds each new failure, and replaces the
+    property."""
+
+    property: Address
+    sources: Annotated[list[Source], operator.add] = []
+    map_objects: Annotated[list[MapObject], operator.add] = []
+    findings: Annotated[list[Finding], operator.add] = []
+    failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
