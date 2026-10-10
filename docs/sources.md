@@ -16,7 +16,8 @@ queries. Tavily search and extract are the model's only tools (see
 
 Geocoding over OpenStreetMap data. Public instance at
 `https://nominatim.openstreetmap.org/search`. A call returns the places that match an address,
-with their coordinates.
+with their coordinates. Its usage policy allows at most one request a second and asks each
+app to name itself in the User-Agent.
 
 [Search](https://nominatim.org/release-docs/latest/api/Search/) returns a list of matches,
 which can be empty. A match can be a building, a street or a whole district, so coordinates

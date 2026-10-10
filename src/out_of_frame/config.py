@@ -21,3 +21,14 @@ WEB_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_WEB_ATTEMPTS", "3"))
 # Tries of one prompt injection check whose answer is cut off or does not parse. A page is never
 # shown to the model unchecked, so after the last one the run stops.
 CHECK_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_CHECK_ATTEMPTS", "2"))
+
+# The public Nominatim instance. Its usage policy asks each app to name itself in the User-Agent.
+NOMINATIM_URL = os.environ.get(
+    "OUT_OF_FRAME_NOMINATIM_URL", "https://nominatim.openstreetmap.org/search"
+)
+USER_AGENT = os.environ.get(
+    "OUT_OF_FRAME_USER_AGENT", "out-of-frame (github.com/avashchenkov/out-of-frame)"
+)
+
+# Tries of one call to Nominatim or Overpass that fails for a while, such as on a timeout.
+SOURCE_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_SOURCE_ATTEMPTS", "3"))
