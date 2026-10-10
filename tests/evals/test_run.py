@@ -12,7 +12,7 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from evals.graders.finding import Expected
 from evals.load import TASKS, Task
 from evals.run import (
-    MeteredWebSearch,
+    NoWebSearch,
     Outcome,
     Trial,
     abstain,
@@ -232,11 +232,11 @@ def test_draft_finding_drafts_the_finding_from_the_state(monkeypatch):
         return found.finding
 
     monkeypatch.setattr("out_of_frame.finding.draft_finding", fake_draft_finding)
-    trial = draft_finding(STATE, dt.date(2026, 10, 3), MeteredWebSearch(None))
+    trial = draft_finding(STATE, dt.date(2026, 10, 3), NoWebSearch())
     assert seen == [(STATE, dt.date(2026, 10, 3))]
     assert trial.outcome == found
     with pytest.raises(TypeError):
-        draft_finding(MAP_OBJECT, dt.date(2026, 10, 3), MeteredWebSearch(None))
+        draft_finding(MAP_OBJECT, dt.date(2026, 10, 3), NoWebSearch())
 
 
 def test_check_page_checks_the_page_alone(monkeypatch):
@@ -247,10 +247,10 @@ def test_check_page_checks_the_page_alone(monkeypatch):
         return [True]
 
     monkeypatch.setattr(prompt_injection, "flag_injections", flag)
-    trial = check_page(PAGE, dt.date(2026, 10, 10), MeteredWebSearch(None))
+    trial = check_page(PAGE, dt.date(2026, 10, 10), NoWebSearch())
     assert seen == [[PAGE]] and trial.outcome is True
     with pytest.raises(TypeError):
-        check_page(MAP_OBJECT, dt.date(2026, 10, 10), MeteredWebSearch(None))
+        check_page(MAP_OBJECT, dt.date(2026, 10, 10), NoWebSearch())
 
 
 def test_a_part_runs_only_the_tasks_of_its_suites():

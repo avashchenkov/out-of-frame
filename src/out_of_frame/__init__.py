@@ -1,2 +1,1 @@
-def main() -> None:
-    print("Hello from out-of-frame!")
+"""Out of Frame: an agent that checks what lies around a Berlin address."""

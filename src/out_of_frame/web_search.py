@@ -10,6 +10,7 @@ from langgraph.runtime import get_runtime
 from tavily import TavilyClient
 from tavily.errors import ForbiddenError, InvalidAPIKeyError
 
+from out_of_frame import prices
 from out_of_frame.config import SEARCH_RESULTS, WEB_ATTEMPTS
 
 
@@ -96,3 +97,25 @@ def call_tavily(method, *args, **kwargs) -> dict:
                 raise WebSearchError(f"{WEB_ATTEMPTS} tries failed: {error!r}") from error
             time.sleep(attempt)
     raise ValueError("OUT_OF_FRAME_WEB_ATTEMPTS must be at least 1")
+
+
+class MeteredWebSearch:
+    """A web search that passes each call on to the one it wraps and counts the tool calls and
+    the Tavily credits, for the cost of a run."""
+
+    def __init__(self, web_search: WebSearch):
+        self.web_search = web_search
+        self.tool_calls = 0
+        self.credits = 0.0
+
+    def search(self, query: str) -> list[PageText]:
+        self.tool_calls += 1
+        texts = self.web_search.search(query)
+        self.credits += prices.load().tavily.search_credits
+        return texts
+
+    def extract(self, url: str) -> list[PageText]:
+        self.tool_calls += 1
+        texts = self.web_search.extract(url)
+        self.credits += prices.load().tavily.page_credits * len(texts)
+        return texts

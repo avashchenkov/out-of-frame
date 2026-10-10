@@ -624,6 +624,7 @@ name = "out-of-frame"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "anthropic" },
     { name = "httpx" },
     { name = "jinja2" },
     { name = "langchain-anthropic" },
@@ -641,6 +642,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic", specifier = ">=1.12.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "langchain-anthropic", specifier = ">=1.7.5" },

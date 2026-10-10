@@ -25,8 +25,15 @@ from evals.load import EVALS, Inputs, Task, load, load_all
 from out_of_frame import prices
 from out_of_frame.config import MODEL
 from out_of_frame.grounding import find_grounding_errors
+from out_of_frame.prices import compute_run_cost
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source
-from out_of_frame.web_search import PageText, TavilyWebSearch, WebSearch, WebSearchAccessError
+from out_of_frame.web_search import (
+    MeteredWebSearch,
+    PageText,
+    TavilyWebSearch,
+    WebSearch,
+    WebSearchAccessError,
+)
 
 RESULTS = EVALS / "results"
 
@@ -47,31 +54,15 @@ class Trial:
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
 
 
-class MeteredWebSearch:
-    """The web search that a part gets, with the tool calls and the Tavily credits counted by the
-    harness. A run without live web search fails any trial whose part searches."""
-
-    def __init__(self, web_search: WebSearch | None):
-        self.web_search = web_search
-        self.tool_calls = 0
-        self.credits = 0.0
+class NoWebSearch:
+    """The web search of a run without one: only the investigate part searches, so a part that
+    searches anyway fails its trial."""
 
     def search(self, query: str) -> list[PageText]:
-        self.tool_calls += 1
-        texts = self.live().search(query)
-        self.credits += prices.load().tavily.search_credits
-        return texts
+        raise RuntimeError("this run has no web search")
 
     def extract(self, url: str) -> list[PageText]:
-        self.tool_calls += 1
-        texts = self.live().extract(url)
-        self.credits += prices.load().tavily.page_credits * len(texts)
-        return texts
-
-    def live(self) -> WebSearch:
-        if self.web_search is None:
-            raise RuntimeError("this run has no web search: only the investigate part searches")
-        return self.web_search
+        raise RuntimeError("this run has no web search")
 
 
 # The part of the agent a suite runs. It gets only the task's inputs, the date and web search.
@@ -188,21 +179,13 @@ def dump_outcome(task: Task, outcome: Outcome | bool) -> dict:
     }
 
 
-def compute_cost(usage: dict, credits: float) -> float:
-    """USD for the model's tokens and the Tavily credits. The usage is keyed by the API's model
-    snapshot, not by MODEL, but a run uses one model."""
-    input_tokens = sum(u["input_tokens"] for u in usage.values())
-    output_tokens = sum(u["output_tokens"] for u in usage.values())
-    return prices.load().compute_cost(MODEL, input_tokens, output_tokens, credits)
-
-
 def run_task(
     task: Task, part: Part, k: int, record: Callable[[dict], None], web_search: WebSearch | None
 ) -> list[dict]:
     trials = []
     for n in range(1, k + 1):
         date = task.date or dt.date.today()
-        metered = MeteredWebSearch(web_search)
+        metered = MeteredWebSearch(web_search or NoWebSearch())
         trial, error = None, None
         with get_usage_metadata_callback() as usage:
             try:
@@ -213,7 +196,7 @@ def run_task(
                 error = traceback.format_exc()
         counts = {
             "tool_calls": metered.tool_calls,
-            "cost_usd": compute_cost(usage.usage_metadata, metered.credits),
+            "cost_usd": compute_run_cost(usage.usage_metadata, metered.credits),
         }
         if trial is None:
             failed = {

@@ -7,6 +7,7 @@ from importlib.resources import files
 import yaml
 from pydantic import NonNegativeFloat
 
+from out_of_frame.config import MODEL
 from out_of_frame.record import Record
 
 
@@ -40,3 +41,12 @@ def load() -> Prices:
     """The prices, read once."""
     path = files("out_of_frame").joinpath("data/prices.yaml")
     return Prices.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+
+def compute_run_cost(usage: dict, credits: float) -> float:
+    """USD for the model's tokens, as get_usage_metadata_callback counts them, and the Tavily
+    credits. The usage is keyed by the API's model snapshot, not by MODEL, but a run uses one
+    model."""
+    input_tokens = sum(u["input_tokens"] for u in usage.values())
+    output_tokens = sum(u["output_tokens"] for u in usage.values())
+    return load().compute_cost(MODEL, input_tokens, output_tokens, credits)
