@@ -43,7 +43,7 @@ calibration.
       stopping decision, the tool cap, the finding, the grounding check and a web search
       failure. Code tests with a stubbed model and Tavily.
    3. ✅ Live Tavily. Run L1 on the live web; the harness counts the tool calls and the cost.
-   4. The injection guards: prepare P1–P4 and F4, then build the checker.
+   4. ✅ The injection guards: prepare P1–P4 and F4, then build the checker.
    5. The CLI path: Nominatim, Overpass, the object choice and the report with sources. Check
       the whole path with replayed sources and a stubbed model.
    6. The rubrics of the three MVP judges, written with the first report. Run the judges
