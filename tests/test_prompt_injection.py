@@ -90,4 +90,5 @@ def test_an_api_error_is_not_tried_again(monkeypatch):
     stub_the_check(monkeypatch, counted)
     with pytest.raises((PromptInjectionCheckError, ConnectionError)):
         prompt_injection.flag_injections([PAGE, PLANTED])
-    assert calls[PLANTED.url] == 1
+    # Not at all, if PAGE fails first: the batch then cancels the checks that have not started.
+    assert calls.get(PLANTED.url, 0) <= 1
