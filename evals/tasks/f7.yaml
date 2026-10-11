@@ -1,0 +1,21 @@
+# F7, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F7
+suite: finding
+covers: >-
+  The pages settle the object, a site at Klärwerkstraße 1 and 1a shared by a cleaning business,
+  RETEC GmbH, and by training and job-centre projects, but they give each business's name, its
+  address and its activity on separate lines, with other lines between them: directory entries
+  and an Impressum. In 3 of 4 live runs on 2026-10-10 and 2026-10-11, the finding took the right
+  type and status but joined such lines into one key fact, leaving out the words between them,
+  and the grounding check rejected it. Each key fact must be one passage of a source.
+date: 2026-10-11  # fixed data: the date the pages were retrieved
+
+input:
+  state: f7-separate-lines.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: commercial  # services that make or repair nothing: cleaning and training
+  status: operating  # a current directory entry of RETEC GmbH at Klärwerkstraße 1

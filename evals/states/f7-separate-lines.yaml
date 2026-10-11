@@ -1,0 +1,433 @@
+# An investigation state with two searches whose pages settle the object, but give the name, the
+# address and the activity of each business on separate lines. The object, OSM way 23156479,
+# is the unnamed industrial area 118 m from Freiheit 22, 13597 Berlin, the E1 candidate. The
+# pages are real and were retrieved on 2026-10-11, in the third live run of roadmap step 5.6.
+# Each is rewritten in new words; business names, addresses, opening hours and the lines that
+# the finding needs are kept as found, and so is the layout: the line breaks, the separate
+# address blocks and the repeated directory details, since the failure this task checks
+# depends on them. The names of people are left out.
+map_object:
+  id: osm-way-23156479
+  name: null
+  details: {category: industry, landuse: industrial}
+  addresses:
+    - Klärwerkstraße 1, 13597 Berlin
+    - Klärwerkstraße 1A, 13597 Berlin
+  coordinates: {lat: 52.52801, lon: 13.23528}  # the centre of the way's bounds
+  distance_from_property_m: 118
+  source_id: overpass-1  # the map response the object came from; see evals/fixtures/overpass/
+
+history:
+  - {role: model, tool: search, query: "Klärwerkstraße 1, 13597 Berlin"}
+  - {role: tool, pages: [web-1, web-2, web-3, web-4, web-5]}
+  - {role: model, tool: search, query: "Klärwerkstraße 1A, 13597 Berlin"}
+  - {role: tool, pages: [web-6, web-7, web-8, web-9, web-10]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Klärwerkstraße 1, 13597 Berlin
+    url: https://s-b-h.de/sbh-vor-ort/sbh-nordost/standorte-nordost/berlin_482b4a43484c5033524c4d7043646f454e4d5869724
+    content: |-
+      Berlin - Spandau, Klärwerkstraße 1 a — SBH
+      to the courses
+
+      # Berlin - Spandau, Klärwerkstraße 1 a
+
+      Street:  Klärwerkstraße 1 a   Postcode / town:  13597 Berlin - Spandau   Phone and e-mail of the contact person
+
+       Marker on the map: Berlin - Spandau, Klärwerkstraße 1 a, route planner
+
+        52.528333 13.23307
+
+      to the courses
+
+      Places free
+       No places free
+
+      Courses at this site, among them:
+       + Berufliche Weiterbildung
+       + Ausbildung und Umschulung
+       + Berufsorientierung und Berufswahl
+       + Sprache-Beruf-Integration
+       + Berufliche Rehabilitation
+  - id: web-2
+    kind: web search
+    request: Klärwerkstraße 1, 13597 Berlin
+    url: https://neue-perspektive-spandau.de/kontakt
+    content: |-
+      Kontakt | NEUE PERSPEKTIVE SPANDAU
+      Call us now
+       Home
+       Project
+       Team
+       Contact
+
+      NEUE PERSPEKTIVE SPANDAU
+
+      # Get in touch
+
+      A warm welcome to NEUE PERSPEKTIVE SPANDAU.
+
+      #### Adresse
+
+      Klärwerkstraße 1a
+      13597 Berlin
+
+      #### E-Mail
+
+      info.spandau@pmp-management.de
+
+      #### Telefon
+
+      030. 33 939 758
+
+      ÖFFNUNGSZEITEN
+      Montag bis Freitag
+      08:30 Uhr – 16:30 Uhr
+
+      Im Auftrag des Jobcenters Berlin Spandau
+
+      ## Become part of NEUE PERSPEKTIVE SPANDAU
+
+      Write to us or come by.
+      We are glad to grow.
+  - id: web-3
+    kind: web search
+    request: Klärwerkstraße 1, 13597 Berlin
+    url: https://suchehandwerker.de/betrieb/retec-gmbh-259018
+    content: |-
+      Retec GmbH in Berlin
+      ## About
+
+      Need a Handwerksbetrieb für Reinigung, for a home or for a business? Then get in touch with Retec GmbH in Berlin, which takes new orders in Berlin and around.
+
+      ## Details
+
+       www.retec-berlin.com
+       info@retec-berlin.com
+       +49 30 68409930
+       Klärwerkstraße 1 13597 Berlin  Wegbeschreibung
+       Ortsteil: Spandau
+       Keine Bewertungen
+       Montags: 08:00 - 20:00
+
+        Dienstags: 08:00 - 20:00
+
+        Mittwochs: 08:00 - 20:00
+
+        Donnerstags: 08:00 - 20:00 [...] Freitags: 08:00 - 20:00
+
+        Samstags: 08:00 - 20:00
+
+        Sonntags: 08:00 - 20:00
+
+      ## Dienstleistungen
+
+      Reinigung
+
+      ## Details
+
+       www.retec-berlin.com
+       info@retec-berlin.com
+       +49 30 68409930
+       Klärwerkstraße 1 13597 Berlin  Wegbeschreibung
+       Ortsteil: Spandau
+       Keine Bewertungen
+       Montags: 08:00 - 20:00
+
+        Dienstags: 08:00 - 20:00
+
+        Mittwochs: 08:00 - 20:00
+
+        Donnerstags: 08:00 - 20:00
+
+        Freitags: 08:00 - 20:00
+
+        Samstags: 08:00 - 20:00
+
+        Sonntags: 08:00 - 20:00
+
+      ### Is this your business? [...] 1. Expert reports
+         2. Locksmith
+         3. House clearance
+         4. Removals
+
+      ## Retec GmbH
+
+      Back
+
+      # Retec GmbH
+
+      13597 Berlin - Spandau
+
+      Keine Bewertungen
+
+      Rate this business
+
+      Retec GmbH in Berlin
+
+      Rate  Call   Message
+
+      Keine Bewertungen
+
+      Klärwerkstraße 1 13597 Berlin  Wegbeschreibung
+
+      ## About
+  - id: web-4
+    kind: web search
+    request: Klärwerkstraße 1, 13597 Berlin
+    url: https://gartenabfall-entsorgung-berlin.de/impressum
+    content: |-
+      Impressum - Gartenabfall Entsorung Berlin
+      For questions on how your personal data are collected, used, corrected or deleted, or to withdraw your consent, write to the managing director at
+       Klärwerkstraße 1
+       13597 Berlin
+       E-Mail: info@retec-berlin.com
+
+
+
+      ### Disclaimer [...] Skip to content
+
+      Gartenabfall Entsorung Berlin
+
+      Close menu
+
+      # Gartenabfall Abholung Impressum
+
+      ### Pflichtangaben nach § 5 Telemediengesetz (TMG) und der DL-InfoV
+
+      RETEC GmbH
+      Klärwerkstr. 1
+
+      vertreten durch: the managing director
+      Geschäftsführer
+
+      Telefon:  +49(0)30 – 684 099 30
+      Telefax:  +49(0)30 – 684 099 43
+      E-Mail:  info@retec-berlin.com
+      Internet:  www.retec-berlin.com
+
+      Registereintrag:
+      Eintragung im Handelsregister
+      Registergericht: AG Berlin Charlottenburg
+      Registernummer: HRB 94877 [...] This website uses a web analytics service that stores cookies on your computer and sends what they record to servers in the USA, where it is used to report on how the website is used.
+  - id: web-5
+    kind: web search
+    request: Klärwerkstraße 1, 13597 Berlin
+    url: https://www.pmp-management.de/neustart-spandau
+    content: |-
+      Neustart Spandau • PMP Management
+      How to find us
+       Take bus M45 towards S + U Zoologischer Garten to the stop Krematorium Ruhleben.
+       Then walk for about 3 minutes to Klärwerkstraße 1a.
+
+      #### Standort
+
+      Klärwerkstraße 1a
+       13597 Berlin-Spandau
+
+      #### Ansprechpartner
+
+      The contact person
+       030 33 939 758
+       info.spandau@pmp-management.de
+
+      Maßnahme-Nummer:
+       955/8418/20
+
+      #### Kontakt
+
+      PMP Projekt Management Partner GmbH
+
+      Friedensallee 103
+       22763 Hamburg
+  - id: web-6
+    kind: web search
+    request: Klärwerkstraße 1A, 13597 Berlin
+    url: https://s-b-h.de/sbh-vor-ort/sbh-nordost/standorte-nordost/berlin_482b4a43484c5033524c4d7043646f454e4d5869724
+    content: |-
+      Berlin - Spandau, Klärwerkstraße 1 a — SBH
+      to the courses
+
+      # Berlin - Spandau, Klärwerkstraße 1 a
+
+      Street:  Klärwerkstraße 1 a   Postcode / town:  13597 Berlin - Spandau   Phone and e-mail of the contact person
+
+       Marker on the map: Berlin - Spandau, Klärwerkstraße 1 a, route planner
+
+        52.528333 13.23307
+
+      to the courses
+
+      Places free
+       No places free
+
+      Courses at this site, among them:
+       + Berufliche Weiterbildung
+       + Ausbildung und Umschulung
+       + Berufsorientierung und Berufswahl
+       + Sprache-Beruf-Integration
+       + Berufliche Rehabilitation
+  - id: web-7
+    kind: web search
+    request: Klärwerkstraße 1A, 13597 Berlin
+    url: https://neue-perspektive-spandau.de
+    content: |-
+      NEUE PERSPEKTIVE SPANDAU | MIT UNS TAUCHEN SIE AUF.
+      ### Not sure which modules suit you? We are here to help.
+
+      "
+
+      ## Nehmen Sie Kontakt auf
+
+      #### ADRESSE
+
+      Klärwerkstraße 1A
+      13597 Berlin-Spandau
+
+      #### KONTAKTWEGE
+
+      Telefon 030 33 939 758
+      E-Mail info.spandau@pmp-management.de
+      Fax 030 33 939 759
+
+      #### ÖFFNUNGSZEITEN
+
+      Montag bis Freitag
+      08:30 Uhr - 16:30 Uhr
+
+      Im Auftrag des Jobcenters Berlin Spandau.
+
+      Manage cookie consent [...] The job market changes fast, and keeping up is hard. At Neue Perspektive Spandau we work with these questions every day, and our one-to-one coaching modules help you catch up: we build on your strengths, look for solutions and help you find work, from a first talk to a plan for your career [...] 2 days a week,
+      2 hours each,
+      1 month in all,
+      on site or hybrid.
+
+      ## Projekt
+
+      NEUE PERSPEKTIVE SPANDAU: a fresh start, with the eyes on the future.
+
+      ## Team
+
+      NEUE
+      PERSPEKTIVE
+      – the team introduces itself.
+
+      ## Kontakt
+
+      Choose how you want to get in touch.
+  - id: web-8
+    kind: web search
+    request: Klärwerkstraße 1A, 13597 Berlin
+    url: https://www.mapquest.com/de/berlin/city-seminar-lfb-806344768
+    content: |-
+      City Seminar Lfb, 1A Klärwerkstraße, Berlin, Berlin 13597, DE - MapQuest
+      Get directions
+
+       My saved places
+       Route Planner
+       Get help
+
+      Advertisement
+
+      # City Seminar Lfb
+
+      CallWeb
+
+      Advertisement
+
+      ## Also at this address
+
+      Advertisement [...] Own this business?
+
+      See a problem?
+
+      Germany›Berlin›Berlin›Berlin›13597›City Seminar Lfb
+  - id: web-9
+    kind: web search
+    request: Klärwerkstraße 1A, 13597 Berlin
+    url: https://neustart-spandau.de
+    content: |-
+      NEUSTART 2.0 | Mal was anders machen!
+      030 33 939 758 info-spandau@pmp-management.de
+
+      NEUSTART 2.0
+
+      Choose a page
+
+      ## NEUSTART 2.0
+
+      ### Diese Maßnahme fand ein Ende.
+
+      ## Kontaktaufnahme
+
+      ### trotz beendeter Maßnahme
+
+      #### ADRESSE
+
+      Klärwerkstraße 1A, 1. Stock
+      13597 Berlin-Spandau
+
+      #### TELEFON
+
+      030 33 939 758
+      info-spandau@pmp-management.de
+
+      Im Auftrag des Jobcenters Berlin Spandau.
+
+      Manage cookie consent [...] Storage used only for statistics, which on its own cannot identify you. [...] Storage needed to provide a service that you asked for.
+
+          Preferences
+  - id: web-10
+    kind: web search
+    request: Klärwerkstraße 1A, 13597 Berlin
+    url: https://www.pmp-management.de/neustart-spandau
+    content: |-
+      Neustart Spandau • PMP Management
+      How to find us
+       Take bus M45 towards S + U Zoologischer Garten to the stop Krematorium Ruhleben.
+       Then walk for about 3 minutes to Klärwerkstraße 1a.
+
+      #### Standort
+
+      Klärwerkstraße 1a
+       13597 Berlin-Spandau
+
+      #### Ansprechpartner
+
+      The contact person
+       030 33 939 758
+       info.spandau@pmp-management.de
+
+      Maßnahme-Nummer:
+       955/8418/20
+
+      #### Kontakt
+
+      PMP Projekt Management Partner GmbH
+
+      Friedensallee 103
+       22763 Hamburg [...] ### Die Maßnahme
+
+       Finanziert durch das Jobcenter Spandau
+       Dauer: 6 Monate, 5 Stunden täglich, 2 Tage Urlaub im Monat
+       In small groups
+
+      ### KONTAKT
+
+      We look forward to seeing you!
+
+      Every Monday: come for a first talk.
+
+      We start the day together with a healthy breakfast and offers in small groups. [...] Other PMP sites: Berlin-Neukölln, Leipzig, Pinneberg, each with its contact person.
+
+      ### NEUSTART SPANDAU – Mal was anders machen.
+
+      Exercise, breakfast together, help with planning your life.
+
+      Come by and find out more.
+
+      ### Das Programm
+
+finding: null
