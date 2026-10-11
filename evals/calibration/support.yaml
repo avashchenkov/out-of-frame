@@ -1,0 +1,69 @@
+# The calibration set of the support judge, see docs/eval-architecture.md#llm-judges: one
+# statement of a report's draft with the sources it cites, graded once by a person by the
+# rubric in evals/graders/support.md.j2.
+# The runs are local files in evals/results/, which are not committed: they hold whole web
+# pages. Without its run file, an example cannot be judged again. run_sha256 shows that a run
+# file is the one that was graded.
+
+graded: '2026-10-11'
+rubric_sha256: 45ed41b546ba8fe2fe24ba8b51c9cc15811c2a474329bcf51c0d97273b6ac2bf
+examples:
+- run: 2026-10-11T01-11-35-561627Z-run.json
+  run_sha256: 1c581f3fe368711c9bff1302a5d12feabab98be07f0036ba985e3c287eb0a7ee
+  statement: The object osm-way-23156479 lies 118 m from the property. Its map data shows an industrial
+    land-use area with the addresses Klärwerkstraße 1 and Klärwerkstraße 1A, 13597 Berlin. The investigation
+    classed it as a commercial site, a service business that makes or repairs nothing, and its status
+    is operating. It is listed as a cleaning service, with opening hours Monday to Friday, 08:30 to 16:30.
+    [osm-way-23156479]
+  cited:
+  - osm-way-23156479
+  pages:
+  - web-4
+  - web-3
+  - web-2
+  grade: contradicted
+  reason: The weekday hours 08:30-16:30 belong to Neue Perspektive Spandau at Klärwerkstraße 1a (web-2);
+    RETEC's own listing gives 08:00-20:00 every day (web-3). The rest is backed.
+- run: 2026-10-11T01-11-35-561627Z-run.json
+  run_sha256: 1c581f3fe368711c9bff1302a5d12feabab98be07f0036ba985e3c287eb0a7ee
+  statement: For someone living nearby, the relevant fact is that this business operates on weekday daytimes,
+    so any traffic it generates is likely to fall within those hours. The investigation does not show
+    whether it has evening, weekend or night activity. [osm-way-23156479]
+  cited:
+  - osm-way-23156479
+  pages:
+  - web-4
+  - web-3
+  - web-2
+  grade: contradicted
+  reason: '"Operates on weekday daytimes" contradicts RETEC''s listing (web-3), and no source backs the
+    traffic claim.'
+- run: 2026-10-11T01-10-26-955882Z-run.json
+  run_sha256: 673e016b00b1c694010d7f917811089108822a5152b5cfe3fb8e0630f4cb500d
+  statement: The nearest object is an industrial land-use area 118 m from the property, with the addresses
+    Klärwerkstraße 1 and Klärwerkstraße 1A, 13597 Berlin. I could not identify what it is, so I cannot
+    say what business or activity it holds, or whether it is in use. The map data records only the land
+    use and the addresses [osm-way-23156479].
+  cited:
+  - osm-way-23156479
+  pages: []
+  grade: unsupported
+  reason: '"The nearest object": the run has only this object, and the map response has nearer ones, such
+    as railway tracks and the Müllverbrennungsanlage Ruhleben. The rest is backed.'
+- run: 2026-10-11T01-10-26-955882Z-run.json
+  run_sha256: 673e016b00b1c694010d7f917811089108822a5152b5cfe3fb8e0630f4cb500d
+  statement: Since its type is unknown, this report cannot say what it might mean for someone living nearby.
+  cited: []
+  pages: []
+  grade: supported
+  reason: It says only that nothing can be said.
+- run: 2026-10-11T01-12-39-046225Z-run.json
+  run_sha256: efc6ef91ead2d8005555771c9f73384649eef8bbfba1acf38eb9955cfb3ceb29
+  statement: The object at Klärwerkstraße 1 and 1A, 13597 Berlin, lies 118 m from the property. Its map
+    data tags it as industrial land (landuse=industrial) and gives the two addresses above. The investigation
+    could not identify what the object is, so this report gives no type, status or use for it. [osm-way-23156479]
+  cited:
+  - osm-way-23156479
+  pages: []
+  grade: supported
+  reason: The addresses, distance, land use and the unidentified outcome match the run.

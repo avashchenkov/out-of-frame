@@ -1,0 +1,73 @@
+# The calibration set of the interpretation judge, see docs/eval-architecture.md#llm-judges:
+# one report's draft, graded once by a person by the rubric in
+# evals/graders/interpretation.md.j2.
+# The runs are local files in evals/results/, which are not committed: they hold whole web
+# pages. Without its run file, an example cannot be judged again. run_sha256 shows that a run
+# file is the one that was graded.
+
+graded: '2026-10-11'
+rubric_sha256: 4fc2dabffeecc09f46749fa7a7ce311b2a8a4e5159aa5aa280a34caa1e348b57
+examples:
+- run: 2026-10-11T01-11-35-561627Z-run.json
+  run_sha256: 1c581f3fe368711c9bff1302a5d12feabab98be07f0036ba985e3c287eb0a7ee
+  draft: 'The object osm-way-23156479 lies 118 m from the property. Its map data shows an industrial land-use
+    area with the addresses Klärwerkstraße 1 and Klärwerkstraße 1A, 13597 Berlin. The investigation classed
+    it as a commercial site, a service business that makes or repairs nothing, and its status is operating.
+    It is listed as a cleaning service, with opening hours Monday to Friday, 08:30 to 16:30. [osm-way-23156479]
+
+
+    For someone living nearby, the relevant fact is that this business operates on weekday daytimes, so
+    any traffic it generates is likely to fall within those hours. The investigation does not show whether
+    it has evening, weekend or night activity. [osm-way-23156479]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: It tries to say what the site means for someone living nearby.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: There is no unclear object.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'no'
+      reason: 'Traffic is not a meaning that a commercial site has as such: a small business may bring
+        none, so the conclusion can mislead.'
+- run: 2026-10-11T01-10-26-955882Z-run.json
+  run_sha256: 673e016b00b1c694010d7f917811089108822a5152b5cfe3fb8e0630f4cb500d
+  draft: The nearest object is an industrial land-use area 118 m from the property, with the addresses
+    Klärwerkstraße 1 and Klärwerkstraße 1A, 13597 Berlin. I could not identify what it is, so I cannot
+    say what business or activity it holds, or whether it is in use. The map data records only the land
+    use and the addresses [osm-way-23156479]. Since its type is unknown, this report cannot say what it
+    might mean for someone living nearby.
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: No object was identified.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The unidentified object is given with its distance.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: It gives the unidentified object no meaning.
+- run: 2026-10-11T01-12-39-046225Z-run.json
+  run_sha256: efc6ef91ead2d8005555771c9f73384649eef8bbfba1acf38eb9955cfb3ceb29
+  draft: The object at Klärwerkstraße 1 and 1A, 13597 Berlin, lies 118 m from the property. Its map data
+    tags it as industrial land (landuse=industrial) and gives the two addresses above. The investigation
+    could not identify what the object is, so this report gives no type, status or use for it. [osm-way-23156479]
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: No object was identified.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The unidentified object is given with its distance.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: It gives the unidentified object no meaning.

@@ -46,8 +46,14 @@ calibration.
    4. ✅ The injection guards: prepare P1–P4 and F4, then build the checker.
    5. ✅ The CLI path: Nominatim, Overpass, the object choice and the report with sources. Check
       the whole path with replayed sources and a stubbed model.
-   6. The rubrics of the three MVP judges, written with the first report. Run the judges
+   6. ✅ The rubrics of the three MVP judges, written with the first report. Run the judges
       uncalibrated; their scores are not quoted until they pass calibration in step 10.
+   7. Fix what the hand grades of the first reports found. The report names an object by what
+      it is, never by its ID, and never as the nearest when the run kept only some objects; it
+      gives a fact, such as opening hours, only to the business that its source gives it to;
+      it reads plainly. The rubrics count an effect on a resident, such as traffic, as backed
+      only when a source says so. Turn the Freiheit 22 pages whose right finding the grounding
+      check rejected in 3 of 4 runs into a finding eval task, and make those rejections rare.
 
    The result must demonstrate a supported finding and an honest unidentified outcome when
    evidence is missing; inspect the first report by hand.
