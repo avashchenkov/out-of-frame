@@ -57,7 +57,7 @@ class FakeWriter:
         self.requests.append(request)
         if self.drafts:
             return AIMessage(self.drafts.pop(0))
-        ids = re.findall(r"^Object (\S+),", request[-1].content, re.MULTILINE)
+        ids = re.findall(r"^\[(\S+)\] An object", request[-1].content, re.MULTILINE)
         return AIMessage(" ".join(f"An object [{id}]." for id in ids) or "No object is listed.")
 
 
@@ -99,7 +99,7 @@ def test_the_model_gets_the_map_data_without_the_category_and_the_failures(monke
     _, writer = write(monkeypatch, state)
     [[system, task]] = writer.requests
     assert "2026-10-10" in system.content and "- production:" in system.content
-    assert "Object osm-way-1, 118 m from the property" in task.content
+    assert "[osm-way-1] An object 118 m from the property" in task.content
     assert "landuse=industrial" in task.content and "category" not in task.content
     assert "Finding: production, status not given. Key facts: Test GmbH makes parts" in task.content
     assert "failed after their retries, so their part of the report is missing: web search." in (
@@ -124,6 +124,7 @@ def test_an_object_that_was_not_investigated_is_marked_and_cites_its_map_data(mo
         ("[osm-way-1]\n\n[osm-way-1]: https://made-up.example", "]:"),
         ("(see www.made-up.example)", "www.made-up.example)"),
         ("[here]", "[here]"),
+        ("at osm-way-1 [osm-way-1]", "osm-way-1"),
     ],
     ids=[
         "unknown",
@@ -133,6 +134,7 @@ def test_an_object_that_was_not_investigated_is_marked_and_cites_its_map_data(mo
         "a link definition",
         "a url",
         "not an id",
+        "an id in the text",
     ],
 )
 def test_a_draft_with_a_wrong_citation_is_written_again(monkeypatch, citation, told):
@@ -160,3 +162,20 @@ def test_a_map_failure_is_not_told_as_nothing_found(monkeypatch):
     task = writer.requests[0][-1].content
     assert "was found" not in task
     assert "so their part of the report is missing: map." in task
+
+
+@pytest.mark.parametrize(
+    "draft",
+    ["The object osm-way-1 [osm-way-1].", "The object _osm-way-1_ [osm-way-1].", "__osm-way-1__"],
+)
+def test_an_id_in_the_text_is_told(draft):
+    assert report.find_wrong_citations(draft, {"osm-way-1"}) == ["osm-way-1"]
+
+
+def test_a_longer_id_in_the_text_is_not_a_known_one():
+    assert report.find_wrong_citations("A site [osm-way-1], not osm-way-10.", {"osm-way-1"}) == []
+
+
+@pytest.mark.parametrize("draft", ["A site [[osm-way-1]].", "A site [osm-way-1]]."])
+def test_a_bracket_without_its_pair_is_told(draft):
+    assert report.find_wrong_citations(draft, {"osm-way-1"})

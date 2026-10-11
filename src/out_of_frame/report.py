@@ -54,10 +54,19 @@ def write_report(state: RunState, date: dt.date) -> str:
 
 def find_wrong_citations(draft: str, known: set[str]) -> list[str]:
     """Each bracket in the draft that is not one known ID, such as several IDs in one bracket
-    or an unknown ID, and each link or URL: code adds the sources, so a URL in the draft would
-    be made up."""
+    or an unknown ID, and each bracket left without its pair, as in [[osm-way-1]]; each known
+    ID in the text, outside a citation, since the reader does not know the IDs; and each link
+    or URL: code adds the sources, so a URL in the draft would be made up."""
     brackets = [match[0] for match in BRACKETS.finditer(draft) if match[1] not in known]
-    return sorted(brackets + LINK.findall(draft))
+    text = BRACKETS.sub(" ", draft)
+    unpaired = [bracket for bracket in "[]" if bracket in text]
+    # A whole ID, also in Markdown emphasis such as _osm-way-1_, but not the start of osm-way-10.
+    in_text = [
+        id
+        for id in sorted(known)
+        if re.search(rf"(?<![^\W_])(?<!-){re.escape(id)}(?![^\W_])(?!-)", text)
+    ]
+    return sorted(brackets + unpaired + in_text + LINK.findall(draft))
 
 
 @cache
