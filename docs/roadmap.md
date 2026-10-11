@@ -48,12 +48,17 @@ calibration.
       the whole path with replayed sources and a stubbed model.
    6. ✅ The rubrics of the three MVP judges, written with the first report. Run the judges
       uncalibrated; their scores are not quoted until they pass calibration in step 10.
-   7. Fix what the hand grades of the first reports found. The report names an object by what
-      it is, never by its ID, and never as the nearest when the run kept only some objects; it
-      gives a fact, such as opening hours, only to the business that its source gives it to;
-      it reads plainly. The rubrics count an effect on a resident, such as traffic, as backed
-      only when a source says so. Turn the Freiheit 22 pages whose right finding the grounding
-      check rejected in 3 of 4 runs into a finding eval task, and make those rejections rare.
+   7. ✅ Fix what the hand grades of the first reports found wrong for the reader. The report
+      names an object by what it is, never by its ID, and never as the nearest; it says how a
+      type of object can affect people nearby, not how much or when, and leaves out opening
+      hours and phone numbers. F7, from the Freiheit 22 pages whose right finding the grounding
+      check rejected in 3 of 4 runs, passes at least 9 of 10 trials. If a sharper prompt cannot
+      get there, the finding is written once more with the grounding errors.
+   8. The report cites the page of each fact, not only the object, so that a sentence shows
+      which source backs it and the support judge gets only that source. Several businesses can
+      share one site, and a live run still gave one business another's facts: the report model
+      gets each key fact with its source, and a fact goes to no business but the one its source
+      is about.
 
    The result must demonstrate a supported finding and an honest unidentified outcome when
    evidence is missing; inspect the first report by hand.
@@ -63,7 +68,10 @@ calibration.
    Check T1–T2, F2, F6 and R2–R4, plus
    code tests for routing (T3), grouping, distances, caps and failures. The report must preserve
    clear findings, show unidentified and not investigated objects, and distinguish an empty
-   result from a failure.
+   result from a failure. From the first hand grades: the report reads plainly, and each type
+   has one line in the research scope on how it can affect people nearby. A site that several
+   businesses share can get a different type from run to run, by the business the
+   investigation finds first: decide which business sets the type.
 7. **Input conversation.** Add extraction, address disambiguation, questions and LangGraph
    pauses. Check I1–I3 and code tests for applying changes and resuming the run. The user can
    resolve an ambiguous address and supply missing times; complete input starts research
@@ -80,6 +88,9 @@ calibration.
     [MVP task](eval-architecture.md#mvp), several trials each; check that the labels cover
     every category. Publish results with failures and limitations. Add one Docker
     image for the CLI; the keys are passed at run time, never built into the image.
+    From the first hand grades: the support and interpretation rubrics count an effect on a
+    resident, such as traffic, as backed only when the type's line or a source gives it, and
+    the person checks the grades of evals/calibration/ against the changed rubrics.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.
