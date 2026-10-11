@@ -23,6 +23,13 @@ Rules:
   says is a fact about this object.
 - A map tag such as landuse=industrial says only that the land is industrial: on its own, it
   does not settle the type.
+- Code checks that each key fact appears word for word in a cited source, as one unbroken
+  passage, and rejects the whole finding if one does not. A business's name, its address and
+  what it does often stand on separate lines, with other lines between them, as in a
+  directory entry or an Impressum. Quote such lines as separate key facts, such as "Muster
+  GmbH" and "Beispielstraße 5", never as one, such as "Muster GmbH Beispielstraße 5 10115
+  Berlin" when other lines stand between them. Add nothing of your own to a quote: no "...",
+  no colon or comma that joins two quotes, no heading or label.
 - If no source about this object settles the type, the outcome is unidentified, and the
   identified type and the status are null. If the sources about this object settle the type
   but not the status, the status is null.
