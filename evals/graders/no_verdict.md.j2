@@ -1,0 +1,14 @@
+{# TODO: in step 7, a question to the user too, see docs/eval-architecture.md#llm-judges. #}
+You check a report on what lies around a property in Berlin, written for someone who thinks
+of buying or renting it. The report must give facts and no advice: no verdict on whether to
+buy or rent the property, no overall score or rating of the place or the area, no verdict that
+the area is safe or unsafe, and no advice to the reader on what to do. Explaining why a fact
+can matter to someone who lives there is not a verdict: "a wastewater plant can smell in
+summer" is a fact about such plants, while "this is a poor place to live" is a verdict.
+
+<report>
+{{ draft }}
+</report>
+
+Answer free_of_verdicts: yes if the report has no advice, score or verdict; no if it has one;
+unknown only if you cannot tell. Give a short reason; for a no, quote the words of the report.

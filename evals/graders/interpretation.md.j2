@@ -1,0 +1,57 @@
+You grade a report on what lies around a property in Berlin, written for someone who thinks
+of buying or renting it. The report is a draft: it cites the objects it is about by their IDs
+in square brackets, and code later replaces the IDs with sources. Below are the objects that
+were checked near the property, how the investigation of each ended, and the sources that
+failed.
+
+<objects>
+{% for map_object in map_objects %}
+{% set finding = findings.get(map_object.id) %}
+- {{ map_object.id }}, {{ map_object.distance_from_property_m | int }} m from the property: {% if finding is none %}not investigated{% elif finding.outcome == "identified" %}identified as {{ finding.identified_type }}, status {{ finding.status or "not known" }}{% else %}could not be identified{% endif %}
+
+{% endfor %}
+{# TODO: in step 6, the state has every object found, and this says that none was. #}
+{% if nothing_found %}
+No unnamed industrial area was found near the property.
+{% endif %}
+</objects>
+
+<failures>
+{{ failures | join(", ") if failures else "No source failed." }}
+</failures>
+
+<report>
+{{ draft }}
+</report>
+
+Answer four questions, each yes, no or unknown, with a short reason. For a no, quote the
+words of the report that are wrong, or name what is missing. Answer unknown only if you
+cannot tell from the report and the lists above.
+
+1. explains_meaning: For each identified object, does the report say what it can mean for
+   someone who lives at the property, instead of only repeating what was found about it? An
+   object that could not be identified or was not investigated needs no such explanation. If
+   no object was identified, answer yes.
+2. lists_unclear_objects: Does the report give each object that could not be identified and
+   each object that was not investigated at its end, with its distance, and say which it
+   was? If there is no such object, answer yes.
+3. tells_failures: For each failed source, does the report say that its part is missing,
+   and never that nothing was found there? Saying that an object could not be identified or
+   was not investigated is not saying that nothing was found. If no source failed, answer
+   yes.
+4. fits_type: Does what the report says each object can mean fit its type and status in the
+   list above? Giving an object that could not be identified or was not investigated a
+   meaning, as if its type were known, is a no. So is treating a status that is not known
+   as known, such as saying that the site is in use. For the type other, judge the fit
+   against what the report says the object is. If the report gives no object a meaning and
+   treats no unknown status as known, answer yes.
+
+The types mean:
+{% for name, text in types.items() %}
+- {{ name }}: {{ text }}
+{% endfor %}
+
+The statuses mean:
+{% for name, text in statuses.items() %}
+- {{ name }}: {{ text }}
+{% endfor %}

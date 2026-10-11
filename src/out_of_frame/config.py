@@ -5,6 +5,9 @@ import os
 # One model for every call in the MVP; the evals show if it is not enough.
 MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
 
+# The model of the evals' LLM judges, which grade the agent's output; the agent never uses it.
+JUDGE_MODEL = os.environ.get("OUT_OF_FRAME_JUDGE_MODEL", MODEL)
+
 # Tool calls in one investigation, Tavily searches and page reads together.
 TOOL_CAP = int(os.environ.get("OUT_OF_FRAME_TOOL_CAP", "3"))
 
