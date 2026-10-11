@@ -47,13 +47,15 @@ def build_graph():
     builder.add_node(get_map_objects)
     builder.add_node(investigate_object)
     builder.add_node(write_report)
+    builder.add_node(fill_references)
     builder.add_edge(START, "geocode_property")
     builder.add_edge("geocode_property", "get_map_objects")
     builder.add_conditional_edges(
         "get_map_objects", send_each_object_to_investigation, ["investigate_object", "write_report"]
     )
     builder.add_edge("investigate_object", "write_report")  # once every investigation has ended
-    builder.add_edge("write_report", END)
+    builder.add_edge("write_report", "fill_references")
+    builder.add_edge("fill_references", END)
     return builder.compile()
 
 
@@ -112,4 +114,10 @@ def investigate_object(state: ObjectToInvestigate, runtime: Runtime[Context]) ->
 
 
 def write_report(state: RunState, runtime: Runtime[Context]) -> dict:
+    """The model's draft, which the evals grade before code fills in its references."""
     return {"report": report.write_report(state, runtime.context.date)}
+
+
+def fill_references(state: RunState) -> dict:
+    assert state.report is not None  # write_report comes first
+    return {"report": report.fill_references(state.report, state)}

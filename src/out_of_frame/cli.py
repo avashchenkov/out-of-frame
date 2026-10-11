@@ -29,7 +29,8 @@ FAILURE_NOTICES = {
     "map": "The map could not be loaded, so the report may be incomplete.",
     "web search": "Web search failed, so an object may stay unidentified.",
 }
-# What each step has done, so that the user sees a run that takes a minute move.
+# What each step has done, so that the user sees a run that takes a minute move. Steps that
+# are not listed, such as filling in the references, are not told.
 PROGRESS = {
     "geocode_property": "Found the address.",
     "get_map_objects": "Fetched the map.",
@@ -93,7 +94,8 @@ def run(address: str, web_search: MeteredWebSearch) -> RunState:
             end = chunk
             continue
         for node, update in chunk.items():
-            print(PROGRESS.get(node, node), file=sys.stderr)
+            if node in PROGRESS:
+                print(PROGRESS[node], file=sys.stderr)
             for service in (update or {}).get("failures", []):
                 print(FAILURE_NOTICES[service], file=sys.stderr)
     return RunState.model_validate(end)

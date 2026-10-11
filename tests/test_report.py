@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage
 
 from out_of_frame import report
 from out_of_frame.config import REPORT_ATTEMPTS
-from out_of_frame.report import ReportError, write_report
+from out_of_frame.report import ReportError, fill_references, write_report
 from out_of_frame.state import Address, Coordinates, Finding, MapObject, RunState, Source
 
 DATE = dt.date(2026, 10, 10)
@@ -62,17 +62,30 @@ class FakeWriter:
 
 
 def write(monkeypatch, state=STATE, *drafts):
+    """The report a person reads, from the draft the model writes."""
     writer = FakeWriter(*drafts)
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
-    return write_report(state, DATE), writer
+    return fill_references(write_report(state, DATE), state), writer
+
+
+def test_the_model_writes_a_draft_that_cites_object_ids(monkeypatch):
+    monkeypatch.setattr(report, "build_report_model", lambda: FakeWriter("A site [osm-way-1]."))
+    assert write_report(STATE, DATE) == "A site [osm-way-1]."
 
 
 def test_a_citation_becomes_the_numbers_of_its_sources(monkeypatch):
     text, _ = write(monkeypatch, STATE, "A workshop 118 m away makes parts [osm-way-1].")
     assert text.startswith("# What lies around Freiheit 22, 13597 Berlin\n")
-    assert "makes parts [1]." in text
-    assert "Sources:\n1. https://example.org/test-gmbh\n" in text
+    assert "makes parts [1, 2]." in text
+    assert "Sources:\n1. https://example.org/test-gmbh\n2. OpenStreetMap\n" in text
     assert text.endswith(report.OSM_CREDIT)
+
+
+def test_a_finding_that_cites_the_map_names_it_once(monkeypatch):
+    from_the_map = FOUND.model_copy(update={"evidence_ids": ["overpass-1"]})
+    state = STATE.model_copy(update={"findings": [from_the_map]})
+    text, _ = write(monkeypatch, state, "A workshop [osm-way-1].")
+    assert "A workshop [1]." in text and "Sources:\n1. OpenStreetMap\n" in text
 
 
 def test_an_unidentified_object_cites_its_map_data(monkeypatch):
@@ -124,7 +137,7 @@ def test_an_object_that_was_not_investigated_is_marked_and_cites_its_map_data(mo
 )
 def test_a_draft_with_a_wrong_citation_is_written_again(monkeypatch, citation, told):
     text, writer = write(monkeypatch, STATE, f"A site {citation}.", "A site [osm-way-1].")
-    assert "A site [1]." in text and "made-up" not in text
+    assert "A site [1, 2]." in text and "made-up" not in text
     assert told in writer.requests[1][-1].content
 
 

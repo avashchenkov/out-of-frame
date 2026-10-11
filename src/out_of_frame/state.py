@@ -163,4 +163,4 @@ class RunState(Record):
     map_objects: Annotated[list[MapObject], operator.add] = []
     findings: Annotated[list[Finding], operator.add] = []
     failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
-    report: str | None = None  # with its references filled in
+    report: str | None = None  # the model's draft, then the report with its references filled in

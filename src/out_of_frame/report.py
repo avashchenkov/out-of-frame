@@ -27,8 +27,9 @@ class ReportError(Exception):
 
 
 def write_report(state: RunState, date: dt.date) -> str:
-    """The report, with its references filled in. A draft with a wrong citation is written
-    again, and the model is told which citations were wrong."""
+    """The model's draft of the report, which cites objects by their IDs; fill_references then
+    turns it into the report a person reads. A draft with a wrong citation is written again,
+    and the model is told which citations were wrong."""
     scope = research_scope.load()
     system = SystemMessage(
         render("report.md.j2", date=date.isoformat(), types=scope.identified_types)
@@ -47,7 +48,7 @@ def write_report(state: RunState, date: dt.date) -> str:
         draft = build_report_model().invoke([system, HumanMessage(task)]).text
         wrong = find_wrong_citations(draft, known)
         if not wrong:
-            return fill_references(draft, state)
+            return draft
     raise ReportError(f"{REPORT_ATTEMPTS} drafts had wrong citations, last: {', '.join(wrong)}")
 
 
@@ -67,8 +68,8 @@ def build_report_model():
 def fill_references(draft: str, state: RunState) -> str:
     """The report a person reads: a title, the draft with each cited object ID replaced by the
     numbers of its sources, then the sources and the map credit. A web page is given by its
-    URL, map data by its name. An object cites the sources of its finding, or its map data if
-    the finding has none."""
+    URL, map data by its name. An object cites the pages of its finding and its own map data,
+    since the report also gives facts from the map, such as its address."""
     objects = {map_object.id: map_object for map_object in state.map_objects}
     evidence = {finding.map_object_id: finding.evidence_ids for finding in state.findings}
     sources = {source.id: source for source in state.sources}
@@ -76,7 +77,7 @@ def fill_references(draft: str, state: RunState) -> str:
 
     def cite(match: re.Match) -> str:
         map_object = objects[match[1]]
-        ids = evidence.get(map_object.id) or [map_object.source_id]
+        ids = [*evidence.get(map_object.id, []), map_object.source_id]
         cited = {numbers.setdefault(name_source(sources[id]), len(numbers) + 1) for id in ids}
         return "[" + ", ".join(str(number) for number in sorted(cited)) + "]"
 

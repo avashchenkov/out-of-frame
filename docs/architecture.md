@@ -399,7 +399,9 @@ knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
 links a person can open. A web page is linked by its URL. A map or plan response is not
-linked: the report names the source, OpenStreetMap or the Berlin B-Plan WFS. An unknown ID
+linked: the report names the source, OpenStreetMap or the Berlin B-Plan WFS. An object always
+cites its own map or plan data as well as the pages of its finding, since the report also
+gives facts from that data, such as the object's address. An unknown ID
 sends the report back to be written again, a few times at most; after that the run stops, as
 when the model fails. So the model cannot invent a reference.
 

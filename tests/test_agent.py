@@ -80,7 +80,8 @@ def test_the_nearest_unnamed_industrial_area_is_investigated(monkeypatch):
     assert [source.id for source in state.sources] == ["overpass-1", "web-1"]  # web-1 is cited
     assert state.failures == []
     assert state.report is not None
-    assert "An object [1]." in state.report and "1. https://example.org" in state.report
+    assert "An object [1, 2]." in state.report and "1. https://example.org" in state.report
+    assert "2. OpenStreetMap" in state.report
 
 
 def test_an_address_without_one_precise_match_stops_the_run(monkeypatch):

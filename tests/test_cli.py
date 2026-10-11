@@ -33,6 +33,7 @@ def test_the_report_goes_to_stdout_and_the_progress_and_cost_to_stderr(monkeypat
     out, err = capsys.readouterr()
     assert out.startswith(f"# What lies around {FREIHEIT_22}\n")
     assert "Found the address." in err and "Investigated an object on the web." in err
+    assert "fill_references" not in err  # a step the user is not told about
     assert "Tool calls: 1, cost: $0.0080" in err  # one search, and the stubbed models cost nothing
 
 
