@@ -43,10 +43,10 @@ def load() -> Prices:
     return Prices.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
 
 
-def compute_run_cost(usage: dict, credits: float) -> float:
+def compute_run_cost(usage: dict, credits: float, model: str = MODEL) -> float:
     """USD for the model's tokens, as get_usage_metadata_callback counts them, and the Tavily
-    credits. The usage is keyed by the API's model snapshot, not by MODEL, but a run uses one
-    model."""
+    credits. The usage is keyed by the API's model snapshot, not by the model's name, so it must
+    come from calls to the one model given, such as the agent's or the judges'."""
     input_tokens = sum(u["input_tokens"] for u in usage.values())
     output_tokens = sum(u["output_tokens"] for u in usage.values())
-    return load().compute_cost(MODEL, input_tokens, output_tokens, credits)
+    return load().compute_cost(model, input_tokens, output_tokens, credits)
