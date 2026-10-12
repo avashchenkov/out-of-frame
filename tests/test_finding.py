@@ -58,7 +58,7 @@ ANSWER = {
     "identified_type": "production",
     "status": "operating",
     "key_facts": ["Test GmbH makes parts"],
-    "evidence_ids": ["web-1"],
+    "evidence_id": "web-1",
 }
 
 

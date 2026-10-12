@@ -20,6 +20,7 @@ from out_of_frame.agent import UnclearAddressError
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.map_objects import MapError
 from out_of_frame.state import Coordinates, Finding
+from out_of_frame.web_search import PageText
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_investigation import SEARCH, SNIPPET, FakeSearcher, FakeWebSearch
 from tests.test_report import FakeWriter
@@ -82,6 +83,15 @@ def test_the_nearest_unnamed_industrial_area_is_investigated(monkeypatch):
     assert state.report is not None
     assert "An object [1, 2]." in state.report and "1. https://example.org" in state.report
     assert "2. OpenStreetMap" in state.report
+
+
+def test_only_the_page_the_finding_cites_reaches_the_run_state_and_the_report(monkeypatch):
+    stub_the_sources(monkeypatch)
+    stub_the_models(monkeypatch)  # the finding cites web-1
+    other = PageText("https://example.com/other", "Other GmbH works at Klärwerkstraße 1.")
+    state = agent.run(FREIHEIT_22, DATE, FakeWebSearch([SNIPPET, other]))
+    assert [source.id for source in state.sources] == ["overpass-1", "web-1"]
+    assert state.report is not None and "example.com" not in state.report
 
 
 def test_an_address_without_one_precise_match_stops_the_run(monkeypatch):

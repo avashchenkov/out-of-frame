@@ -61,7 +61,7 @@ def identify(inputs, date, web_search):
         identified_type="production",
         status="operating",
         key_facts=["Test GmbH"],
-        evidence_ids=["map-1"],
+        evidence_id="map-1",
     )
     return Trial(Outcome(finding, []), transcript=[])
 
@@ -150,7 +150,7 @@ def test_a_fixed_task_ignores_sources_the_agent_adds(tmp_path):
             identified_type="production",
             status="operating",
             key_facts=["chemical plant"],
-            evidence_ids=["web-1"],
+            evidence_id="web-1",
         )
         return Trial(Outcome(finding, [page]), transcript=[])
 
@@ -331,7 +331,7 @@ def stub_the_model(monkeypatch, searcher, answer):
     monkeypatch.setattr(prompt_injection, "flag_injections", lambda texts: [False] * len(texts))
 
 
-def test_investigate_keeps_each_step_and_the_cited_pages(monkeypatch):
+def test_investigate_keeps_each_step_and_the_cited_page(monkeypatch):
     stub_the_model(monkeypatch, FakeSearcher(SEARCH), ANSWER)
     other = SNIPPET._replace(url="https://example.com")
     trial = investigate(ADDRESSED_OBJECT, dt.date(2026, 10, 9), FakeWebSearch([SNIPPET, other]))

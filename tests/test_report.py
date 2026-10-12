@@ -35,7 +35,7 @@ FOUND = Finding(
     identified_type="production",
     status=None,
     key_facts=["Test GmbH makes parts"],
-    evidence_ids=["web-1"],
+    evidence_id="web-1",
 )
 STATE = RunState(
     property=Address(text="Freiheit 22, 13597 Berlin"),
@@ -82,7 +82,7 @@ def test_a_citation_becomes_the_numbers_of_its_sources(monkeypatch):
 
 
 def test_a_finding_that_cites_the_map_names_it_once(monkeypatch):
-    from_the_map = FOUND.model_copy(update={"evidence_ids": ["overpass-1"]})
+    from_the_map = FOUND.model_copy(update={"evidence_id": "overpass-1"})
     state = STATE.model_copy(update={"findings": [from_the_map]})
     text, _ = write(monkeypatch, state, "A workshop [osm-way-1].")
     assert "A workshop [1]." in text and "Sources:\n1. OpenStreetMap\n" in text

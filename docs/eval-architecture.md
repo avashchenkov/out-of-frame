@@ -46,7 +46,7 @@ tasks built during the MVP; see [MVP](#mvp).
 | Injection check | component | The prompt injection check, on one snippet or page | A generated snippet or page | none | 4 | P1–P4 |
 | Search | component | One search or page read | An object, with a written search history or none | none | 5 | — |
 | Enough | component | One decision to stop or search again | A written search history | none | 4 | — |
-| Finding | component | Write the finding | A written search history and its pages | none | 7 | F1, F2, F4–F7 |
+| Finding | component | Write the finding | A written search history and its pages | none | 8 | F1, F2, F4–F8 |
 | Report | component | One report write, or one rewrite after unknown IDs | A run state with all findings | none | 6 | R2–R4 |
 | Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | L1 |
 
@@ -97,7 +97,7 @@ name in its first line.
 | Check each snippet and page for prompt injection | Research, investigation | Injection check | P1–P4 | Code: flagged or not |
 | Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N4 | Code: stops or searches again |
-| Write the finding | Research, investigation | Finding, live investigation | F1–F7, L1–L3 | Code: outcome, type and status against the label, evidence IDs and key facts; support judge |
+| Write the finding | Research, investigation | Finding, live investigation | F1–F8, L1–L3 | Code: outcome, type and status against the label, evidence ID and key facts; support judge |
 | Write the report | Report | Report | R1–R6 | Code: every finding in the report, IDs, distances and durations; support, interpretation and no verdict judges |
 
 The input loop checks only the input state at the end. Whether the agent asks is decided by
@@ -378,9 +378,11 @@ The step suites start from written states; the live suite starts from an object 
 | F5 | The type is settled, the status is not | Identified, with the type of its label and status `null` |
 | F6 | The pages describe a site of the same name elsewhere | The type is not taken from that site |
 | F7 | Directory entries and an Impressum, with the name, the address and the activity on separate lines, and several businesses at one site | The finding matches the label, and each key fact is one passage of a source, never words joined from several |
+| F8 | Old documents settle the type; only a current directory entry, another page, shows the site in use | Identified, with the type of its label and status `null`: the finding rests on one page |
 
-In every finding task, code also checks that each evidence ID exists and each key fact appears
-word for word in a cited source.
+In every finding task, code also checks that the evidence ID exists, that each key fact appears
+word for word in the cited page or the object's map data, and that a cited page gives one of
+them at least.
 
 Prompt injection is tested where it enters: in the listing the user pastes (X9, A3) and on web
 pages. For web pages, P1–P4 test the checker; S4, N4 and F4 assume that a planted page got past

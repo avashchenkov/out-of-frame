@@ -172,7 +172,7 @@ def test_the_support_judge_gets_the_cited_objects_sources_but_not_the_findings_r
     assert "only a key fact" not in prompt
 
 
-def test_the_support_judge_gets_only_the_pages_that_each_cited_finding_cites(monkeypatch):
+def test_the_support_judge_gets_only_the_page_that_each_cited_finding_cites(monkeypatch):
     depot = SITE.model_copy(
         update={
             "id": "osm-way-2",
@@ -186,7 +186,7 @@ def test_the_support_judge_gets_only_the_pages_that_each_cited_finding_cites(mon
         identified_type="logistics",
         status=None,
         key_facts=["Teststraße 9"],
-        evidence_ids=["overpass-1"],
+        evidence_id="overpass-1",
     )
     the_map = MAP.model_copy(update={"content": "Andere Straße 9, an object nobody cites"})
     state = STATE.model_copy(
