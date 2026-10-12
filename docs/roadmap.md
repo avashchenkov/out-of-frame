@@ -32,7 +32,7 @@ calibration.
    put these tests and task-format checks in CI. This step is ready when both cases run and
    their expected outcomes can be distinguished from wrong ones. Other MVP cases come with
    the behaviour they check; the full task set is not a prerequisite for agent code.
-5. **First working slice: investigate one object.** As a CLI: a precise address → one unclear
+5. ✅ **First working slice: investigate one object.** As a CLI: a precise address → one unclear
    map object → live Tavily search and page reads → a finding → a report with sources. Until
    triage in step 6, the CLI takes the nearest unnamed object of a checked category. All model
    calls use Claude Haiku 5.5; the evals show if it is not enough. In this order:
@@ -54,11 +54,11 @@ calibration.
       hours and phone numbers. F7, from the Freiheit 22 pages whose right finding the grounding
       check rejected in 3 of 4 runs, passes at least 9 of 10 trials. If a sharper prompt cannot
       get there, the finding is written once more with the grounding errors.
-   8. The report cites the page of each fact, not only the object, so that a sentence shows
-      which source backs it and the support judge gets only that source. Several businesses can
-      share one site, and a live run still gave one business another's facts: the report model
-      gets each key fact with its source, and a fact goes to no business but the one its source
-      is about.
+   8. ✅ A finding rests on one page, the one that best settles the object, and on the object's
+      own map data: every key fact comes from them, so that an object's citation stands for one
+      page and the support judge gets only that page. Several businesses can share one site, and
+      a live run gave one business another's facts from another page; one page keeps them
+      apart. When the type and the status are on different pages, the status stays unknown.
 
    The result must demonstrate a supported finding and an honest unidentified outcome when
    evidence is missing; inspect the first report by hand.
