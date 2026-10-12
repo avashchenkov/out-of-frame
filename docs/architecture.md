@@ -34,9 +34,10 @@ flowchart TD
         direction TB
         J(["Research starts<br/><i>branches run in parallel</i>"]):::milestone
         subgraph SUR["Branch: surroundings"]
-            OV["Get map objects in the radius<br/>nearest N per category,<br/>addresses for investigation"]:::code
+            OV["Get map objects in the radius<br/>nearest N per category"]:::code
             OVP[["Overpass API<br/>OpenStreetMap data"]]:::ext
             T["Triage<br/>check the remaining objects"]:::model
+            AD["Get the addresses<br/>of the objects to investigate<br/>one query"]:::code
         end
         subgraph PLN["Branch: planned objects"]
             PL["Get B-Plans in the radius<br/>with their legal status<br/>one object per plan, nearest N"]:::code
@@ -59,9 +60,11 @@ flowchart TD
         J --> PL
         J --> TR
         OV -.->|"the other objects"| T
-        OV -.->|"industry, proposed or under construction<br/>nearest first, capped in number"| S
+        OV -.->|"industry, proposed or under construction"| AD
         OV --- OVP
-        T -.->|"per unclear object<br/>nearest first, capped in number"| S
+        T -.->|"unclear objects"| AD
+        AD -.->|"per object<br/>nearest first, capped in number"| S
+        AD --- OVP
         PL -.->|"per object<br/>nearest first, capped in number"| S
         PL --- WFS
         S -->|"results"| K
@@ -161,16 +164,23 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each category
      within the category's circle. Code groups the elements into objects (one site or one road
-     can be several elements) and keeps the nearest N per category. For each object that code
-     sends to investigation, a second query returns the addresses of the buildings inside it;
-     the other objects get none, which spares the busy public instance. TODO: in step 6, decide
-     where an object that triage sends to investigation gets its addresses. Code sends every
+     can be several elements) and keeps the nearest N per category. Elements of one category
+     are one object when they have the same name, or without a name the same `ref`, such as a
+     road number, and the same stage: built, under construction or proposed. A road and a
+     railway are never one object. The road elements of one stage that have neither name nor
+     `ref` are one object, and so are such rail elements, such as service tracks; any other
+     element without a name is an object of its own. An object keeps the ID, details and
+     coordinates of its nearest element, and that element's distance; its addresses come from
+     that element's area. Code sends every
      `industry` object and any object tagged as proposed or under construction to
      investigation, within the cap.
      The model triages only the rest, one per call, from the name, tags and what it knows.
      If these are enough to fill the finding without conflicts, it writes it with the map's
      status; otherwise it sends the object to investigation. These findings use the map
-     without a web check.
+     without a web check. Then a second query returns the addresses of the buildings inside
+     each object that goes to investigation, whoever sent it; the other objects get none, which
+     spares the busy public instance. If that query fails, the objects are investigated
+     without addresses.
    - *Planned objects:* the Berlin B-Plan WFS, the city's planning API, filters only by a
      rectangle. Code asks for the square around the circle, drops the plans outside the
      circle and keeps the nearest N. The WFS gives each plan's legal status and, for plans in
@@ -198,7 +208,9 @@ validation are left to the code.
 
 - **Updates.** A step returns only the fields it changes. Each field has a reducer: it says
   how an update is combined with the current value. Parallel branches add entries to the same
-  lists, such as `sources` and `map_objects`; without a reducer, LangGraph rejects such updates. In
+  lists, such as `sources` and `map_objects`; without a reducer, LangGraph rejects such updates.
+  A map object with the ID of one already in the list replaces it, so that code can add its
+  addresses later. In
   the input phase, code first applies the user's changes, then replaces `property` and
   `destinations` with the result.
 - **Saved after each step.** A run can stop to ask the user and continue later, so the state
@@ -219,7 +231,7 @@ validation are left to the code.
 | `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Geocoding, map and plan responses, plus Tavily snippets and pages cited by findings | Append |
-| `map_objects` | list of MapObject | Map objects and B-Plans, nearest N per category; N is set in the configuration, separately for map categories and plans | Append |
+| `map_objects` | list of MapObject | Map objects and B-Plans, nearest N per category; N is set in the configuration, separately for map categories and plans | Append; an object with a known ID replaces the old one |
 | `findings` | list of Finding | One per clear or investigated object | Append |
 | `journeys` | list of Journey | Two per destination, there and back, each with its outcome | Append |
 | `failures` | list of service | The services that still failed after retries: map, plans, transit or web search | Add if new |
@@ -309,10 +321,11 @@ coordinates, but it can by its address.
 Only a `Finding` classifies an object: its `identified_type` and `status` come from the lists
 in the research scope.
 
-TODO: define the lists of finding types and statuses and N for map categories and for plans in
-[research_scope.yaml](../src/out_of_frame/data/research_scope.yaml) in stages with the eval tasks, before implementing the behaviour that uses each value (see
-[roadmap.md](roadmap.md)). The agent and the evals use the same lists; the agent never sees
-the truth labels.
+The lists of finding types and statuses are in
+[research_scope.yaml](../src/out_of_frame/data/research_scope.yaml). Each type also says how
+such an object can affect people nearby, and the report takes the effect from it alone. The
+agent and the evals use the same lists; the agent never sees the truth labels. TODO: in step
+8, the types and statuses of planned objects, and N for plans, with their eval tasks.
 
 ### What each step reads and writes
 
@@ -328,8 +341,9 @@ message is the input of the run and goes straight into `messages`.
 | Input | Geocode every address | code | `property.text`, `destinations[]` (only `address.text` is geocoded) | `property.coordinates`, `property.source_id`, `destinations[].address.coordinates`, `destinations[].address.source_id`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
-| Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, with the addresses of each object that code sends to investigation; `sources`, `failures` |
+| Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_id` |
+| Research | Get the addresses of the objects to investigate | code | `map_objects`, `findings`: which objects go to investigation, computed by code | `map_objects[].addresses` of those objects |
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
@@ -435,6 +449,9 @@ Code retries each call to the model or a source a few times. If it still fails:
 - **The model or geocoding:** the run stops, and the user is asked to try again later. The
   state is saved after each step, so the run then continues where it stopped.
 - **The map or plan source:** that part of the report is missing, and the rest continues.
+  The query for the addresses of the objects to investigate is the exception: they are
+  investigated without addresses, the map part of the report stays, and nothing is added to
+  `failures`.
 - **The transit source:** the journeys it could not plan are marked unavailable, and the
   rest continues.
 - **Web search in an investigation:** the object stays unidentified, and the other
