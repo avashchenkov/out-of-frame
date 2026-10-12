@@ -24,7 +24,7 @@ from evals.graders.prompt_injection import grade_flagged
 from evals.load import EVALS, Inputs, Task, load, load_all
 from out_of_frame import prices
 from out_of_frame.config import MODEL
-from out_of_frame.grounding import find_grounding_errors
+from out_of_frame.grounding import collect_cited_page, find_grounding_errors
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.state import Finding, InvestigationState, MapObject, Source
 from out_of_frame.web_search import (
@@ -43,7 +43,7 @@ class Outcome:
     """The state where the suite ends."""
 
     finding: Finding
-    sources: list[Source]  # the snippets and pages the agent stored for the finding
+    sources: list[Source]  # the snippet or page that the finding cites, if any
 
 
 @dataclass(frozen=True)
@@ -121,7 +121,7 @@ def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     if draft is not None and draft != state.finding:
         errors = find_grounding_errors(draft, state.map_object, state.pages)
         transcript.append({"find_grounding_errors": errors})
-    cited = [page for page in state.pages if page.id in state.finding.evidence_ids]
+    cited = collect_cited_page(state.finding.evidence_id, state.pages)
     return Trial(Outcome(state.finding, cited), transcript)
 
 
@@ -150,7 +150,8 @@ def find_map_object(inputs: Inputs) -> MapObject:
 
 def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
     """A task from a written state is graded against its own pages only, so the agent cannot add
-    or change evidence. A live task is graded against the sources the agent stored."""
+    or change evidence. A live task is graded against the page the agent stored for its
+    finding."""
     if isinstance(task.inputs, InvestigationState):
         return task.inputs.pages
     return outcome.sources

@@ -63,25 +63,26 @@ class Finding(Record):
         description="identified if a source about this object settles what it is; the rules "
         "say which sources are about it"
     )
+    evidence_id: str | None = Field(
+        description="The ID of the one page that the finding rests on, without brackets, such "
+        "as web-1; the rules say which page. The map's source ID only if no page adds a key "
+        "fact that the finding needs. Null if the object is unidentified."
+    )
     identified_type: str | None = Field(
-        description="One of the listed types; other if the sources about this object settle "
-        "what it is and no listed type fits; null if they do not settle it."
+        description="One of the listed types; other if the cited source and the map data "
+        "settle what it is and no listed type fits; null if they do not settle it."
     )
     status: str | None = Field(
-        description="One of the listed statuses, for today; null if the sources do not settle "
-        "it for today."
+        description="One of the listed statuses, for today; null if the cited source and the "
+        "map data do not settle it for today."
     )
     key_facts: list[str] = Field(
         description="One to three short quotes about this object, those that best settle what "
-        "it is and whether it is in use. Each is copied word for word from one cited source or "
+        "it is and whether it is in use. Each is copied word for word from the cited page or "
         "the map data, without added words or '...': only the words that show the fact, such as "
         "a name or an address, never a whole snippet or page, and never several lines joined "
-        "into one. At least one if the object is identified."
-    )
-    evidence_ids: list[str] = Field(
-        description="The IDs of the sources that the key facts come from, such as web-1, or "
-        "the map's source ID for a quote from the map data, without brackets. At least one if "
-        "the object is identified."
+        "into one. At least one if the object is identified, and at least one from the cited "
+        "page, if it cites one."
     )
 
     @classmethod
@@ -93,7 +94,7 @@ class Finding(Record):
             identified_type=None,
             status=None,
             key_facts=[],
-            evidence_ids=[],
+            evidence_id=None,
         )
 
 

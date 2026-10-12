@@ -274,7 +274,7 @@ classDiagram
         identified_type: from the research scope's list, or null
         status: from a fixed list, or null
         key_facts: list of text
-        evidence_ids: list of Source ID
+        evidence_id: Source ID, or null
     }
     class Journey {
         destination_id: Destination ID
@@ -288,7 +288,7 @@ classDiagram
     MapObject *-- Coordinates
     MapObject --> Source : source_id
     Finding --> MapObject : map_object_id
-    Finding --> Source : evidence_ids
+    Finding --> Source : evidence_id
     Journey --> Destination : destination_id
 ```
 
@@ -329,12 +329,12 @@ message is the input of the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, with the addresses of each object that code sends to investigation; `sources`, `failures` |
-| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_ids` |
+| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_id` |
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
-| Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the `sources` it cites, `failures` |
+| Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs (code) | `report` |
-| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_ids`, `sources`, `journeys` | `report` |
+| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
 
@@ -342,8 +342,8 @@ Each investigation is a LangGraph subgraph with its own state. Code starts one r
 object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets only
 its object. The model sees the object's name, details without the category, and addresses, not its coordinates or
 distance: it searches by address. The run's field names differ from the run state's, so nothing passes between them by
-accident. When it ends, code writes its finding into `findings`, the snippets and pages the
-finding cites into `sources`, and web search into `failures` if it failed.
+accident. When it ends, code writes its finding into `findings`, the snippet or page the
+finding cites into `sources`, if it cites one, and web search into `failures` if it failed.
 
 The model has two tools, which code runs with Tavily: search, which returns short snippets,
 and extract, which returns the full text of one page it chooses. One model call makes both choices: it calls a
@@ -386,21 +386,26 @@ Other rules:
 ## Grounding
 
 Code gives an ID to each source response and to each snippet or page from Tavily. A snippet or
-page reaches the run state only if a finding cites it. A finding cites the IDs it uses and its
-key facts (a name, a date, a status), copied word for word from the source. Code checks that
-each ID exists and each fact's words, numbers and symbols appear in the stored text in the
-same order, whatever the case, spacing and punctuation between them; for the object's own map
-or plan data, that
-text is the object's name, details without the category, and addresses. If not, the finding is rejected,
-and the object is marked unidentified. The check runs inside the investigation, so only a
-finding that passes it, or an unidentified one after a rejection or a web search failure, goes
-into `findings`. Triage findings are not checked: in triage the model may use what it
-knows to say what a mapped object is.
+page reaches the run state only if a finding cites it. A finding rests on one source, the
+page that best settles the object, and on the object's own map or plan data: it cites that
+source's ID, or the map or plan response's ID when no page adds a fact the finding needs, and
+its key facts (a name, a date, a status), copied word for word from the source or the map or
+plan data. One source keeps the facts of one business apart from another's at a
+shared site, and lets the report cite one page for an object. A search snippet and the full
+text of the same page, with the same URL, count as one page. Code checks that the ID exists,
+that an unidentified finding cites no page, that a cited page gives at least one key fact, and
+that each fact's words, numbers and symbols appear in the stored text in the same order,
+whatever the case, spacing and punctuation between them; for the object's own map or plan
+data, that text is the object's name, details without the category, and addresses. If not,
+the finding is rejected, and the object is marked unidentified. The check runs inside the
+investigation, so only a finding that passes it, or an unidentified one after a rejection or a
+web search failure, goes into `findings`. Triage findings are not checked: in triage the model
+may use what it knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
 links a person can open. A web page is linked by its URL. A map or plan response is not
 linked: the report names the source, OpenStreetMap or the Berlin B-Plan WFS. An object always
-cites its own map or plan data as well as the pages of its finding, since the report also
+cites its own map or plan data as well as the page of its finding, since the report also
 gives facts from that data, such as the object's address. An unknown ID, or an object ID in
 the text outside a citation, which the reader cannot use, sends the report back to be written
 again, a few times at most; after that the run stops, as when the model fails. So the model

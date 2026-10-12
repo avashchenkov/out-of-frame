@@ -19,6 +19,7 @@ from pydantic import Field
 
 from out_of_frame import research_scope
 from out_of_frame.config import JUDGE_MODEL
+from out_of_frame.grounding import collect_cited_page
 from out_of_frame.record import Record
 from out_of_frame.report import CITATION
 from out_of_frame.state import RunState
@@ -131,20 +132,18 @@ def states_something(text: str) -> bool:
 def judge_support(statement: Statement, state: RunState, date: dt.date) -> SupportGrade:
     """Whether the sources of the objects the statement cites back it, on the date of the run.
     The judge gets each object's map data, distance and how its investigation ended, and the
-    web pages its finding cites, but not the finding's type and status: the agent's own
+    web page its finding cites, but not the finding's type and status: the agent's own
     conclusion backs nothing."""
     objects = {map_object.id: map_object for map_object in state.map_objects}
     findings = {finding.map_object_id: finding for finding in state.findings}
-    sources = {source.id: source for source in state.sources}
     cited = [objects[id] for id in statement.cited]
+    # The object's map data is its map_text(), not the stored map response, which has every
+    # object the map returned, so it could back a claim about another one.
     pages = {
-        map_object.id: [
-            sources[id]
-            for id in (findings[map_object.id].evidence_ids if map_object.id in findings else [])
-            # The object's map data is its map_text(): the stored map response has every object
-            # the map returned, so it could back a claim about another one.
-            if sources[id].kind == "web search"
-        ]
+        map_object.id: collect_cited_page(
+            findings[map_object.id].evidence_id if map_object.id in findings else None,
+            state.sources,
+        )
         for map_object in cited
     }
     prompt = render(

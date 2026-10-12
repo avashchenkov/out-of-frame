@@ -45,6 +45,6 @@ the nodes.
   rule for merging their updates; without one, LangGraph rejects the update.
 - Pauses need a checkpointer and a thread ID. When a run resumes, the paused node starts again
   from the beginning, so the work before the pause must be safe to repeat.
-- Each investigation needs its own subgraph state, and only the finding, the snippets and
-  pages it cites and a web search failure return to the main state. `Send` starts the subgraph
-  but does not keep its transcript out of the main state by itself.
+- Each investigation needs its own subgraph state, and only the finding, the snippet or page
+  it cites, if any, and a web search failure return to the main state. `Send` starts the
+  subgraph but does not keep its transcript out of the main state by itself.

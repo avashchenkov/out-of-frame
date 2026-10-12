@@ -10,28 +10,46 @@ from out_of_frame.state import Finding, MapObject, Source
 def find_grounding_errors(
     finding: Finding, map_object: MapObject, sources: list[Source]
 ) -> list[str]:
-    """Why the finding is not grounded; empty if it is. Each evidence ID must exist, and each
-    key fact must appear word for word in a cited source.
+    """Why the finding is not grounded; empty if it is. Its evidence ID must exist, and each
+    key fact must appear word for word in the cited page or in the object's own map data.
 
-    An identified finding cites at least one source and one key fact; an unidentified one may
-    cite nothing. For the object's own map or plan data, the cited text is its map_text().
+    An identified finding cites one source and at least one key fact, and a cited page gives
+    one of them at least, so that the report never cites a page no fact came from. An
+    unidentified finding cites no page. For the object's own map or plan data, the text is its
+    map_text().
     """
     errors = []
-    if finding.outcome == "identified" and not (finding.evidence_ids and finding.key_facts):
+    cited = finding.evidence_id
+    if finding.outcome == "identified" and (cited is None or not finding.key_facts):
         errors.append("an identified finding needs an evidence ID and a key fact")
+    if finding.outcome == "unidentified" and collect_cited_page(cited, sources):
+        errors.append("an unidentified finding cites no page")
     ids = [source.id for source in sources] + [map_object.source_id]
     if len(set(ids)) != len(ids):
         errors.append("two sources have the same ID")
-    texts = {source.id: source.content for source in sources}
-    texts[map_object.source_id] = map_object.map_text()
-    errors += [f"unknown evidence ID {id!r}" for id in finding.evidence_ids if id not in texts]
-    cited = [texts[id] for id in finding.evidence_ids if id in texts]
-    for fact in finding.key_facts:
-        if not fact.strip():
-            errors.append("an empty key fact")
-        elif not any(appears_in(fact, text) for text in cited):
-            errors.append(f"key fact not found word for word in a cited source: {fact!r}")
+    if cited is not None and cited not in ids:
+        errors.append(f"unknown evidence ID {cited!r}")
+    page = [source.content for source in collect_cited_page(cited, sources)]
+    facts = [fact for fact in finding.key_facts if fact.strip()]
+    from_page = [fact for fact in facts if any(appears_in(fact, text) for text in page)]
+    if len(facts) < len(finding.key_facts):
+        errors.append("an empty key fact")
+    errors += [
+        f"key fact not found word for word in the cited page or the map data: {fact!r}"
+        for fact in facts
+        if fact not in from_page and not appears_in(fact, map_object.map_text())
+    ]
+    if finding.outcome == "identified" and page and not from_page:
+        errors.append(f"no key fact comes from the cited page {cited!r}")
     return errors
+
+
+def collect_cited_page(evidence_id: str | None, sources: list[Source]) -> list[Source]:
+    """Every web source with the cited source's URL: a search snippet and the full text of the
+    same page get IDs of their own, but they are one page. Empty if the finding cites the map,
+    or nothing."""
+    urls = {s.url for s in sources if s.id == evidence_id and s.kind == "web search"}
+    return [s for s in sources if s.url in urls and s.kind == "web search"]
 
 
 # A number with its decimal or thousands separators, a word, or any other character.

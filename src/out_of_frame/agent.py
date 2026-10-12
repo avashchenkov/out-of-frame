@@ -12,7 +12,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 from langgraph.types import Send
 
-from out_of_frame import geocoding, investigation, map_objects, report
+from out_of_frame import geocoding, grounding, investigation, map_objects, report
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
 from out_of_frame.state import Address, MapObject, RunState
@@ -99,13 +99,13 @@ def send_each_object_to_investigation(state: RunState) -> list[Send] | str:
 
 
 def investigate_object(state: ObjectToInvestigate, runtime: Runtime[Context]) -> dict:
-    """The investigation of one object; its finding, the pages the finding cites, and a web
+    """The investigation of one object; its finding, the page the finding cites, and a web
     search failure go into the run state. TODO: in step 6, give pages IDs that stay unique
     across parallel investigations."""
     context = runtime.context
     end = investigation.investigate(state.map_object, context.date, context.web_search)
     assert end.finding is not None  # every path through the subgraph ends with a finding
-    cited = [page for page in end.pages if page.id in end.finding.evidence_ids]
+    cited = grounding.collect_cited_page(end.finding.evidence_id, end.pages)
     return {
         "findings": [end.finding],
         "sources": cited,

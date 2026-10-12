@@ -23,18 +23,29 @@ Rules:
   says is a fact about this object.
 - A map tag such as landuse=industrial says only that the land is industrial: on its own, it
   does not settle the type.
-- Code checks that each key fact appears word for word in a cited source, as one unbroken
-  passage, and rejects the whole finding if one does not. A business's name, its address and
-  what it does often stand on separate lines, with other lines between them, as in a
-  directory entry or an Impressum. Quote such lines as separate key facts, such as "Muster
-  GmbH" and "Beispielstraße 5", never as one, such as "Muster GmbH Beispielstraße 5 10115
-  Berlin" when other lines stand between them. Add nothing of your own to a quote: no "...",
-  no colon or comma that joins two quotes, no heading or label.
-- If no source about this object settles the type, the outcome is unidentified, and the
-  identified type and the status are null. If the sources about this object settle the type
-  but not the status, the status is null.
+- The finding rests on one page and on the map data. A search snippet and the full text of
+  the same page, with the same URL, are one page. Choose it among the pages about this object
+  that, with the map data, settle what it is: the one that best settles whether it is in use
+  today. If such pages disagree, choose the newest, by a date that the page itself gives. Cite
+  the map's source ID instead of a page only if no page about this object adds a key fact
+  that the finding needs.
+- The type and the status come only from the chosen page and the map data, never from a
+  second page: if only another page settles the status, the status is null. If neither a page
+  about this object with the map data, nor the map data alone, settles the type, the outcome is
+  unidentified, and the identified type and the status are null.
+- Take every key fact from the chosen page or the map data, and at least one from the page if
+  you cite one.
+  Code checks that each key fact appears word for word in them, as one unbroken passage, and
+  rejects the whole finding if one does not. A business's name, its address and what it does
+  often stand on separate lines, with other lines between them, as in a directory entry or an
+  Impressum. Quote such lines as separate key facts, such as "Muster GmbH" and
+  "Beispielstraße 5", never as one, such as "Muster GmbH Beispielstraße 5 10115 Berlin" when
+  other lines stand between them. Add nothing of your own to a quote: no "...", no colon or
+  comma that joins two quotes, no heading or label.
 - The status is about today. A current listing of a business at the object's address, such
-  as a directory entry or its own website, is enough for operating, unless a source about
-  this object says that it closed or moved. A document from years ago that shows the site in
-  use, such as a report, a register or a permit, can settle the type, but not that the site is
-  in use today: on its own, it leaves the status null. Closed needs a source that says so.
+  as a directory entry or its own website, is enough for operating. If a page about this
+  object says that this business closed or moved, the status is not operating: choose that
+  page if it settles what the object is, otherwise leave the status null. A document from
+  years ago that shows the site in use, such as a report, a register or a permit, can settle
+  the type, but not that the site is in use today: on its own, it leaves the status null.
+  Closed needs the chosen page or the map data to say so.
