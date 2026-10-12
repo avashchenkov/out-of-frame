@@ -69,9 +69,13 @@ calibration.
    code tests for routing (T3), grouping, distances, caps and failures. The report must preserve
    clear findings, show unidentified and not investigated objects, and distinguish an empty
    result from a failure. From the first hand grades: the report reads plainly, and each type
-   has one line in the research scope on how it can affect people nearby. A site that several
-   businesses share can get a different type from run to run, by the business the
-   investigation finds first: decide which business sets the type.
+   has one line in the research scope on how it can affect people nearby. An object that
+   cannot affect them, such as a cleaning business, gets one short line with its distance and
+   no details the reader cannot use, such as its map addresses. The report never quotes map
+   tags such as landuse=industrial. A site that several businesses share can get a different
+   type from run to run, by the business the investigation finds first: decide which business
+   sets the type. At Klärwerkstraße 1 and 1a, runs found a cleaning business and a Jobcenter
+   project, both commercial, and missed a metalwork shop with production halls there.
 7. **Input conversation.** Add extraction, address disambiguation, questions and LangGraph
    pauses. Check I1–I3 and code tests for applying changes and resuming the run. The user can
    resolve an ambiguous address and supply missing times; complete input starts research
