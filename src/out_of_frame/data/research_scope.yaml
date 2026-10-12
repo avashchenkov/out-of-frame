@@ -12,9 +12,9 @@
 # use. A finding leaves either null when the evidence cannot settle it; other means that the
 # evidence settles what the object is and no listed type fits. The agent and the eval labels
 # use the same lists. Types are coarse: one per kind of impact that matters to a buyer, with
-# clear borders between them.
-# TODO: types for objects other than industrial sites and the statuses of planned objects,
-# with the tasks that need them.
+# clear borders between them. Each type ends with how such an object can affect people
+# nearby; the report takes the effect from that sentence alone.
+# TODO: in step 8, the types and statuses of planned objects, with the tasks that need them.
 
 finding_statuses:
   operating: In use now.
@@ -24,12 +24,23 @@ finding_statuses:
 
 identified_types:
   plant: Power, heat, waste, chemicals or fuel, made, burnt, treated or stored, including waste
-    recycling.
-  production: Makes or repairs things, such as a factory or a workshop.
-  logistics: Stores or moves goods, such as a warehouse or a depot.
+    recycling but not wastewater. A site that fits this type and another one is a plant. It
+    can bring noise, smell, emissions and a risk of accidents to people nearby.
+  production: Makes or repairs things, such as a factory or a workshop. It can bring noise and
+    delivery traffic to people nearby.
+  logistics: Stores or moves goods, such as a warehouse or a depot. It can bring lorry traffic
+    and noise to people nearby.
   commercial: Offices, shops or services that make or repair nothing, whether one business or
-    several share the site.
-  other: The evidence settles what the object is, and no type above fits.
+    several share the site. Its type alone shows no effect on people nearby.
+  wastewater plant: Treats sewage. It can bring smell to people nearby.
+  airport: An airfield for aircraft, such as an airport. It can bring aircraft noise to people
+    nearby, mostly under its flight paths.
+  major road: A motorway or a trunk road. It can bring traffic noise and exhaust to people
+    nearby.
+  railway: A railway or light railway line, or its tracks. It can bring train noise and
+    vibration to people nearby.
+  other: The evidence settles what the object is, and no type above fits. Its type alone shows
+    no effect on people nearby.
 
 categories:
   # Objects from OpenStreetMap.
