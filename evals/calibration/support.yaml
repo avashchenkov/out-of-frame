@@ -5,65 +5,58 @@
 # pages. Without its run file, an example cannot be judged again. run_sha256 shows that a run
 # file is the one that was graded.
 
-graded: '2026-10-11'
-rubric_sha256: 45ed41b546ba8fe2fe24ba8b51c9cc15811c2a474329bcf51c0d97273b6ac2bf
+graded: '2026-10-12'
+rubric_sha256: bb89e4551482d307039a956e744a4d05a8a263ed5b2b9ca9cfa54a967e1489c9
 examples:
-- run: 2026-10-11T01-11-35-561627Z-run.json
-  run_sha256: 1c581f3fe368711c9bff1302a5d12feabab98be07f0036ba985e3c287eb0a7ee
-  statement: The object osm-way-23156479 lies 118 m from the property. Its map data shows an industrial
-    land-use area with the addresses Klärwerkstraße 1 and Klärwerkstraße 1A, 13597 Berlin. The investigation
-    classed it as a commercial site, a service business that makes or repairs nothing, and its status
-    is operating. It is listed as a cleaning service, with opening hours Monday to Friday, 08:30 to 16:30.
-    [osm-way-23156479]
+- run: 2026-10-12T01-51-48-538796Z-run.json
+  run_sha256: 361a29009f2399a159d238e1198e1473176450a72862652e94680f379c64c824
+  statement: This object is 118 m from the property. Its map data tags the land as industrial and lists
+    two addresses, Klärwerkstraße 1 and Klärwerkstraße 1A, both in 13597 Berlin. The investigation classed
+    it as commercial, meaning an office, shop or service that makes or repairs nothing, and found it in
+    operation [osm-way-23156479].
   cited:
   - osm-way-23156479
-  pages:
-  - web-4
-  - web-3
-  - web-2
-  grade: contradicted
-  reason: The weekday hours 08:30-16:30 belong to Neue Perspektive Spandau at Klärwerkstraße 1a (web-2);
-    RETEC's own listing gives 08:00-20:00 every day (web-3). The rest is backed.
-- run: 2026-10-11T01-11-35-561627Z-run.json
-  run_sha256: 1c581f3fe368711c9bff1302a5d12feabab98be07f0036ba985e3c287eb0a7ee
-  statement: For someone living nearby, the relevant fact is that this business operates on weekday daytimes,
-    so any traffic it generates is likely to fall within those hours. The investigation does not show
-    whether it has evening, weekend or night activity. [osm-way-23156479]
-  cited:
-  - osm-way-23156479
-  pages:
-  - web-4
-  - web-3
-  - web-2
-  grade: contradicted
-  reason: '"Operates on weekday daytimes" contradicts RETEC''s listing (web-3), and no source backs the
-    traffic claim.'
-- run: 2026-10-11T01-10-26-955882Z-run.json
-  run_sha256: 673e016b00b1c694010d7f917811089108822a5152b5cfe3fb8e0630f4cb500d
-  statement: The nearest object is an industrial land-use area 118 m from the property, with the addresses
-    Klärwerkstraße 1 and Klärwerkstraße 1A, 13597 Berlin. I could not identify what it is, so I cannot
-    say what business or activity it holds, or whether it is in use. The map data records only the land
-    use and the addresses [osm-way-23156479].
-  cited:
-  - osm-way-23156479
-  pages: []
-  grade: unsupported
-  reason: '"The nearest object": the run has only this object, and the map response has nearer ones, such
-    as railway tracks and the Müllverbrennungsanlage Ruhleben. The rest is backed.'
-- run: 2026-10-11T01-10-26-955882Z-run.json
-  run_sha256: 673e016b00b1c694010d7f917811089108822a5152b5cfe3fb8e0630f4cb500d
-  statement: Since its type is unknown, this report cannot say what it might mean for someone living nearby.
+  grade: supported
+  reason: 'The distance, the land use and the addresses are map data. web-3 lists Retec GmbH at Klärwerkstraße
+    1 under Reinigung, with opening hours: a cleaning service, so commercial, and in use.'
+- run: 2026-10-12T01-51-48-538796Z-run.json
+  run_sha256: 361a29009f2399a159d238e1198e1473176450a72862652e94680f379c64c824
+  statement: The record names one business, Retec GmbH, at Klärwerkstraße 1, and describes its activity
+    as cleaning (Reinigung). The record does not say which business, if any, uses the 1A address. For
+    someone living nearby, a cleaning service of this type does not by itself suggest an effect on neighbours,
+    such as noise, smell or emissions, and the investigation did not find one.
   cited: []
-  pages: []
-  grade: supported
-  reason: It says only that nothing can be said.
-- run: 2026-10-11T01-12-39-046225Z-run.json
-  run_sha256: efc6ef91ead2d8005555771c9f73384649eef8bbfba1acf38eb9955cfb3ceb29
-  statement: The object at Klärwerkstraße 1 and 1A, 13597 Berlin, lies 118 m from the property. Its map
-    data tags it as industrial land (landuse=industrial) and gives the two addresses above. The investigation
-    could not identify what the object is, so this report gives no type, status or use for it. [osm-way-23156479]
+  grade: unsupported
+  reason: 'It cites nothing, and the run facts do not name Retec GmbH, cleaning or the 1A address: those
+    come from web-3, which only the citation before it brings in.'
+- run: 2026-10-12T01-46-31-102269Z-run.json
+  run_sha256: fd9a5e50375505bb531022820ede71593de7b3e15c46717aba1f8ac91b2f2491
+  statement: Klärwerkstraße 1 and 1A lie about 118 m from the property, on land the map data marks as
+    industrial (landuse=industrial). The site is in operation. [osm-way-23156479]
   cited:
   - osm-way-23156479
-  pages: []
   grade: supported
-  reason: The addresses, distance, land use and the unidentified outcome match the run.
+  reason: The distance, the land use and the addresses are map data. web-2 gives the opening hours of
+    NEUE PERSPEKTIVE SPANDAU, Montag bis Freitag 08:30 to 16:30, so the site is in use.
+- run: 2026-10-12T01-46-31-102269Z-run.json
+  run_sha256: fd9a5e50375505bb531022820ede71593de7b3e15c46717aba1f8ac91b2f2491
+  statement: Klärwerkstraße 1a is the address of NEUE PERSPEKTIVE SPANDAU, a service that works on behalf
+    of the Jobcenter Berlin Spandau. It is a commercial service that makes or repairs nothing, so its
+    type alone does not show any effect such as noise, smell or emissions for people living nearby. The
+    data does not show whether other businesses share these addresses. The facts above apply only to this
+    service. [osm-way-23156479]
+  cited:
+  - osm-way-23156479
+  grade: supported
+  reason: 'web-2: NEUE PERSPEKTIVE SPANDAU, Klärwerkstraße 1a, 13597 Berlin, "Im Auftrag des Jobcenters
+    Berlin Spandau". No effect follows from the type. That the data does not show other businesses holds
+    for the cited page and the map data, though other pages of the run name Retec GmbH and SBH there.'
+- run: 2026-10-12T01-45-18-783505Z-run.json
+  run_sha256: c4181c1bcfe8e2a67ca5ee8f04ed583741eec92f650d5cd4a67024e21b0e8f5c
+  statement: The map source failed after its retries, so this part of the report is missing. No objects
+    near the property are listed here, and this does not mean that none exist. The checks around the property
+    could not be reported.
+  cited: []
+  grade: supported
+  reason: The run facts give the map source as failed. The text says so and does not say that nothing
+    was found.
