@@ -10,9 +10,8 @@ failed.
 - {{ map_object.id }}, {{ map_object.distance_from_property_m | int }} m from the property: {% if finding is none %}not investigated{% elif finding.outcome == "identified" %}identified as {{ finding.identified_type }}, status {{ finding.status or "not known" }}{% else %}could not be identified{% endif %}
 
 {% endfor %}
-{# TODO: in step 6, the state has every object found, and this says that none was. #}
 {% if nothing_found %}
-No unnamed industrial area was found near the property.
+No object of the checked kinds was found near the property.
 {% endif %}
 </objects>
 

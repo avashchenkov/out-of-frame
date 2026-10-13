@@ -38,6 +38,15 @@ OVERPASS_URL = os.environ.get(
     "OUT_OF_FRAME_OVERPASS_URL", "https://overpass-api.de/api/interpreter"
 )
 
+# The map objects kept per category, nearest first. Every unclear one of them is investigated,
+# so this is also the cap of investigations per category, see docs/architecture.md#one-run.
+MAP_OBJECTS_PER_CATEGORY = int(os.environ.get("OUT_OF_FRAME_MAP_OBJECTS_PER_CATEGORY", "5"))
+
+# Investigations that run at once, so that a run does not hit the model's rate limit. At least
+# 2: a stream with its subgraphs, as in evals/judge.py, takes one of them, and with only one
+# the run would wait for ever.
+INVESTIGATIONS_AT_ONCE = int(os.environ.get("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE", "3"))
+
 # Tries of one call to Nominatim or Overpass that fails for a while, such as on a timeout.
 SOURCE_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_SOURCE_ATTEMPTS", "3"))
 

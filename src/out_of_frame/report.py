@@ -9,7 +9,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from out_of_frame import research_scope
-from out_of_frame.config import MODEL, REPORT_ATTEMPTS
+from out_of_frame.config import MAP_OBJECTS_PER_CATEGORY, MODEL, REPORT_ATTEMPTS
 from out_of_frame.finding import render
 from out_of_frame.state import RunState, Source
 
@@ -17,8 +17,7 @@ CITATION = re.compile(r"\[([^\[\]\s]+)\]")  # [osm-way-1]
 BRACKETS = re.compile(r"\[([^\[\]]*)\]")  # any [...]
 LINK = re.compile(r"\]\(|\]:|(?:https?://|www\.)\S*")  # a Markdown link, or a URL of any form
 OSM_CREDIT = "Map data © OpenStreetMap contributors: https://www.openstreetmap.org/copyright"
-# TODO: in step 6, the run investigates up to five objects per category.
-SCOPE_NOTE = "This early version investigates only the nearest unnamed industrial area."
+SCOPE_NOTE = f"The report covers the nearest {MAP_OBJECTS_PER_CATEGORY} objects of each kind."
 
 
 class ReportError(Exception):

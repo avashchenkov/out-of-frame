@@ -1,9 +1,5 @@
 """The map objects around the property, from Overpass: see docs/architecture.md#one-run and
-docs/sources.md#overpass.
-
-TODO: in step 6, code groups the elements into objects (one site or one road can be several
-elements) and keeps the nearest five per category. Until then, each element is an object.
-"""
+docs/sources.md#overpass."""
 
 import json
 import math
@@ -13,7 +9,12 @@ from itertools import pairwise
 import httpx
 
 from out_of_frame import research_scope
-from out_of_frame.config import OVERPASS_URL, SOURCE_ATTEMPTS, USER_AGENT
+from out_of_frame.config import (
+    MAP_OBJECTS_PER_CATEGORY,
+    OVERPASS_URL,
+    SOURCE_ATTEMPTS,
+    USER_AGENT,
+)
 from out_of_frame.state import Coordinates, MapObject, Source
 
 EARTH_RADIUS_M = 6_371_000
@@ -25,8 +26,8 @@ class MapError(Exception):
 
 
 def fetch_map_objects(origin: Coordinates) -> tuple[list[MapObject], Source]:
-    """The map objects of every category within the category's radius of the origin, without
-    their addresses, and the Overpass response they come from."""
+    """The nearest objects of every category within the category's radius of the origin,
+    without their addresses, and the Overpass response they come from."""
     categories = [c for c in research_scope.load().categories if c.source == "overpass"]
     query = "[out:json][timeout:90];"
     for category in categories:
@@ -41,34 +42,79 @@ def fetch_map_objects(origin: Coordinates) -> tuple[list[MapObject], Source]:
         url=OVERPASS_URL,
         content=json.dumps(response, ensure_ascii=False),
     )
+    objects: dict[str, MapObject] = {}
+    for category, elements in zip(categories, split_by_count(response), strict=True):
+        placed = [
+            build_map_object(element, category.id, origin, source.id)
+            for element in elements
+            if "lat" in element or "bounds" in element  # not a relation of relations
+        ]
+        for map_object in group_into_objects(placed)[:MAP_OBJECTS_PER_CATEGORY]:
+            objects.setdefault(map_object.id, map_object)  # an element of two categories once
+    return list(objects.values()), source
+
+
+def group_into_objects(elements: list[MapObject]) -> list[MapObject]:
+    """The objects that the elements of one category make, nearest first: elements of one
+    group are one object, which is the nearest of them, see find_group."""
+    objects: dict[tuple, MapObject] = {}
+    for element in sorted(elements, key=lambda element: element.distance_from_property_m):
+        objects.setdefault(find_group(element), element)
+    return list(objects.values())
+
+
+def find_group(element: MapObject) -> tuple:
+    """Elements with the same name, or without a name the same ref, such as a road number, and
+    at the same stage are one object; a road and a railway never are. Road elements, or rail
+    elements, of one stage with neither are one object too, such as service tracks; any other
+    element without a name is an object of its own."""
+    tags = element.details
+    kind = "road" if "highway" in tags else "rail" if "railway" in tags else None
+    label = ("name", element.name) if element.name else ("ref", tags.get("ref"))
+    if label == ("ref", None) and kind is None:
+        return (element.id,)
+    return (kind, find_stage(tags), *label)
+
+
+def find_stage(tags: dict[str, str]) -> str:
+    """construction or proposed for a road or a railway tagged so, otherwise built."""
+    stages = [tags.get(key) for key in ("highway", "railway")]
+    return next((stage for stage in stages if stage in ("construction", "proposed")), "built")
+
+
+def fetch_addresses(objects: list[MapObject]) -> dict[str, list[str]]:
+    """The street addresses of the buildings inside each object's area, by which an unnamed
+    object can be found on the web, by the object's ID, from one query. A single point, a road
+    and a railway have no area, so they have none and are not asked for."""
+    areas = [
+        map_object
+        for map_object in objects
+        if not map_object.id.startswith("osm-node-")  # see build_map_object
+        and not {"highway", "railway"} & map_object.details.keys()
+    ]
+    if not areas:
+        return {}
+    query = "[out:json][timeout:90];"
+    for map_object in areas:
+        _, osm_type, osm_id = map_object.id.split("-")
+        query += f'{osm_type}({osm_id});map_to_area->.a;nwr(area.a)["addr:housenumber"];'
+        query += "out count;out tags;"  # the count marks where an object's addresses start
+    groups = split_by_count(call_overpass(query))
+    return {
+        map_object.id: sorted({format_address(element["tags"]) for element in elements})
+        for map_object, elements in zip(areas, groups, strict=True)
+    }
+
+
+def split_by_count(response: dict) -> list[list[dict]]:
+    """The elements of a response, split at each count: the output of each part of a query."""
     groups: list[list[dict]] = []
     for element in response["elements"]:
         if element["type"] == "count":
             groups.append([])
         else:
             groups[-1].append(element)
-    objects: dict[str, MapObject] = {}
-    for category, elements in zip(categories, groups, strict=True):
-        for element in elements:
-            if "lat" not in element and "bounds" not in element:
-                continue  # no point to place it by, such as a relation of relations
-            map_object = build_map_object(element, category.id, origin, source.id)
-            objects.setdefault(map_object.id, map_object)  # an element of two categories once
-    return list(objects.values()), source
-
-
-def fetch_addresses(map_object: MapObject) -> list[str]:
-    """The street addresses of the buildings inside the object's area, by which an unnamed
-    object can be found on the web. A single point has no area, so it has none."""
-    _, osm_type, osm_id = map_object.id.split("-")  # see build_map_object
-    if osm_type == "node":
-        return []
-    query = (
-        f"[out:json][timeout:60];{osm_type}({osm_id});map_to_area->.a;"
-        f'nwr(area.a)["addr:housenumber"];out tags;'
-    )
-    elements = call_overpass(query)["elements"]
-    return sorted({format_address(element["tags"]) for element in elements})
+    return groups
 
 
 def build_tag_filter(tags: dict[str, str | list[str]]) -> str:

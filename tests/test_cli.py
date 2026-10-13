@@ -34,7 +34,7 @@ def test_the_report_goes_to_stdout_and_the_progress_and_cost_to_stderr(monkeypat
     assert out.startswith(f"# What lies around {FREIHEIT_22}\n")
     assert "Found the address." in err and "Investigated an object on the web." in err
     assert "fill_references" not in err  # a step the user is not told about
-    assert "Tool calls: 1, cost: $0.0080" in err  # one search, and the stubbed models cost nothing
+    assert "Tool calls: 5, cost: $0.0400" in err  # a search in each of five investigations
 
 
 class ReportWriterThatSeesStderr(FakeWriter):
@@ -82,7 +82,7 @@ def test_a_model_failure_stops_the_run_and_still_tells_the_cost(monkeypatch, cap
         run_cli(monkeypatch)
     out, err = capsys.readouterr()
     assert stopped.value.code == 1 and out == ""
-    assert "Try again later." in err and "Tool calls: 1, cost: $0.0080" in err
+    assert "Try again later." in err and "Tool calls: 5, cost: $0.0400" in err
 
 
 def test_an_unclear_address_exits_with_a_hint(monkeypatch, capsys):

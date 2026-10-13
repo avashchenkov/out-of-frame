@@ -152,7 +152,7 @@ def test_wrong_citations_in_every_draft_stop_the_run(monkeypatch):
 def test_with_no_objects_the_report_has_no_sources(monkeypatch):
     state = RunState(property=Address(text="Freiheit 22, 13597 Berlin"))
     text, writer = write(monkeypatch, state)
-    assert "No unnamed industrial area was found" in writer.requests[0][-1].content
+    assert "No object of the checked kinds was found" in writer.requests[0][-1].content
     assert "Sources:" not in text and text.endswith(report.OSM_CREDIT)
 
 

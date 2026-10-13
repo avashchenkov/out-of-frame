@@ -11,9 +11,8 @@ Finding: unidentified.
 {% endif %}
 
 {% endfor %}
-{# TODO: in step 6, the state has every object found, and this says that none was. #}
 {% if not map_objects and "map" not in failures %}
-No unnamed industrial area was found near the property.
+No object of the checked kinds was found near the property.
 {% endif %}
 {% if failures %}
 These sources failed after their retries, so their part of the report is missing: {{ failures | join(", ") }}.

@@ -206,7 +206,7 @@ def test_the_support_judge_gets_only_the_page_that_each_cited_finding_cites(monk
     assert "230 m" in prompt and "Teststraße 9, 13597 Berlin" in prompt
     assert "<page" not in prompt  # PAGE is stored, but no finding cites it
     assert "Andere Straße" not in prompt  # the map response, though the finding cites it
-    assert "No unnamed industrial area was found" not in prompt
+    assert "No object of the checked kinds was found" not in prompt
 
 
 def test_the_support_judge_is_told_that_an_object_was_not_investigated(monkeypatch):
@@ -222,7 +222,7 @@ def test_a_statement_without_a_citation_gets_only_the_facts_about_the_run(monkey
     judge_support(Statement("Nothing was found.", ()), state, DATE)
     assert "<object" not in prompts[0]
     assert "No source failed." in prompts[0]
-    assert "No unnamed industrial area was found near the property." in prompts[0]
+    assert "No object of the checked kinds was found near the property." in prompts[0]
 
 
 def test_the_interpretation_judge_gets_every_object_and_the_failures_but_no_pages(monkeypatch):

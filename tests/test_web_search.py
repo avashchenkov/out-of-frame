@@ -1,12 +1,14 @@
 """Web search on Tavily with a stubbed SDK client: what the model sees, retries and setup errors."""
 
+import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import get_args
 
 import pytest
 from tavily.errors import InvalidAPIKeyError
 from tavily.errors import TimeoutError as TavilyTimeout
 
-from out_of_frame import web_search
+from out_of_frame import prices, web_search
 from out_of_frame.config import WEB_ATTEMPTS
 from out_of_frame.state import ToolCall
 from out_of_frame.web_search import PageText, TavilyWebSearch, WebSearchAccessError, WebSearchError
@@ -83,3 +85,19 @@ def test_no_key_is_a_setup_error(monkeypatch):
 def test_the_tools_are_the_ones_that_a_written_history_can_name():
     names = get_args(ToolCall.model_fields["tool"].annotation)
     assert set(web_search.TOOLS) == set(names)
+
+
+def test_searches_at_once_are_all_counted():
+    class SlowWebSearch:
+        def search(self, query):
+            time.sleep(0.01)  # so that the searches overlap
+            return [PageText("https://example.org", "A snippet.")]
+
+        def extract(self, url):
+            return []
+
+    metered = web_search.MeteredWebSearch(SlowWebSearch())
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(metered.search, ["a query"] * 40))
+    assert metered.tool_calls == 40
+    assert metered.credits == 40 * prices.load().tavily.search_credits

@@ -154,14 +154,26 @@ def add_new(old: list, new: list) -> list:
     return old + [entry for entry in new if entry not in old]
 
 
+def replace_by_id(old: list, new: list) -> list:
+    """The old list with each new entry in place of the old one with its ID, and the other new
+    entries at the end, so that code can add to an object later, such as its addresses. An
+    entry can be a record or, in a state that LangGraph has not validated yet, a dict."""
+
+    def find_id(entry) -> str:
+        return entry["id"] if isinstance(entry, dict) else entry.id
+
+    new_by_id = {find_id(entry): entry for entry in new}
+    return [new_by_id.pop(find_id(entry), entry) for entry in old] + list(new_by_id.values())
+
+
 class RunState(Record):
     """The state of one run, see docs/architecture.md#the-state. LangGraph appends a node's
-    sources, map objects and findings to the lists, adds each new failure, and replaces the
-    property and the report."""
+    sources, map objects and findings to the lists, a map object in place of the one with its
+    ID, adds each new failure, and replaces the property and the report."""
 
     property: Address
     sources: Annotated[list[Source], operator.add] = []
-    map_objects: Annotated[list[MapObject], operator.add] = []
+    map_objects: Annotated[list[MapObject], replace_by_id] = []
     findings: Annotated[list[Finding], operator.add] = []
     failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
     report: str | None = None  # the model's draft, then the report with its references filled in

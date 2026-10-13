@@ -2,6 +2,7 @@
 tools, run on Tavily. See docs/sources.md#tavily."""
 
 import os
+import threading
 import time
 from typing import Any, NamedTuple, Protocol
 
@@ -101,21 +102,28 @@ def call_tavily(method, *args, **kwargs) -> dict:
 
 class MeteredWebSearch:
     """A web search that passes each call on to the one it wraps and counts the tool calls and
-    the Tavily credits, for the cost of a run."""
+    the Tavily credits, for the cost of a run. Investigations run in parallel, so each count
+    is added under a lock."""
 
     def __init__(self, web_search: WebSearch):
         self.web_search = web_search
         self.tool_calls = 0
         self.credits = 0.0
+        self.lock = threading.Lock()
 
     def search(self, query: str) -> list[PageText]:
-        self.tool_calls += 1
+        self.add(tool_calls=1)
         texts = self.web_search.search(query)
-        self.credits += prices.load().tavily.search_credits
+        self.add(credits=prices.load().tavily.search_credits)
         return texts
 
     def extract(self, url: str) -> list[PageText]:
-        self.tool_calls += 1
+        self.add(tool_calls=1)
         texts = self.web_search.extract(url)
-        self.credits += prices.load().tavily.page_credits * len(texts)
+        self.add(credits=prices.load().tavily.page_credits * len(texts))
         return texts
+
+    def add(self, tool_calls: int = 0, credits: float = 0.0) -> None:
+        with self.lock:
+            self.tool_calls += tool_calls
+            self.credits += credits

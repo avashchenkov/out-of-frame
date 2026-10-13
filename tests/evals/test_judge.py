@@ -36,9 +36,11 @@ def stub_the_judges(monkeypatch, answer_to=lambda schema: answer(ANSWERS[schema]
 
 
 def run_the_agent(monkeypatch, web_search=None, writer=None) -> dict:
+    """A run whose draft, by default, is about one object, so that it is one statement."""
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)
-    monkeypatch.setattr(report, "build_report_model", lambda: writer or FakeWriter())
+    writer = writer or FakeWriter("An object [osm-way-23156479].")
+    monkeypatch.setattr(report, "build_report_model", lambda: writer)
     web_search = MeteredWebSearch(web_search or FakeWebSearch([SNIPPET]))
     return judge.run_agent(FREIHEIT_22, DATE, web_search)
 
@@ -50,7 +52,7 @@ def test_a_run_is_saved_with_its_draft_and_the_investigations_steps(monkeypatch)
     assert saved["state"]["report"].startswith(f"# What lies around {FREIHEIT_22}")
     steps = [step for step in saved["transcript"] if step["graph"]]
     assert any("write_finding" in step["update"] for step in steps)  # inside the investigation
-    assert saved["tool_calls"] == 1 and saved["prices_as_of"]
+    assert saved["tool_calls"] == 5 and saved["prices_as_of"]  # a search in each of five
     json.loads(judge.save(saved, "run").read_text(encoding="utf-8"))
 
 
@@ -69,9 +71,9 @@ def test_a_run_that_stops_late_is_saved_with_its_last_state(monkeypatch):
     writer = FakeWriter(*["A site [osm-way-9]."] * REPORT_ATTEMPTS)  # an unknown ID each time
     saved = run_the_agent(monkeypatch, writer=writer)
     assert "ReportError" in saved["error"] and saved["draft"] is None
-    [found] = saved["state"]["findings"]
-    assert found["outcome"] == "identified" and saved["tool_calls"] == 1
-    assert [source["id"] for source in saved["state"]["sources"]] == ["overpass-1", "web-1"]
+    findings = saved["state"]["findings"]
+    assert len(findings) == 5 and {found["outcome"] for found in findings} == {"identified"}
+    assert saved["tool_calls"] == 5 and len(saved["state"]["sources"]) == 6  # the map, 5 pages
 
 
 class StoppingWebSearch:
@@ -93,7 +95,7 @@ class StoppingWebSearch:
 def test_a_run_that_web_search_stops_is_saved_too(monkeypatch, error):
     saved = run_the_agent(monkeypatch, web_search=StoppingWebSearch(error))
     assert type(error).__name__ in saved["error"]
-    assert [o["id"] for o in saved["state"]["map_objects"]] == ["osm-way-23156479"]
+    assert len(saved["state"]["map_objects"]) == 11
 
 
 def test_the_judges_grade_the_draft_of_a_saved_run(monkeypatch):

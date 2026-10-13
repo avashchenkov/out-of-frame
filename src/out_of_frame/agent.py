@@ -13,6 +13,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import Send
 
 from out_of_frame import geocoding, grounding, investigation, map_objects, report
+from out_of_frame.config import INVESTIGATIONS_AT_ONCE
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
 from out_of_frame.state import Address, MapObject, RunState
@@ -42,21 +43,25 @@ def run(address: str, date: dt.date, web_search: WebSearch) -> RunState:
 
 @cache
 def build_graph():
+    if INVESTIGATIONS_AT_ONCE < 2:  # a stream with its subgraphs takes one, see config.py
+        raise ValueError("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE must be at least 2")
     builder = StateGraph(RunState, context_schema=Context)
     builder.add_node(geocode_property)
     builder.add_node(get_map_objects)
+    builder.add_node(get_addresses)
     builder.add_node(investigate_object)
     builder.add_node(write_report)
     builder.add_node(fill_references)
     builder.add_edge(START, "geocode_property")
     builder.add_edge("geocode_property", "get_map_objects")
+    builder.add_edge("get_map_objects", "get_addresses")
     builder.add_conditional_edges(
-        "get_map_objects", send_each_object_to_investigation, ["investigate_object", "write_report"]
+        "get_addresses", send_each_object_to_investigation, ["investigate_object", "write_report"]
     )
     builder.add_edge("investigate_object", "write_report")  # once every investigation has ended
     builder.add_edge("write_report", "fill_references")
     builder.add_edge("fill_references", END)
-    return builder.compile()
+    return builder.compile().with_config(max_concurrency=INVESTIGATIONS_AT_ONCE)
 
 
 def geocode_property(state: RunState) -> dict:
@@ -67,48 +72,71 @@ def geocode_property(state: RunState) -> dict:
 
 
 def get_map_objects(state: RunState) -> dict:
-    """The map objects around the property. Until step 6, only the one that is investigated is
-    kept, with its addresses. If Overpass fails, the map part of the report is missing."""
+    """The nearest map objects of each category around the property. If Overpass fails, the
+    map part of the report is missing."""
     assert state.property.coordinates is not None  # geocode_property comes first
     try:
         found, source = map_objects.fetch_map_objects(state.property.coordinates)
-        chosen = choose_object_to_investigate(found)
-        if chosen is None:
-            return {"sources": [source]}
-        addresses = map_objects.fetch_addresses(chosen)
     except map_objects.MapError as error:
         log.warning("the map failed: %s", error)
         return {"failures": ["map"]}
-    chosen = chosen.model_copy(update={"addresses": addresses})
-    return {"map_objects": [chosen], "sources": [source]}
+    return {"map_objects": found, "sources": [source]}
 
 
-def choose_object_to_investigate(found: list[MapObject]) -> MapObject | None:
-    """The nearest unnamed industrial object. TODO: in step 6, code routing and triage choose
-    the objects, up to five per category."""
-    unnamed = [o for o in found if o.name is None and o.details["category"] == "industry"]
-    return min(unnamed, key=lambda o: o.distance_from_property_m, default=None)
+def get_addresses(state: RunState) -> dict:
+    """The addresses of the objects to investigate, from one query, in place of the objects
+    without them. If Overpass fails, they are investigated without addresses: the map part of
+    the report stays."""
+    chosen = choose_objects_to_investigate(state)
+    try:
+        addresses = map_objects.fetch_addresses(chosen)
+    except map_objects.MapError as error:
+        log.warning("the addresses failed, so the objects are investigated without them: %s", error)
+        return {}
+    found = [
+        o.model_copy(update={"addresses": addresses[o.id]}) for o in chosen if o.id in addresses
+    ]
+    return {"map_objects": found}
+
+
+def choose_objects_to_investigate(state: RunState) -> list[MapObject]:
+    """Every object that code sends to investigation, and has no finding yet, nearest first:
+    at most five per category, as the map keeps no more. TODO: in step 6.3, also the objects
+    that triage cannot settle."""
+    settled = {finding.map_object_id for finding in state.findings}
+    chosen = [o for o in state.map_objects if is_sent_by_code(o) and o.id not in settled]
+    return sorted(chosen, key=lambda o: o.distance_from_property_m)  # nearest first
+
+
+def is_sent_by_code(map_object: MapObject) -> bool:
+    """Every industrial object goes to investigation, even with a name and complete tags, and
+    so does any object that is proposed or under construction; triage checks the others."""
+    tags = map_object.details
+    return tags["category"] == "industry" or map_objects.find_stage(tags) != "built"
 
 
 def send_each_object_to_investigation(state: RunState) -> list[Send] | str:
-    if not state.map_objects:
+    chosen = choose_objects_to_investigate(state)
+    if not chosen:
         return "write_report"
-    return [
-        Send("investigate_object", ObjectToInvestigate(map_object=o)) for o in state.map_objects
-    ]
+    return [Send("investigate_object", ObjectToInvestigate(map_object=o)) for o in chosen]
 
 
 def investigate_object(state: ObjectToInvestigate, runtime: Runtime[Context]) -> dict:
     """The investigation of one object; its finding, the page the finding cites, and a web
-    search failure go into the run state. TODO: in step 6, give pages IDs that stay unique
-    across parallel investigations."""
+    search failure go into the run state. Each investigation numbers its pages from web-1, so
+    in the run state a page's ID also names its object, such as osm-way-1/web-1."""
     context = runtime.context
     end = investigation.investigate(state.map_object, context.date, context.web_search)
     assert end.finding is not None  # every path through the subgraph ends with a finding
     cited = grounding.collect_cited_page(end.finding.evidence_id, end.pages)
+    sources = [page.model_copy(update={"id": f"{state.map_object.id}/{page.id}"}) for page in cited]
+    evidence_id = end.finding.evidence_id
+    if cited:  # the finding cites a page, not the map
+        evidence_id = f"{state.map_object.id}/{evidence_id}"
     return {
-        "findings": [end.finding],
-        "sources": cited,
+        "findings": [end.finding.model_copy(update={"evidence_id": evidence_id})],
+        "sources": sources,
         "failures": ["web search"] if end.web_search_failed else [],
     }
 
