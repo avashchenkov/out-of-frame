@@ -1,7 +1,7 @@
 """The run state as a logical data model, see docs/architecture.md#the-state.
 
-TODO: Message, Destination and Journey, and the run state's fields for them, with the steps
-that use them.
+TODO: Destination and Journey, and the run state's fields for them, with the steps that use
+them (step 9).
 """
 
 import operator
@@ -17,9 +17,15 @@ class Coordinates(Record):
     lon: float
 
 
+class Message(Record):
+    role: Literal["user", "agent"]
+    text: str
+
+
 class Address(Record):
-    text: str  # as the user gave it; code never changes it
+    text: str  # as the extract call took it from the conversation; code never changes it
     coordinates: Coordinates | None = None  # only for exactly one precise match
+    source_id: str | None = None  # the Nominatim response for this text, once it is geocoded
 
 
 class Source(Record):
@@ -168,10 +174,11 @@ def replace_by_id(old: list, new: list) -> list:
 
 class RunState(Record):
     """The state of one run, see docs/architecture.md#the-state. LangGraph appends a node's
-    sources, map objects and findings to the lists, a map object in place of the one with its
-    ID, adds each new failure, and replaces the property and the report."""
+    messages, sources, map objects and findings to the lists, a map object in place of the one
+    with its ID, adds each new failure, and replaces the property and the report."""
 
-    property: Address
+    messages: Annotated[list[Message], operator.add] = []  # the conversation in the input phase
+    property: Address | None = None  # null until the user gives its address
     sources: Annotated[list[Source], operator.add] = []
     map_objects: Annotated[list[MapObject], replace_by_id] = []
     findings: Annotated[list[Finding], operator.add] = []

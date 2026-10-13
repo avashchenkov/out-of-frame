@@ -38,7 +38,7 @@ from out_of_frame.config import JUDGE_MODEL, MODEL
 from out_of_frame.investigation import Context
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.record import Record
-from out_of_frame.state import Address, RunState
+from out_of_frame.state import RunState
 from out_of_frame.web_search import MeteredWebSearch, TavilyWebSearch, WebSearchAccessError
 
 RESULTS = EVALS / "results"
@@ -53,12 +53,13 @@ def run_agent(address: str, date: dt.date, web_search: MeteredWebSearch) -> dict
     and its last state: it has paid for its calls."""
     saved = {"address": address, "date": date.isoformat(), "model": MODEL, "draft": None}
     saved |= {"transcript": [], "error": None}
-    start = RunState(property=Address(text=address))
+    start, config = agent.start(address), agent.start_thread()
     end: dict | RunState = start
     with get_usage_metadata_callback() as usage:
         try:
             steps = agent.build_graph().stream(
                 start,
+                config,
                 context=Context(date, web_search),
                 stream_mode=["updates", "values"],
                 subgraphs=True,  # so that a rejected finding and its pages can be read later
@@ -66,8 +67,8 @@ def run_agent(address: str, date: dt.date, web_search: MeteredWebSearch) -> dict
             for graph, mode, chunk in steps:
                 assert isinstance(chunk, dict)  # an update by node name, or the whole state
                 if mode == "values":
-                    if not graph:  # the run's state, not an investigation's
-                        end = chunk
+                    if not graph:  # the run's state, not an investigation's, without a question
+                        end = {key: value for key, value in chunk.items() if key != "__interrupt__"}
                     continue
                 saved["transcript"].append({"graph": list(graph), "update": chunk})
                 if graph:
@@ -77,6 +78,9 @@ def run_agent(address: str, date: dt.date, web_search: MeteredWebSearch) -> dict
                         print(cli.PROGRESS[node], file=sys.stderr)
                     if node == "write_report":
                         saved["draft"] = update["report"]
+            question = agent.find_question(agent.build_graph(), config)
+            if question is not None:  # the judges need a run that the address alone completes
+                raise agent.UnansweredQuestionError(question)
         except Exception, KeyboardInterrupt:
             saved["error"] = traceback.format_exc()
     saved["state"] = RunState.model_validate(end)

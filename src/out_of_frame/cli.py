@@ -1,4 +1,5 @@
-"""The command line: an address in, the report out. Run with the keys in .env:
+"""The command line: a message in, such as an address or a listing, questions about what is
+missing in the terminal, and the report out. Run with the keys in .env:
 uv run --env-file .env out-of-frame "Freiheit 22, 13597 Berlin"
 """
 
@@ -11,16 +12,17 @@ import sys
 import anthropic
 import pydantic
 from langchain_core.callbacks import get_usage_metadata_callback
+from langgraph.types import Command
 
 from out_of_frame import agent
-from out_of_frame.agent import UnclearAddressError
+from out_of_frame.conversation import ExtractError
 from out_of_frame.finding import MissingFindingError
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.investigation import Context
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.prompt_injection import PromptInjectionCheckError
 from out_of_frame.report import ReportError
-from out_of_frame.state import Address, RunState
+from out_of_frame.state import RunState
 from out_of_frame.web_search import MeteredWebSearch, TavilyWebSearch, WebSearchAccessError
 
 # What the user is told at once when a service fails after its retries, see
@@ -32,7 +34,6 @@ FAILURE_NOTICES = {
 # What each step has done, so that the user sees a run that takes a minute move. Steps that
 # are not listed, such as filling in the references, are not told.
 PROGRESS = {
-    "geocode_property": "Found the address.",
     "get_map_objects": "Fetched the map.",
     "triage_objects": "Checked the objects that the map makes clear.",
     "investigate_object": "Investigated an object on the web.",
@@ -45,7 +46,11 @@ def main() -> None:
         description="Check what lies around a Berlin address: industry, wastewater plants, "
         "airports, major roads and railways."
     )
-    parser.add_argument("address", help='a precise address, such as "Freiheit 22, 13597 Berlin"')
+    parser.add_argument(
+        "message",
+        help='the property to check: an address, such as "Freiheit 22, 13597 Berlin", or a '
+        "listing; the agent asks for what is missing",
+    )
     args = parser.parse_args()
     logging.basicConfig(format="%(levelname)s %(name)s: %(message)s")
     if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -56,13 +61,9 @@ def main() -> None:
         parser.exit(1, f"Set TAVILY_API_KEY, for example in .env: {error}\n")
     with get_usage_metadata_callback() as usage:
         try:
-            state = run(args.address, web_search)
-        except UnclearAddressError:
-            parser.exit(
-                2,
-                f"No single building in Berlin matches {args.address!r}: give the "
-                "street, the house number and the postcode.\n",
-            )
+            state = run(args.message, web_search)
+        except EOFError:
+            parser.exit(2, "\nNo answer, so the run stops.\n")
         except WebSearchAccessError as error:
             parser.exit(1, f"Web search does not accept the key: {error}\n")
         except (
@@ -70,6 +71,7 @@ def main() -> None:
             anthropic.APIError,
             pydantic.ValidationError,  # a model answer outside its schema, such as an unknown type
             PromptInjectionCheckError,
+            ExtractError,
             MissingFindingError,
             ReportError,
         ) as error:
@@ -82,21 +84,24 @@ def main() -> None:
             print(f"Tool calls: {web_search.tool_calls}, cost: ${cost:.4f}", file=sys.stderr)
 
 
-def run(address: str, web_search: MeteredWebSearch) -> RunState:
-    """The run, with its progress and each failed service told on stderr as they happen."""
-    start = RunState(property=Address(text=address))
-    context = Context(dt.date.today(), web_search)
-    end: dict = {}
-    for mode, chunk in agent.build_graph().stream(
-        start, context=context, stream_mode=["updates", "values"]
-    ):
-        assert isinstance(chunk, dict)  # an update by node name, or the whole state
-        if mode == "values":
-            end = chunk
-            continue
-        for node, update in chunk.items():
-            if node in PROGRESS:
-                print(PROGRESS[node], file=sys.stderr)
-            for service in (update or {}).get("failures", []):
-                print(FAILURE_NOTICES[service], file=sys.stderr)
-    return RunState.model_validate(end)
+def run(message: str, web_search: MeteredWebSearch) -> RunState:
+    """The run, with each question asked on stderr and answered on stdin, and its progress and
+    each failed service told on stderr as they happen: stdout holds only the report."""
+    graph, config = agent.build_graph(), agent.start_thread()
+    command: RunState | Command = agent.start(message)
+    while True:
+        context = Context(dt.date.today(), web_search)  # today's, after an answer days later
+        for chunk in graph.stream(command, config, context=context, stream_mode="updates"):
+            for node, update in chunk.items():
+                if not isinstance(update, dict):  # the question the run waits on, or no update
+                    continue
+                if node in PROGRESS:
+                    print(PROGRESS[node], file=sys.stderr)
+                for service in update.get("failures", []):
+                    print(FAILURE_NOTICES[service], file=sys.stderr)
+        question = agent.find_question(graph, config)
+        if question is None:
+            return RunState.model_validate(graph.get_state(config).values)
+        print(question, file=sys.stderr)
+        print("> ", end="", file=sys.stderr, flush=True)
+        command = Command(resume=input())

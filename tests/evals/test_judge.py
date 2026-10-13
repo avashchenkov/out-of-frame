@@ -15,7 +15,12 @@ from out_of_frame.config import REPORT_ATTEMPTS
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.web_search import MeteredWebSearch, WebSearchAccessError
 from tests.evals.test_judges import INTERPRETED, SUPPORTED, answer
-from tests.test_agent import FREIHEIT_22, stub_the_models, stub_the_sources
+from tests.test_agent import (
+    FREIHEIT_22,
+    stub_the_conversation,
+    stub_the_models,
+    stub_the_sources,
+)
 from tests.test_investigation import SNIPPET, FakeWebSearch
 from tests.test_report import DATE, FakeWriter
 
@@ -26,6 +31,11 @@ ANSWERS = {SupportGrade: SUPPORTED, InterpretationGrade: INTERPRETED, NoVerdictG
 @pytest.fixture(autouse=True)
 def keep_results_in(tmp_path, monkeypatch):
     monkeypatch.setattr(judge, "RESULTS", tmp_path)
+
+
+@pytest.fixture(autouse=True)
+def take_the_first_message_for_the_address(monkeypatch):
+    stub_the_conversation(monkeypatch)
 
 
 def stub_the_judges(monkeypatch, answer_to=lambda schema: answer(ANSWERS[schema])):
@@ -67,13 +77,24 @@ def test_a_run_that_stops_is_saved_with_its_error(monkeypatch):
     assert saved["draft"] is None and saved["cost_usd"] == 0
 
 
+def test_a_run_that_stops_at_a_question_is_saved_with_it(monkeypatch):
+    stub_the_sources(monkeypatch, {"Freiheit, Berlin": "freiheit-street.json"})
+    saved = judge.run_agent("Freiheit, Berlin", DATE, MeteredWebSearch(FakeWebSearch()))
+    assert "UnansweredQuestionError: Question 1" in saved["error"]
+    assert [message["text"] for message in saved["state"]["messages"]] == [
+        "Freiheit, Berlin",
+        "Question 1",
+    ]
+    json.loads(judge.save(saved, "run").read_text(encoding="utf-8"))
+
+
 def test_a_run_that_stops_late_is_saved_with_its_last_state(monkeypatch):
     writer = FakeWriter(*["A site [osm-way-9]."] * REPORT_ATTEMPTS)  # an unknown ID each time
     saved = run_the_agent(monkeypatch, writer=writer)
     assert "ReportError" in saved["error"] and saved["draft"] is None
     findings = saved["state"]["findings"]  # five investigated, six settled by triage
     assert len(findings) == 11 and {found["outcome"] for found in findings} == {"identified"}
-    assert saved["tool_calls"] == 5 and len(saved["state"]["sources"]) == 6  # the map, 5 pages
+    assert saved["tool_calls"] == 5 and len(saved["state"]["sources"]) == 7  # address, map, 5 pages
 
 
 class StoppingWebSearch:

@@ -100,6 +100,7 @@ def fill_references(draft: str, state: RunState) -> str:
         return "[" + ", ".join(str(number) for number in sorted(cited)) + "]"
 
     text = CITATIONS.sub(cite, draft).strip()
+    assert state.property is not None  # research starts only once the property is resolved
     lines = [f"# What lies around {state.property.text}", "", text, "", describe_scope(), ""]
     if numbers:
         lines += ["Sources:", *(f"{n}. {name}" for name, n in numbers.items()), ""]

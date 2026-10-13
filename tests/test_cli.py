@@ -7,7 +7,12 @@ import pytest
 
 from out_of_frame import cli, finding, report
 from out_of_frame.map_objects import MapError
-from tests.test_agent import FREIHEIT_22, stub_the_models, stub_the_sources
+from tests.test_agent import (
+    FREIHEIT_22,
+    stub_the_conversation,
+    stub_the_models,
+    stub_the_sources,
+)
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_investigation import SNIPPET, FakeWebSearch
 from tests.test_report import FakeWriter
@@ -19,10 +24,11 @@ def stub_the_keys_and_the_report(monkeypatch):
     monkeypatch.setattr(cli, "TavilyWebSearch", lambda: FakeWebSearch([SNIPPET]))
     writer = FakeWriter()
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
+    stub_the_conversation(monkeypatch)
 
 
-def run_cli(monkeypatch, address=FREIHEIT_22):
-    monkeypatch.setattr(sys, "argv", ["out-of-frame", address])
+def run_cli(monkeypatch, message=FREIHEIT_22):
+    monkeypatch.setattr(sys, "argv", ["out-of-frame", message])
     cli.main()
 
 
@@ -32,7 +38,7 @@ def test_the_report_goes_to_stdout_and_the_progress_and_cost_to_stderr(monkeypat
     run_cli(monkeypatch)
     out, err = capsys.readouterr()
     assert out.startswith(f"# What lies around {FREIHEIT_22}\n")
-    assert "Found the address." in err and "Investigated an object on the web." in err
+    assert "Fetched the map." in err and "Investigated an object on the web." in err
     assert "fill_references" not in err  # a step the user is not told about
     assert "Tool calls: 5, cost: $0.0400" in err  # a search in each of five investigations
 
@@ -85,12 +91,28 @@ def test_a_model_failure_stops_the_run_and_still_tells_the_cost(monkeypatch, cap
     assert "Try again later." in err and "Tool calls: 5, cost: $0.0400" in err
 
 
-def test_an_unclear_address_exits_with_a_hint(monkeypatch, capsys):
-    stub_the_sources(monkeypatch, nominatim="freiheit-street.json")
+def test_the_agent_asks_in_the_terminal_and_goes_on_with_the_answer(monkeypatch, capsys):
+    stub_the_sources(
+        monkeypatch, {"Freiheit, Berlin": "freiheit-street.json", FREIHEIT_22: "freiheit-22.json"}
+    )
+    stub_the_models(monkeypatch)
+    monkeypatch.setattr("builtins.input", lambda: FREIHEIT_22)
+    run_cli(monkeypatch, "Freiheit, Berlin")
+    out, err = capsys.readouterr()
+    assert err.startswith("Question 1\n> ")
+    assert out.startswith(f"# What lies around {FREIHEIT_22}\n")  # stdout holds only the report
+
+
+def test_without_an_answer_the_run_stops(monkeypatch, capsys):
+    stub_the_sources(monkeypatch, {"Freiheit, Berlin": "freiheit-street.json"})
+
+    def no_answer():
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", no_answer)
     with pytest.raises(SystemExit) as stopped:
         run_cli(monkeypatch, "Freiheit, Berlin")
-    assert stopped.value.code == 2
-    assert "give the street, the house number and the postcode" in capsys.readouterr().err
+    assert stopped.value.code == 2 and "No answer, so the run stops." in capsys.readouterr().err
 
 
 def test_without_the_model_key_it_exits_at_once(monkeypatch, capsys):

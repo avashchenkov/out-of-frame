@@ -1,22 +1,34 @@
-"""One run of the agent, from the property's address to the report: the LangGraph graph of
+"""One run of the agent, from the user's first message to the report: the LangGraph graph of
 docs/architecture.md#one-run.
 
-TODO: the input conversation (step 7); B-Plans (step 8); journeys (step 9).
+TODO: B-Plans (step 8); journeys (step 9).
 """
 
 import datetime as dt
 import logging
+import uuid
 from functools import cache
 
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
-from langgraph.types import Send
+from langgraph.types import Command, Send, interrupt
 
-from out_of_frame import geocoding, grounding, investigation, map_objects, report, triage
+from out_of_frame import (
+    conversation,
+    geocoding,
+    grounding,
+    investigation,
+    map_objects,
+    report,
+    triage,
+)
 from out_of_frame.config import INVESTIGATIONS_AT_ONCE
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
-from out_of_frame.state import Address, MapObject, RunState
+from out_of_frame.state import Address, MapObject, Message, RunState
 from out_of_frame.web_search import WebSearch
 
 log = logging.getLogger(__name__)
@@ -29,32 +41,66 @@ class ObjectToInvestigate(Record):
     map_object: MapObject
 
 
-class UnclearAddressError(Exception):
-    """The address has no single precise match in Berlin. TODO: in step 7, the agent asks the
-    user instead."""
+class UnansweredQuestionError(Exception):
+    """The agent asked a question after the user's replies had run out."""
 
 
-def run(address: str, date: dt.date, web_search: WebSearch) -> RunState:
-    end = build_graph().invoke(
-        RunState(property=Address(text=address)), context=Context(date, web_search)
-    )
-    return RunState.model_validate(end)
+def run(messages: list[str], date: dt.date, web_search: WebSearch) -> RunState:
+    """A run without a person: the first message starts it, and each next one answers the
+    agent's next question, as in the evals."""
+    graph, config = build_graph(), start_thread()
+    command: RunState | Command = start(messages[0])
+    for reply in [*messages[1:], None]:
+        graph.invoke(command, config, context=Context(date, web_search))
+        question = find_question(graph, config)
+        if question is None:
+            break
+        if reply is None:
+            raise UnansweredQuestionError(question)
+        command = Command(resume=reply)
+    return RunState.model_validate(graph.get_state(config).values)
+
+
+def start(message: str) -> RunState:
+    """The state that a run starts from: the user's first message."""
+    return RunState(messages=[Message(role="user", text=message)])
+
+
+def start_thread() -> RunnableConfig:
+    """The config of a new run: the graph keeps each run's state under its own thread."""
+    return {"configurable": {"thread_id": str(uuid.uuid4())}}
+
+
+def find_question(graph, config: RunnableConfig) -> str | None:
+    """The question that the run waits to have answered, if it waits."""
+    interrupts = graph.get_state(config).interrupts
+    return interrupts[0].value if interrupts else None
 
 
 @cache
 def build_graph():
+    """The graph, which keeps the state of each run in memory, so that a run can wait for the
+    user's answer and go on; a known MVP limitation, see docs/roadmap.md, step 7."""
     if INVESTIGATIONS_AT_ONCE < 2:  # a stream with its subgraphs takes one, see config.py
         raise ValueError("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE must be at least 2")
     builder = StateGraph(RunState, context_schema=Context)
-    builder.add_node(geocode_property)
+    builder.add_node(extract_input)
+    builder.add_node(geocode_input)
+    builder.add_node(ask_for_missing)
+    builder.add_node(wait_for_answer)
     builder.add_node(get_map_objects)
     builder.add_node(triage_objects)
     builder.add_node(get_addresses)
     builder.add_node(investigate_object)
     builder.add_node(write_report)
     builder.add_node(fill_references)
-    builder.add_edge(START, "geocode_property")
-    builder.add_edge("geocode_property", "get_map_objects")
+    builder.add_edge(START, "extract_input")
+    builder.add_edge("extract_input", "geocode_input")
+    builder.add_conditional_edges(
+        "geocode_input", check_input, ["ask_for_missing", "get_map_objects"]
+    )
+    builder.add_edge("ask_for_missing", "wait_for_answer")
+    builder.add_edge("wait_for_answer", "extract_input")
     builder.add_edge("get_map_objects", "triage_objects")
     builder.add_edge("triage_objects", "get_addresses")
     builder.add_conditional_edges(
@@ -63,20 +109,53 @@ def build_graph():
     builder.add_edge("investigate_object", "write_report")  # once every investigation has ended
     builder.add_edge("write_report", "fill_references")
     builder.add_edge("fill_references", END)
-    return builder.compile().with_config(max_concurrency=INVESTIGATIONS_AT_ONCE)
+    # The state's own records, which the checkpointer may load back without a warning.
+    records = ["Address", "Finding", "MapObject", "Message", "Source"]
+    serde = JsonPlusSerializer(allowed_msgpack_modules=[("out_of_frame.state", r) for r in records])
+    graph = builder.compile(checkpointer=InMemorySaver(serde=serde))
+    return graph.with_config(max_concurrency=INVESTIGATIONS_AT_ONCE)
 
 
-def geocode_property(state: RunState) -> dict:
-    coordinates = geocoding.geocode(state.property.text)
-    if coordinates is None:
-        raise UnclearAddressError(state.property.text)
-    return {"property": state.property.model_copy(update={"coordinates": coordinates})}
+def extract_input(state: RunState) -> dict:
+    """The change that the user's last message makes: a new address replaces the old one with
+    its coordinates; everything else stays as it was."""
+    text = conversation.extract(state)
+    if text is None:
+        return {}
+    return {"property": Address(text=text)}
+
+
+def geocode_input(state: RunState) -> dict:
+    """The property's address geocoded again after each message, and the response kept, so
+    that code can say why it does not resolve."""
+    if state.property is None:
+        return {}
+    number = 1 + sum(source.kind == "geocoding" for source in state.sources)
+    address, source = geocoding.geocode(state.property.text, f"nominatim-{number}")
+    return {"property": address, "sources": [source]}
+
+
+def check_input(state: RunState) -> str:
+    """Research starts once nothing is missing or unclear in the input; code decides it."""
+    return "ask_for_missing" if conversation.find_missing(state) else "get_map_objects"
+
+
+def ask_for_missing(state: RunState) -> dict:
+    question = conversation.ask(state, conversation.find_missing(state))
+    return {"messages": [Message(role="agent", text=question)]}
+
+
+def wait_for_answer(state: RunState) -> dict:
+    """The run waits here for the user's answer to the question. On resume LangGraph runs this
+    node again from its start, so it makes no model call."""
+    answer = interrupt(state.messages[-1].text)
+    return {"messages": [Message(role="user", text=answer)]}
 
 
 def get_map_objects(state: RunState) -> dict:
     """The nearest map objects of each category around the property. If Overpass fails, the
     map part of the report is missing."""
-    assert state.property.coordinates is not None  # geocode_property comes first
+    assert state.property is not None and state.property.coordinates is not None  # see check_input
     try:
         found, source = map_objects.fetch_map_objects(state.property.coordinates)
     except map_objects.MapError as error:
