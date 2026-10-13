@@ -12,7 +12,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 from langgraph.types import Send
 
-from out_of_frame import geocoding, grounding, investigation, map_objects, report
+from out_of_frame import geocoding, grounding, investigation, map_objects, report, triage
 from out_of_frame.config import INVESTIGATIONS_AT_ONCE
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
@@ -48,13 +48,15 @@ def build_graph():
     builder = StateGraph(RunState, context_schema=Context)
     builder.add_node(geocode_property)
     builder.add_node(get_map_objects)
+    builder.add_node(triage_objects)
     builder.add_node(get_addresses)
     builder.add_node(investigate_object)
     builder.add_node(write_report)
     builder.add_node(fill_references)
     builder.add_edge(START, "geocode_property")
     builder.add_edge("geocode_property", "get_map_objects")
-    builder.add_edge("get_map_objects", "get_addresses")
+    builder.add_edge("get_map_objects", "triage_objects")
+    builder.add_edge("triage_objects", "get_addresses")
     builder.add_conditional_edges(
         "get_addresses", send_each_object_to_investigation, ["investigate_object", "write_report"]
     )
@@ -83,6 +85,13 @@ def get_map_objects(state: RunState) -> dict:
     return {"map_objects": found, "sources": [source]}
 
 
+def triage_objects(state: RunState) -> dict:
+    """Triage of each object that code does not send to investigation, one at a time: a clear
+    one gets its finding, and any other goes to investigation."""
+    checked = [triage.triage(o) for o in state.map_objects if not is_sent_by_code(o)]
+    return {"findings": [finding for finding in checked if finding is not None]}
+
+
 def get_addresses(state: RunState) -> dict:
     """The addresses of the objects to investigate, from one query, in place of the objects
     without them. If Overpass fails, they are investigated without addresses: the map part of
@@ -100,12 +109,12 @@ def get_addresses(state: RunState) -> dict:
 
 
 def choose_objects_to_investigate(state: RunState) -> list[MapObject]:
-    """Every object that code sends to investigation, and has no finding yet, nearest first:
-    at most five per category, as the map keeps no more. TODO: in step 6.3, also the objects
-    that triage cannot settle."""
+    """Every object without a finding yet, nearest first: those that code sends to
+    investigation and those that triage could not settle. At most five per category, as the
+    map keeps no more."""
     settled = {finding.map_object_id for finding in state.findings}
-    chosen = [o for o in state.map_objects if is_sent_by_code(o) and o.id not in settled]
-    return sorted(chosen, key=lambda o: o.distance_from_property_m)  # nearest first
+    chosen = [o for o in state.map_objects if o.id not in settled]
+    return sorted(chosen, key=lambda o: o.distance_from_property_m)
 
 
 def is_sent_by_code(map_object: MapObject) -> bool:

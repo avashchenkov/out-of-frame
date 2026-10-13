@@ -1,0 +1,33 @@
+# T1, triage: one call checks one map object that code does not send to investigation.
+# See docs/eval-architecture.md#triage.
+id: T1
+suite: triage
+covers: An airport whose name and tags make it clear gets a finding with the map's status.
+date: 2026-10-13  # fixed data: the date the tags were read
+
+# What the agent gets: OSM way 859790021 on 2026-10-13, without its names in other languages.
+input:
+  map_object:
+    id: osm-way-859790021
+    name: Flughafen Berlin Brandenburg
+    details:
+      category: airport
+      aeroway: aerodrome
+      aerodrome: international
+      alt_name: Flughafen Berlin
+      iata: BER
+      icao: EDDB
+    addresses: []
+    coordinates: {lat: 52.3657654, lon: 13.49691}  # the centre of the way's bounds
+    distance_from_property_m: 3500  # written: the task has no property
+    source_id: overpass-1
+
+# Read only by the graders.
+expected:
+  label:
+    id: ber-airport  # for a human reviewer only
+    coordinates: {lat: 52.3657654, lon: 13.49691}  # used only in end-to-end tasks
+    distance_tolerance_m: 2000  # used only in end-to-end tasks
+    identified_type: airport
+    status: operating  # what the map shows: no tag says otherwise
+    source_url: https://ber.berlin-airport.de/  # for a human reviewer only

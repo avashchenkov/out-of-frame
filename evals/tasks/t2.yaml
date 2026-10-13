@@ -1,0 +1,31 @@
+# T2, triage: one call checks one map object that code does not send to investigation.
+# See docs/eval-architecture.md#triage.
+id: T2
+suite: triage
+covers: >-
+  The former Gatow airfield, whose name says it is former while its tags show an airfield in
+  use: a conflict, so triage sends it to investigation.
+date: 2026-10-13  # fixed data: the date the tags were read
+
+# OSM way 907671280 on 2026-10-13, edited for the task: its abandoned:aeroway=aerodrome tag is
+# left out, so that only the name says that the airfield is former.
+input:
+  map_object:
+    id: osm-way-907671280
+    name: Ehemaliger Flugplatz Berlin - Gatow
+    details:
+      category: airport
+      aeroway: aerodrome
+      landuse: military
+      military: airfield
+    addresses: []
+    coordinates: {lat: 52.4755375, lon: 13.150046}  # the centre of the way's bounds
+    distance_from_property_m: 1500  # written: the task has no property
+    source_id: overpass-1
+
+# Read only by the graders. Unidentified: triage writes no finding and sends the object to
+# investigation.
+expected:
+  outcome: unidentified
+  identified_type: null
+  status: null

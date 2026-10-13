@@ -34,6 +34,7 @@ FAILURE_NOTICES = {
 PROGRESS = {
     "geocode_property": "Found the address.",
     "get_map_objects": "Fetched the map.",
+    "triage_objects": "Checked the objects that the map makes clear.",
     "investigate_object": "Investigated an object on the web.",
     "write_report": "Wrote the report.",
 }

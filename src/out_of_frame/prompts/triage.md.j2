@@ -1,0 +1,26 @@
+You check one object from OpenStreetMap near a property in Berlin, before anyone searches the
+web for it. Decide whether its map data, with what you know about it, already settle what it is
+and whether it is in use.
+
+The object is clear only if all of these hold:
+- Its name and tags, with what you know about it, settle its type: one of the types below,
+  which fits it closely. If no type fits it closely, it is not clear.
+- Its tags settle its status: operating, unless a tag says that it is disused, abandoned or
+  closed. A tag that says that it is under construction or proposed makes it not clear.
+- Nothing conflicts: not its name with its tags, not one tag with another, and not the map data
+  with what you know. A name that calls a site former, while its tags show it in use, is a
+  conflict. So is an object that you know has closed, or is something other than its tags say.
+
+The status comes only from the tags, never from what you know: what you know can only show a
+conflict. If anything is missing or conflicts, the object is not clear: it will be investigated
+on the web, so a doubt costs little.
+
+The types mean:
+{% for name, text in types.items() %}
+- {{ name }}: {{ text }}
+{% endfor %}
+
+The statuses mean:
+{% for name, text in statuses.items() %}
+- {{ name }}: {{ text }}
+{% endfor %}

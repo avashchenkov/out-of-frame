@@ -10,7 +10,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
 from evals.graders.finding import Expected
-from evals.load import TASKS, Task
+from evals.load import TASKS, Task, load
 from evals.run import (
     NoWebSearch,
     Outcome,
@@ -18,9 +18,11 @@ from evals.run import (
     abstain,
     check_page,
     draft_finding,
+    grade,
     investigate,
     run,
     select_tasks,
+    triage_object,
     trust_every_page,
 )
 from out_of_frame import finding, investigation, prices, prompt_injection
@@ -30,6 +32,8 @@ from out_of_frame.web_search import PageText, WebSearchAccessError
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_finding import MAP_OBJECT as ADDRESSED_OBJECT
 from tests.test_investigation import SEARCH, SNIPPET, FakeSearcher, FakeWebSearch
+from tests.test_triage import AIRPORT, stub_the_triage
+from tests.test_triage import UNCLEAR as TRIAGE_UNCLEAR
 
 MAP_OBJECT = MapObject(
     id="obj-1",
@@ -253,10 +257,42 @@ def test_check_page_checks_the_page_alone(monkeypatch):
         check_page(MAP_OBJECT, dt.date(2026, 10, 10), NoWebSearch())
 
 
+def test_triage_grades_an_object_it_sends_to_investigation_as_unidentified(monkeypatch):
+    stub_the_triage(monkeypatch, TRIAGE_UNCLEAR)
+    trial = triage_object(AIRPORT, dt.date(2026, 10, 13), NoWebSearch())
+    assert isinstance(trial.outcome, Outcome)
+    assert trial.outcome.finding == Finding.unidentified(AIRPORT.id)
+    assert trial.transcript == [{"answer": TRIAGE_UNCLEAR}]  # a real answer, not a broken one
+    with pytest.raises(TypeError):
+        triage_object(PAGE, dt.date(2026, 10, 13), NoWebSearch())
+
+
+def test_a_triage_finding_passes_only_with_key_facts_from_the_map_data():
+    task = load(TASKS / "t1.yaml")
+    assert isinstance(task.inputs, MapObject)
+    finding = Finding(
+        map_object_id=task.inputs.id,
+        outcome="identified",
+        evidence_id="overpass-1",
+        identified_type="airport",
+        status="operating",
+        key_facts=["Flughafen Berlin Brandenburg", "iata=BER"],
+    )
+    assert all(g.passed for g in grade(task, Outcome(finding, [])))
+    remembered = finding.model_copy(update={"key_facts": ["Opened in 2020"]})
+    result, grounding = grade(task, Outcome(remembered, []))
+    assert result.passed and not grounding.passed
+
+
 def test_a_part_runs_only_the_tasks_of_its_suites():
     assert {task.suite for task in select_tasks("draft_finding", [])} == {"finding"}
     assert {task.suite for task in select_tasks("investigate", [])} == {"live investigation"}
-    assert {task.suite for task in select_tasks("abstain", [])} == {"finding", "live investigation"}
+    assert {task.suite for task in select_tasks("abstain", [])} == {
+        "finding",
+        "live investigation",
+        "triage",
+    }
+    assert {task.suite for task in select_tasks("triage_object", [])} == {"triage"}
     assert {task.suite for task in select_tasks("trust_every_page", [])} == {"injection check"}
     with pytest.raises(ValueError, match="cannot run L1"):
         select_tasks("draft_finding", [TASKS / "l1.yaml"])

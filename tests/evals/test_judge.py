@@ -71,8 +71,8 @@ def test_a_run_that_stops_late_is_saved_with_its_last_state(monkeypatch):
     writer = FakeWriter(*["A site [osm-way-9]."] * REPORT_ATTEMPTS)  # an unknown ID each time
     saved = run_the_agent(monkeypatch, writer=writer)
     assert "ReportError" in saved["error"] and saved["draft"] is None
-    findings = saved["state"]["findings"]
-    assert len(findings) == 5 and {found["outcome"] for found in findings} == {"identified"}
+    findings = saved["state"]["findings"]  # five investigated, six settled by triage
+    assert len(findings) == 11 and {found["outcome"] for found in findings} == {"identified"}
     assert saved["tool_calls"] == 5 and len(saved["state"]["sources"]) == 6  # the map, 5 pages
 
 

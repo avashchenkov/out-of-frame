@@ -27,6 +27,15 @@ from out_of_frame.web_search import PageText, WebSearchError
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_investigation import SEARCH, SNIPPET, FakeWebSearch
 from tests.test_report import FakeWriter
+from tests.test_triage import UNCLEAR as TRIAGE_UNCLEAR
+from tests.test_triage import stub_the_triage
+
+TRIAGE_CLEAR = {
+    "clear": True,
+    "identified_type": "railway",
+    "status": "operating",
+    "key_facts": ["railway=rail"],
+}
 
 DATE = dt.date(2026, 10, 10)
 FREIHEIT_22 = "Freiheit 22, 13597 Berlin"
@@ -73,9 +82,10 @@ class SearchOnce:
         return AIMessage("", tool_calls=[{"name": name, "args": args, "id": "toolu-1"}])
 
 
-def stub_the_models(monkeypatch):
-    """One search in each investigation, then the finding of tests.test_finding, which cites
-    web-1; no page is flagged."""
+def stub_the_models(monkeypatch, triage_answer=TRIAGE_CLEAR):
+    """Triage settles every object it gets, by default; one search in each investigation, then
+    the finding of tests.test_finding, which cites web-1; no page is flagged."""
+    stub_the_triage(monkeypatch, triage_answer)
     monkeypatch.setattr(investigation, "build_search_model", SearchOnce)
     monkeypatch.setattr(finding, "build_finding_model", lambda: FakeModel(ANSWER))
     monkeypatch.setattr(prompt_injection, "flag_injections", lambda texts: [False] * len(texts))
@@ -101,9 +111,12 @@ def test_every_industrial_object_is_investigated_in_parallel(monkeypatch):
         "Klärwerkstraße 1, 13597 Berlin",
         "Klärwerkstraße 1A, 13597 Berlin",
     ]
-    assert sorted(found.map_object_id for found in state.findings) == sorted(INDUSTRY)
+    investigated = [found for found in state.findings if found.map_object_id in INDUSTRY]
+    triaged = [found for found in state.findings if found.map_object_id not in INDUSTRY]
+    assert len(investigated) == 5 and len(triaged) == 6  # the railways and the Klärwerk
     # Each investigation cites its own web-1, which keeps its object's ID in the run state.
-    assert {found.evidence_id for found in state.findings} == {f"{id}/web-1" for id in INDUSTRY}
+    assert {found.evidence_id for found in investigated} == {f"{id}/web-1" for id in INDUSTRY}
+    assert {found.evidence_id for found in triaged} == {"overpass-1"}
     assert sorted(source.id for source in state.sources) == sorted(
         ["overpass-1", *(f"{id}/web-1" for id in INDUSTRY)]
     )
@@ -113,9 +126,18 @@ def test_every_industrial_object_is_investigated_in_parallel(monkeypatch):
     assert "2. OpenStreetMap" in state.report and "3." not in state.report
 
 
-def test_triage_objects_wait_and_anything_proposed_goes_to_investigation():
-    """TODO: in step 6.3, triage checks the objects that code does not send."""
+def test_an_object_that_triage_cannot_settle_is_investigated(monkeypatch):
+    addresses = read_fixture("overpass/freiheit-22-addresses.json")
+    addresses["elements"].append({"type": "count", "id": 0})  # none inside the Klärwerk
+    objects = read_fixture("overpass/freiheit-22.json")
+    stub_the_sources(monkeypatch, overpass=[objects, addresses])
+    stub_the_models(monkeypatch, TRIAGE_UNCLEAR)
+    state = agent.run(FREIHEIT_22, DATE, FakeWebSearch([SNIPPET]))
+    assert len(state.findings) == 11
+    assert all(found.evidence_id == f"{found.map_object_id}/web-1" for found in state.findings)
 
+
+def test_code_sends_industry_and_anything_proposed_to_investigation():
     def sent(**tags):
         return agent.is_sent_by_code(build_object(tags))
 
@@ -190,14 +212,16 @@ def test_without_their_addresses_the_objects_are_still_investigated(monkeypatch)
     stub_the_models(monkeypatch)
     state = agent.run(FREIHEIT_22, DATE, FakeWebSearch([SNIPPET]))
     assert state.failures == []  # the map part of the report stays
-    assert all(o.addresses == [] for o in state.map_objects) and len(state.findings) == 5
+    assert all(o.addresses == [] for o in state.map_objects)
+    assert len([found for found in state.findings if found.map_object_id in INDUSTRY]) == 5
 
 
 def test_a_web_search_failure_leaves_the_objects_unidentified(monkeypatch):
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)
     state = agent.run(FREIHEIT_22, DATE, FakeWebSearch(fails=True))
-    assert sorted(state.findings, key=lambda f: f.map_object_id) == [
+    investigated = [found for found in state.findings if found.map_object_id in INDUSTRY]
+    assert sorted(investigated, key=lambda f: f.map_object_id) == [
         Finding.unidentified(id) for id in sorted(INDUSTRY)
     ]
     assert state.failures == ["web search"]
@@ -220,7 +244,7 @@ def test_one_failed_investigation_leaves_the_others_their_findings(monkeypatch):
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)
     state = agent.run(FREIHEIT_22, DATE, FailingOnce([SNIPPET], fails=True))
-    outcomes = sorted(found.outcome for found in state.findings)
+    outcomes = sorted(found.outcome for found in state.findings if found.map_object_id in INDUSTRY)
     assert outcomes == ["identified"] * 4 + ["unidentified"]
     assert state.failures == ["web search"] and len(state.sources) == 5  # the map, 4 pages
 
@@ -241,7 +265,8 @@ def test_with_no_object_to_investigate_the_report_is_still_written(monkeypatch):
     starts = [n for n, element in enumerate(elements) if element["type"] == "count"]
     objects["elements"] = elements[:1] + elements[starts[1] :]  # no industry
     stub_the_sources(monkeypatch, overpass=[objects])  # and no query for addresses
+    stub_the_models(monkeypatch)  # triage settles every object
     state = agent.run(FREIHEIT_22, DATE, FakeWebSearch())
-    assert len(state.map_objects) == 6 and state.findings == []
+    assert len(state.map_objects) == 6 and len(state.findings) == 6
     assert [source.id for source in state.sources] == ["overpass-1"]
     assert state.report is not None

@@ -19,6 +19,7 @@ from pydantic_core import to_jsonable_python
 import out_of_frame.finding
 import out_of_frame.investigation
 import out_of_frame.prompt_injection
+import out_of_frame.triage
 from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
 from evals.graders.prompt_injection import grade_flagged
 from evals.load import EVALS, Inputs, Task, load, load_all
@@ -125,20 +126,34 @@ def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     return Trial(Outcome(state.finding, cited), transcript)
 
 
+def triage_object(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """One triage call on one map object. An object that triage sends to investigation is
+    graded as unidentified: triage leaves it to the web. The transcript has the model's answer,
+    or null if it was cut off or does not parse, so that a person can tell the two apart."""
+    if not isinstance(inputs, MapObject):
+        raise TypeError("triage_object needs a task with a map object")
+    answer = out_of_frame.triage.ask(inputs)
+    finding = out_of_frame.triage.settle(inputs, answer) or Finding.unidentified(inputs.id)
+    transcript = [{"answer": answer.model_dump() if answer is not None else None}]
+    return Trial(Outcome(finding, []), transcript)
+
+
 PARTS: dict[str, Part] = {
     "abstain": abstain,
     "trust_every_page": trust_every_page,
     "check_page": check_page,
     "draft_finding": draft_finding,
     "investigate": investigate,
+    "triage_object": triage_object,
 }
 # The suites that each part can run.
 PART_SUITES = {
-    "abstain": {"finding", "live investigation"},
+    "abstain": {"finding", "live investigation", "triage"},
     "trust_every_page": {"injection check"},
     "check_page": {"injection check"},
     "draft_finding": {"finding"},
     "investigate": {"live investigation"},
+    "triage_object": {"triage"},
 }
 
 

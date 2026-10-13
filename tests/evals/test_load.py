@@ -67,6 +67,7 @@ BROKEN = [
         "or flagged",
     ),
     ("p1.yaml", lambda task, state: task["input"].pop("page"), "a page"),
+    ("t2.yaml", lambda task, state: task["input"].pop("map_object"), "triage task gives"),
 ]
 
 

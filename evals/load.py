@@ -95,7 +95,7 @@ class TaskInput(Record):
 
 class TaskFile(Record):
     id: str
-    suite: Literal["finding", "live investigation", "injection check"]
+    suite: Literal["finding", "live investigation", "injection check", "triage"]
     covers: str
     date: dt.date | Literal["today"]
     input: TaskInput
@@ -136,6 +136,8 @@ def load(path: Path) -> Task:
             if map_object.source_id not in [source.id for source in task.input.sources]:
                 fail("the map object's source is not among the task's sources")
             inputs = map_object
+        case "triage", MapObject() as map_object, None, None:
+            inputs = map_object
         case "finding", None, InvestigationState(), None:
             check_state(state, fail)
             inputs = state
@@ -143,8 +145,8 @@ def load(path: Path) -> Task:
             inputs = page
         case _:
             fail(
-                "a live investigation task gives a map object, a finding task a state, an "
-                "injection check task a page"
+                "a live investigation or triage task gives a map object, a finding task a "
+                "state, an injection check task a page"
             )
 
     expected = task.expected.result()

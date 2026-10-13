@@ -69,13 +69,13 @@ calibration.
    [labelling script](eval-architecture.md#ground-truth-labels), F2 and F6 move to step 10;
    R2–R4 are graded by code and read by hand, without the LLM judges; and a person reads one
    live report instead of filling in a hand-grade form. In this order:
-   1. Types for every map category, each with one line on how such an object can affect
+   1. ✅ Types for every map category, each with one line on how such an object can affect
       people nearby; the report takes the effect from that line alone.
-   2. The map: grouping, the nearest five per category, code routing (T3 as a code test), the
+   2. ✅ The map: grouping, the nearest five per category, code routing (T3 as a code test), the
       addresses of the objects to investigate in one query, map objects replaced by ID, and
       parallel investigations, with page IDs unique across them and a limit on how many run
       at once. Code tests for grouping, distances, caps and failures.
-   3. Triage: one call per remaining object, one at a time; a clear object gets a finding with
+   3. ✅ Triage: one call per remaining object, one at a time; a clear object gets a finding with
       the map's status, an unclear one goes to investigation within the cap. T1–T2.
    4. The report for many objects. From the first hand grades: it reads plainly; an object
       whose type alone shows no effect on people nearby, such as a cleaning business, gets one
@@ -102,7 +102,9 @@ calibration.
     From the first hand grades: the support and interpretation rubrics count an effect on a
     resident, such as traffic, as backed only when the type's line or a source gives it, and
     the person checks the grades of evals/calibration/ against the changed rubrics.
-    From step 6: the labelling script, F2 and F6. A known limitation to publish: a site that
+    From step 6: the labelling script, F2 and F6; the support rubric checks the type of a
+    triage finding only against its label, as the eval architecture says, since triage may use
+    what the model knows. A known limitation to publish: a site that
     several businesses share gets the type of the business that the investigation finds. At
     Klärwerkstraße 1 and 1a, runs found a cleaning business and a Jobcenter project, both
     commercial, and missed a metalwork shop with production halls there.
