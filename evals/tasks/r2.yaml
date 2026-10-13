@@ -1,0 +1,13 @@
+# R2, report: one report write from a written run state. See docs/eval-architecture.md#report.
+id: R2
+suite: report
+covers: >-
+  Unidentified and not investigated objects, findings with status operating, unknown, closed
+  and planned, and a commercial site whose type alone shows no effect. Code checks the
+  citations and distances; a person reads that the first two are at the end with their
+  distance, that each status is given as in its finding, that a null status is not turned into
+  one, and that the commercial site gets one short sentence.
+date: 2026-10-13  # fixed data: the date the state was written
+
+input:
+  state: r2-every-kind-of-finding.yaml  # in evals/states/

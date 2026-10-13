@@ -19,6 +19,10 @@ These sources failed after their retries, so their part of the report is missing
 {% endif %}
 {% if wrong_citations %}
 Your last draft had citations that are not one ID listed here in square brackets, IDs in
-its text, where the reader needs what the object is, its name or its address, or links or
-URLs: {{ wrong_citations | join(" ") }}. Write the report again.
+its text, where the reader needs what the object is or its name, or links or URLs:
+{{ wrong_citations | join(" ") }}. Write the report again.
+{% endif %}
+{% if missing_objects %}
+Your last draft left out these objects, and the report must cite every object:
+{{ missing_objects | join(" ") }}. Write the report again.
 {% endif %}

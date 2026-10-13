@@ -1,0 +1,111 @@
+# R2: a written run state with every kind of finding the report must handle: identified with
+# status operating, unknown (null), closed and planned; unidentified; not investigated (no
+# finding); and a commercial site, whose type alone shows no effect. Built from the objects
+# around Freiheit 22, 13597 Berlin on 2026-10-10, plus the former Tegel airport; the findings
+# are written for the task, not the agent's.
+property:
+  text: Freiheit 22, 13597 Berlin
+  coordinates: {lat: 52.5292863, lon: 13.2357896}
+sources:
+  - id: overpass-1
+    kind: map
+    request: written for the task
+    url: https://overpass-api.de/api/interpreter
+    content: written for the task
+  - id: osm-way-23156479/web-1
+    kind: web search
+    request: Klärwerkstraße 1 13597 Berlin
+    url: https://www.example.org/retec-gmbh
+    content: |-
+      Retec GmbH
+      Klärwerkstraße 1
+      13597 Berlin
+      Dienstleistungen: Reinigung
+map_objects:
+  - id: osm-way-49572120
+    name: Müllverbrennungsanlage Ruhleben
+    details: {category: industry, landuse: industrial, power: plant, name: Müllverbrennungsanlage Ruhleben}
+    addresses: ["Freiheit 24;25, 13597 Berlin", "Werkring 2, 13597 Berlin"]
+    coordinates: {lat: 52.5298, lon: 13.2388}
+    distance_from_property_m: 95
+    source_id: overpass-1
+  - id: osm-way-23156479
+    name: null
+    details: {category: industry, landuse: industrial}
+    addresses: ["Klärwerkstraße 1, 13597 Berlin", "Klärwerkstraße 1A, 13597 Berlin"]
+    coordinates: {lat: 52.5283, lon: 13.2349}
+    distance_from_property_m: 118
+    source_id: overpass-1
+  - id: osm-way-49572127
+    name: null
+    details: {category: industry, man_made: works, power: generator}
+    addresses: []
+    coordinates: {lat: 52.5301, lon: 13.2401}
+    distance_from_property_m: 203
+    source_id: overpass-1
+  - id: osm-way-985575964
+    name: null
+    details: {category: industry, landuse: industrial}
+    addresses: ["Klärwerkstraße 3, 13597 Berlin", "Klärwerkstraße 7, 13597 Berlin"]
+    coordinates: {lat: 52.5284, lon: 13.2320}
+    distance_from_property_m: 217
+    source_id: overpass-1
+  - id: osm-way-49572126
+    name: null
+    details: {category: industry, man_made: works}
+    addresses: []
+    coordinates: {lat: 52.5305, lon: 13.2410}
+    distance_from_property_m: 240
+    source_id: overpass-1
+  - id: osm-way-111111111
+    name: null
+    details: {category: road_rail, highway: proposed, proposed: motorway, ref: A 100}
+    addresses: []
+    coordinates: {lat: 52.5270, lon: 13.2380}
+    distance_from_property_m: 260
+    source_id: overpass-1
+  - id: osm-way-22222222
+    name: Flughafen Berlin-Tegel
+    details: {category: airport, aeroway: aerodrome, disused: "yes", name: Flughafen Berlin-Tegel}
+    addresses: []
+    coordinates: {lat: 52.5597, lon: 13.2877}
+    distance_from_property_m: 4300
+    source_id: overpass-1
+findings:
+  - map_object_id: osm-way-49572120
+    outcome: identified
+    evidence_id: overpass-1
+    identified_type: plant
+    status: operating
+    key_facts: [Müllverbrennungsanlage Ruhleben, power=plant]
+  - map_object_id: osm-way-23156479
+    outcome: identified
+    evidence_id: osm-way-23156479/web-1
+    identified_type: commercial
+    status: operating
+    key_facts: [Retec GmbH, "Dienstleistungen: Reinigung"]
+  - map_object_id: osm-way-49572127
+    outcome: identified
+    evidence_id: overpass-1
+    identified_type: plant
+    status: null
+    key_facts: [power=generator]
+  - map_object_id: osm-way-985575964
+    outcome: unidentified
+    evidence_id: null
+    identified_type: null
+    status: null
+    key_facts: []
+  - map_object_id: osm-way-111111111
+    outcome: identified
+    evidence_id: overpass-1
+    identified_type: major road
+    status: planned
+    key_facts: [highway=proposed, ref=A 100]
+  - map_object_id: osm-way-22222222
+    outcome: identified
+    evidence_id: overpass-1
+    identified_type: airport
+    status: closed
+    key_facts: [Flughafen Berlin-Tegel, disused=yes]
+failures: []

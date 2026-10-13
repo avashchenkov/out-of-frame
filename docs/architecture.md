@@ -91,7 +91,7 @@ flowchart TD
         STOP(("●")):::stop
         RS --> W --> REF
         REF -.->|"all IDs found"| OUT
-        REF -.->|"unknown ID:<br/>write again"| W
+        REF -.->|"unknown ID or an object left out:<br/>write again"| W
         OUT --> STOP
     end
 
@@ -347,7 +347,7 @@ message is the input of the run and goes straight into `messages`.
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs (code) | `report` |
+| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs and the objects left out (code) | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
@@ -420,10 +420,10 @@ The report cites a finding by its object ID, never by a link. Code replaces each
 links a person can open. A web page is linked by its URL. A map or plan response is not
 linked: the report names the source, OpenStreetMap or the Berlin B-Plan WFS. An object always
 cites its own map or plan data as well as the page of its finding, since the report also
-gives facts from that data, such as the object's address. An unknown ID, or an object ID in
-the text outside a citation, which the reader cannot use, sends the report back to be written
-again, a few times at most; after that the run stops, as when the model fails. So the model
-cannot invent a reference.
+gives facts from that data, such as the object's name. An unknown ID, an object ID in the
+text outside a citation, which the reader cannot use, or an object that the report leaves out
+sends the report back to be written again, a few times at most; after that the run stops, as
+when the model fails. So the model cannot invent a reference or drop an object.
 
 ## Prompt injection
 

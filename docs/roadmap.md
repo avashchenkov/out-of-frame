@@ -77,7 +77,7 @@ calibration.
       at once. Code tests for grouping, distances, caps and failures.
    3. ✅ Triage: one call per remaining object, one at a time; a clear object gets a finding with
       the map's status, an unclear one goes to investigation within the cap. T1–T2.
-   4. The report for many objects. From the first hand grades: it reads plainly; an object
+   4. ✅ The report for many objects. From the first hand grades: it reads plainly; an object
       whose type alone shows no effect on people nearby, such as a cleaning business, gets one
       short line with its distance; it never quotes map tags such as landuse=industrial, and
       gives no details the reader cannot use, such as an object's map addresses. A draft that leaves out an
@@ -104,10 +104,12 @@ calibration.
     the person checks the grades of evals/calibration/ against the changed rubrics.
     From step 6: the labelling script, F2 and F6; the support rubric checks the type of a
     triage finding only against its label, as the eval architecture says, since triage may use
-    what the model knows. A known limitation to publish: a site that
-    several businesses share gets the type of the business that the investigation finds. At
-    Klärwerkstraße 1 and 1a, runs found a cleaning business and a Jobcenter project, both
-    commercial, and missed a metalwork shop with production halls there.
+    what the model knows; the interpretation rubric lets an object whose type alone shows no
+    effect have one short sentence, as the report prompt asks since step 6.4. A known
+    limitation to publish: a site that several businesses share gets the type of the business
+    that the investigation finds. At Klärwerkstraße 1 and 1a, runs found a cleaning business
+    and a Jobcenter project, both commercial, and missed a metalwork shop with production halls
+    there.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.

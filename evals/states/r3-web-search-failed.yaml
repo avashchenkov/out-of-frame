@@ -1,0 +1,41 @@
+# R3: a written run state in which web search failed after its retries: a railway line that
+# triage settled from the map, and an industrial area left unidentified by the failure. Built
+# from the objects around Freiheit 22, 13597 Berlin on 2026-10-10.
+property:
+  text: Freiheit 22, 13597 Berlin
+  coordinates: {lat: 52.5292863, lon: 13.2357896}
+sources:
+  - id: overpass-1
+    kind: map
+    request: written for the task
+    url: https://overpass-api.de/api/interpreter
+    content: written for the task
+map_objects:
+  - id: osm-way-295391379
+    name: null
+    details: {category: road_rail, railway: rail, ref: "6107", usage: main}
+    addresses: []
+    coordinates: {lat: 52.5300, lon: 13.2350}
+    distance_from_property_m: 67
+    source_id: overpass-1
+  - id: osm-way-23156479
+    name: null
+    details: {category: industry, landuse: industrial}
+    addresses: ["Klärwerkstraße 1, 13597 Berlin", "Klärwerkstraße 1A, 13597 Berlin"]
+    coordinates: {lat: 52.5283, lon: 13.2349}
+    distance_from_property_m: 118
+    source_id: overpass-1
+findings:
+  - map_object_id: osm-way-295391379
+    outcome: identified
+    evidence_id: overpass-1
+    identified_type: railway
+    status: operating
+    key_facts: [railway=rail, usage=main]
+  - map_object_id: osm-way-23156479
+    outcome: unidentified
+    evidence_id: null
+    identified_type: null
+    status: null
+    key_facts: []
+failures: [web search]

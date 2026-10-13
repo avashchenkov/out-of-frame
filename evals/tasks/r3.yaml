@@ -1,0 +1,10 @@
+# R3, report: one report write from a written run state. See docs/eval-architecture.md#report.
+id: R3
+suite: report
+covers: >-
+  Web search failed after its retries. Code checks the citations and distances; a person reads
+  that the rest of the report stays, and that the failure is never told as nothing found.
+date: 2026-10-13  # fixed data: the date the state was written
+
+input:
+  state: r3-web-search-failed.yaml  # in evals/states/

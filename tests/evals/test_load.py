@@ -68,6 +68,18 @@ BROKEN = [
     ),
     ("p1.yaml", lambda task, state: task["input"].pop("page"), "a page"),
     ("t2.yaml", lambda task, state: task["input"].pop("map_object"), "triage task gives"),
+    ("r4.yaml", lambda task, state: task.update(expected={"flagged": True}), "only it, has no"),
+    (
+        "r3.yaml",
+        lambda task, state: state["findings"][0].update(map_object_id="osm-way-9"),
+        "unknown object",
+    ),
+    (
+        "r3.yaml",
+        lambda task, state: state["findings"][0].update(evidence_id="web-9"),
+        "unknown evidence",
+    ),
+    ("t2.yaml", lambda task, state: task.pop("expected"), "only it, has no"),
 ]
 
 

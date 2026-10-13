@@ -19,15 +19,17 @@ from pydantic_core import to_jsonable_python
 import out_of_frame.finding
 import out_of_frame.investigation
 import out_of_frame.prompt_injection
+import out_of_frame.report
 import out_of_frame.triage
 from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
 from evals.graders.prompt_injection import grade_flagged
+from evals.graders.report import grade_citations, grade_distances
 from evals.load import EVALS, Inputs, Task, load, load_all
 from out_of_frame import prices
 from out_of_frame.config import MODEL
 from out_of_frame.grounding import collect_cited_page, find_grounding_errors
 from out_of_frame.prices import compute_run_cost
-from out_of_frame.state import Finding, InvestigationState, MapObject, Source
+from out_of_frame.state import Finding, InvestigationState, MapObject, RunState, Source
 from out_of_frame.web_search import (
     MeteredWebSearch,
     PageText,
@@ -51,7 +53,8 @@ class Outcome:
 class Trial:
     """What a part returns. The harness counts the tool calls and the cost itself."""
 
-    outcome: Outcome | bool  # bool: whether the injection check flagged the page
+    outcome: Outcome | bool | str  # bool: whether the injection check flagged the page; str: a
+    # report's draft
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
 
 
@@ -138,6 +141,14 @@ def triage_object(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial
     return Trial(Outcome(finding, []), transcript)
 
 
+def write_report(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """The report's draft, on a task from a written run state, before code fills in its
+    references."""
+    if not isinstance(inputs, RunState):
+        raise TypeError("write_report needs a task from a written run state")
+    return Trial(out_of_frame.report.write_report(inputs, date), transcript=[])
+
+
 PARTS: dict[str, Part] = {
     "abstain": abstain,
     "trust_every_page": trust_every_page,
@@ -145,6 +156,7 @@ PARTS: dict[str, Part] = {
     "draft_finding": draft_finding,
     "investigate": investigate,
     "triage_object": triage_object,
+    "write_report": write_report,
 }
 # The suites that each part can run.
 PART_SUITES = {
@@ -154,12 +166,13 @@ PART_SUITES = {
     "draft_finding": {"finding"},
     "investigate": {"live investigation"},
     "triage_object": {"triage"},
+    "write_report": {"report"},
 }
 
 
 def find_map_object(inputs: Inputs) -> MapObject:
-    if isinstance(inputs, PageText):
-        raise TypeError("an injection check task has no map object")
+    if isinstance(inputs, PageText | RunState):
+        raise TypeError("an injection check or report task has no one map object")
     return inputs if isinstance(inputs, MapObject) else inputs.map_object
 
 
@@ -172,8 +185,10 @@ def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
     return outcome.sources
 
 
-def grade(task: Task, outcome: Outcome | bool) -> list[Grade]:
+def grade(task: Task, outcome: Outcome | bool | str) -> list[Grade]:
     expected = task.expected
+    if isinstance(outcome, str) and isinstance(task.inputs, RunState):
+        return [grade_citations(outcome, task.inputs), grade_distances(outcome, task.inputs)]
     if isinstance(outcome, bool) and isinstance(expected, bool):
         return [grade_flagged(outcome, expected)]
     if isinstance(outcome, Outcome) and isinstance(expected, Expected):
@@ -185,9 +200,11 @@ def grade(task: Task, outcome: Outcome | bool) -> list[Grade]:
     raise TypeError(f"{task.id}: the part's outcome does not fit the task's expected result")
 
 
-def dump_outcome(task: Task, outcome: Outcome | bool) -> dict:
+def dump_outcome(task: Task, outcome: Outcome | bool | str) -> dict:
     if isinstance(outcome, bool):
         return {"flagged": outcome}
+    if isinstance(outcome, str):
+        return {"draft": outcome}
     return {
         "finding": outcome.finding.model_dump(mode="json"),
         # The sources the finding is graded against, so that the grade can be checked later.

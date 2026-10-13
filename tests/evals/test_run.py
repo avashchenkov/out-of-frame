@@ -284,6 +284,15 @@ def test_a_triage_finding_passes_only_with_key_facts_from_the_map_data():
     assert result.passed and not grounding.passed
 
 
+def test_a_report_draft_is_graded_on_its_citations_and_distances():
+    task = load(TASKS / "r3.yaml")
+    good = "A railway line is 67 m away [osm-way-295391379]. An area 118 m away [osm-way-23156479]."
+    assert all(g.passed for g in grade(task, good))
+    citations, distances = grade(task, "A railway line is 67 m away [osm-way-295391379].")
+    assert citations.reasons == ("left out: osm-way-23156479",)
+    assert distances.reasons == ("no distance 118 m for osm-way-23156479",)
+
+
 def test_a_part_runs_only_the_tasks_of_its_suites():
     assert {task.suite for task in select_tasks("draft_finding", [])} == {"finding"}
     assert {task.suite for task in select_tasks("investigate", [])} == {"live investigation"}
@@ -293,6 +302,7 @@ def test_a_part_runs_only_the_tasks_of_its_suites():
         "triage",
     }
     assert {task.suite for task in select_tasks("triage_object", [])} == {"triage"}
+    assert {task.suite for task in select_tasks("write_report", [])} == {"report"}
     assert {task.suite for task in select_tasks("trust_every_page", [])} == {"injection check"}
     with pytest.raises(ValueError, match="cannot run L1"):
         select_tasks("draft_finding", [TASKS / "l1.yaml"])

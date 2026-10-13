@@ -50,5 +50,6 @@ INVESTIGATIONS_AT_ONCE = int(os.environ.get("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE
 # Tries of one call to Nominatim or Overpass that fails for a while, such as on a timeout.
 SOURCE_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_SOURCE_ATTEMPTS", "3"))
 
-# Drafts of one report that cites an ID it was not given, before the run stops.
+# Drafts of one report that cites an ID it was not given or leaves out an object, before the
+# run stops.
 REPORT_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_REPORT_ATTEMPTS", "2"))

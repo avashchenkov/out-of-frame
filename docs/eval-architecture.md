@@ -47,7 +47,7 @@ tasks built during the MVP; see [MVP](#mvp).
 | Search | component | One search or page read | An object, with a written search history or none | none | 5 | — |
 | Enough | component | One decision to stop or search again | A written search history | none | 4 | — |
 | Finding | component | Write the finding | A written search history and its pages | none | 8 | F1, F2, F4–F8 |
-| Report | component | One report write, or one rewrite after unknown IDs | A run state with all findings | none | 6 | R2–R4 |
+| Report | component | One report write, or one rewrite after unknown IDs or an object left out | A run state with all findings | none | 6 | R2–R4 |
 | Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | L1 |
 
 **Component tasks start from fixed data,** except the live investigation, which searches the

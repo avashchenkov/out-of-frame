@@ -15,7 +15,7 @@ from evals.graders.finding import Expected
 from out_of_frame import research_scope
 from out_of_frame.config import TOOL_CAP
 from out_of_frame.record import Record
-from out_of_frame.state import Coordinates, InvestigationState, MapObject, ToolCall
+from out_of_frame.state import Coordinates, InvestigationState, MapObject, RunState, ToolCall
 from out_of_frame.web_search import PageText
 
 EVALS = Path(__file__).parent
@@ -23,7 +23,7 @@ TASKS = EVALS / "tasks"
 STATES = EVALS / "states"
 FIXTURES = EVALS / "fixtures"
 
-type Inputs = MapObject | InvestigationState | PageText
+type Inputs = MapObject | InvestigationState | RunState | PageText
 
 
 class TaskFormatError(Exception):
@@ -95,11 +95,11 @@ class TaskInput(Record):
 
 class TaskFile(Record):
     id: str
-    suite: Literal["finding", "live investigation", "injection check", "triage"]
+    suite: Literal["finding", "live investigation", "injection check", "triage", "report"]
     covers: str
     date: dt.date | Literal["today"]
     input: TaskInput
-    expected: TaskExpected
+    expected: TaskExpected | None = None  # a report task's graders need only its state
 
 
 @dataclass(frozen=True)
@@ -108,7 +108,9 @@ class Task:
     suite: str
     date: dt.date | None  # None: the date of the trial
     inputs: Inputs
-    expected: Expected | bool  # bool: whether the injection check should flag the page
+    # bool: whether the injection check should flag the page; None for a report task, whose
+    # graders read only its state
+    expected: Expected | bool | None
 
 
 def load_all() -> list[Task]:
@@ -121,8 +123,9 @@ def load(path: Path) -> Task:
 
     try:
         task = TaskFile.model_validate(read_yaml(path))
+        state_model = RunState if task.suite == "report" else InvestigationState
         state = (
-            InvestigationState.model_validate(read_yaml(STATES / task.input.state))
+            state_model.model_validate(read_yaml(STATES / task.input.state))
             if task.input.state
             else None
         )
@@ -141,15 +144,20 @@ def load(path: Path) -> Task:
         case "finding", None, InvestigationState(), None:
             check_state(state, fail)
             inputs = state
+        case "report", None, RunState(), None:
+            check_run_state(state, fail)
+            inputs = state
         case "injection check", None, None, PageText() as page:
             inputs = page
         case _:
             fail(
-                "a live investigation or triage task gives a map object, a finding task a "
-                "state, an injection check task a page"
+                "a live investigation or triage task gives a map object, a finding or report "
+                "task a state, an injection check task a page"
             )
 
-    expected = task.expected.result()
+    if (task.expected is None) != (task.suite == "report"):
+        fail("a report task, and only it, has no expected result")
+    expected = task.expected.result() if task.expected else None
     if isinstance(expected, bool) != (task.suite == "injection check"):
         fail("an injection check task, and only it, expects flagged")
     if isinstance(expected, Expected):
@@ -167,6 +175,21 @@ def check_expected(expected: Expected, fail) -> None:
         fail(f"unknown status {expected.status!r}")
     if (expected.outcome == "unidentified") != (expected.identified_type is None):
         fail("an object is unidentified exactly when it has no type")
+
+
+def check_run_state(state: RunState, fail) -> None:
+    """A written run state refers only to its own objects and sources, so that a typo cannot
+    quietly turn an object into one that was not investigated."""
+    objects = {map_object.id for map_object in state.map_objects}
+    sources = {source.id for source in state.sources}
+    for map_object in state.map_objects:
+        if map_object.source_id not in sources:
+            fail(f"{map_object.id}: unknown source {map_object.source_id!r}")
+    for finding in state.findings:
+        if finding.map_object_id not in objects:
+            fail(f"a finding of an unknown object {finding.map_object_id!r}")
+        if finding.evidence_id is not None and finding.evidence_id not in sources:
+            fail(f"{finding.map_object_id}: unknown evidence {finding.evidence_id!r}")
 
 
 def check_state(state: InvestigationState, fail) -> None:

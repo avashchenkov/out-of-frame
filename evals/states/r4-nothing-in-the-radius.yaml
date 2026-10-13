@@ -1,0 +1,14 @@
+# R4: a written run state in which the map answered, but no object of a checked kind lies in
+# its radius.
+property:
+  text: Freiheit 22, 13597 Berlin
+  coordinates: {lat: 52.5292863, lon: 13.2357896}
+sources:
+  - id: overpass-1
+    kind: map
+    request: written for the task
+    url: https://overpass-api.de/api/interpreter
+    content: '{"elements": []}'
+map_objects: []
+findings: []
+failures: []

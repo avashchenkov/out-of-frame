@@ -14,21 +14,21 @@ from out_of_frame.finding import render
 from out_of_frame.state import RunState, Source
 
 CITATION = re.compile(r"\[([^\[\]\s]+)\]")  # [osm-way-1]
+CITATIONS = re.compile(r"\[[^\[\]\s]+\](?:[ \t]*\[[^\[\]\s]+\])*")  # [osm-way-1][osm-way-2]
 BRACKETS = re.compile(r"\[([^\[\]]*)\]")  # any [...]
 LINK = re.compile(r"\]\(|\]:|(?:https?://|www\.)\S*")  # a Markdown link, or a URL of any form
 OSM_CREDIT = "Map data © OpenStreetMap contributors: https://www.openstreetmap.org/copyright"
-SCOPE_NOTE = f"The report covers the nearest {MAP_OBJECTS_PER_CATEGORY} objects of each kind."
 
 
 class ReportError(Exception):
-    """Every draft had a citation that is not one of the IDs the model was given. The model
-    failed, so the run stops, see docs/architecture.md#failures."""
+    """Every draft had a citation that is not one of the IDs the model was given, or left out
+    an object. The model failed, so the run stops, see docs/architecture.md#failures."""
 
 
 def write_report(state: RunState, date: dt.date) -> str:
     """The model's draft of the report, which cites objects by their IDs; fill_references then
-    turns it into the report a person reads. A draft with a wrong citation is written again,
-    and the model is told which citations were wrong."""
+    turns it into the report a person reads. A draft with a wrong citation, or one that leaves
+    out an object, is written again, and the model is told what was wrong."""
     scope = research_scope.load()
     system = SystemMessage(
         render("report.md.j2", date=date.isoformat(), types=scope.identified_types)
@@ -36,6 +36,7 @@ def write_report(state: RunState, date: dt.date) -> str:
     findings = {finding.map_object_id: finding for finding in state.findings}
     known = {map_object.id for map_object in state.map_objects}
     wrong: list[str] = []
+    missing: list[str] = []
     for _ in range(REPORT_ATTEMPTS):
         task = render(
             "report_task.md.j2",
@@ -43,12 +44,17 @@ def write_report(state: RunState, date: dt.date) -> str:
             findings=findings,
             failures=state.failures,
             wrong_citations=wrong,
+            missing_objects=missing,
         )
         draft = build_report_model().invoke([system, HumanMessage(task)]).text
         wrong = find_wrong_citations(draft, known)
-        if not wrong:
+        missing = sorted(known - set(CITATION.findall(draft)))
+        if not wrong and not missing:
             return draft
-    raise ReportError(f"{REPORT_ATTEMPTS} drafts had wrong citations, last: {', '.join(wrong)}")
+    raise ReportError(
+        f"{REPORT_ATTEMPTS} drafts had wrong citations or left out objects, last: "
+        + ", ".join(wrong + missing)
+    )
 
 
 def find_wrong_citations(draft: str, known: set[str]) -> list[str]:
@@ -74,26 +80,41 @@ def build_report_model():
 
 
 def fill_references(draft: str, state: RunState) -> str:
-    """The report a person reads: a title, the draft with each cited object ID replaced by the
-    numbers of its sources, then the sources and the map credit. A web page is given by its
-    URL, map data by its name. An object cites the page of its finding and its own map data,
-    since the report also gives facts from the map, such as its address."""
+    """The report a person reads: a title, the draft with each citation replaced by the
+    numbers of its sources, then the sources and the map credit. Citations in a row, such as
+    [osm-way-1][osm-way-2], become one. A web page is given by its URL, map data by its name.
+    An object cites the page of its finding and its own map data, since the report also gives
+    facts from the map, such as its name."""
     objects = {map_object.id: map_object for map_object in state.map_objects}
     evidence = {finding.map_object_id: finding.evidence_id for finding in state.findings}
     sources = {source.id: source for source in state.sources}
     numbers: dict[str, int] = {}  # by the source as the person reads it
 
     def cite(match: re.Match) -> str:
-        map_object = objects[match[1]]
-        ids = [id for id in [evidence.get(map_object.id), map_object.source_id] if id]
-        cited = {numbers.setdefault(name_source(sources[id]), len(numbers) + 1) for id in ids}
+        cited = set()
+        for object_id in CITATION.findall(match[0]):
+            map_object = objects[object_id]
+            for id in [evidence.get(map_object.id), map_object.source_id]:
+                if id:
+                    cited.add(numbers.setdefault(name_source(sources[id]), len(numbers) + 1))
         return "[" + ", ".join(str(number) for number in sorted(cited)) + "]"
 
-    text = CITATION.sub(cite, draft).strip()
-    lines = [f"# What lies around {state.property.text}", "", text, "", SCOPE_NOTE, ""]
+    text = CITATIONS.sub(cite, draft).strip()
+    lines = [f"# What lies around {state.property.text}", "", text, "", describe_scope(), ""]
     if numbers:
         lines += ["Sources:", *(f"{n}. {name}" for name, n in numbers.items()), ""]
     return "\n".join([*lines, OSM_CREDIT])
+
+
+def describe_scope() -> str:
+    """Which kinds of objects the report covers, from the research scope, so that the model
+    never has to say it. TODO: plans in step 8."""
+    categories = [c for c in research_scope.load().categories if c.source == "overpass"]
+    kinds = [c.name[0].lower() + c.name[1:] for c in categories]
+    return (
+        f"The report covers the nearest {MAP_OBJECTS_PER_CATEGORY} objects of each kind it "
+        f"checks: {'; '.join(kinds)}."
+    )
 
 
 def name_source(source: Source) -> str:

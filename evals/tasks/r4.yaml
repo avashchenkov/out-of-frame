@@ -1,0 +1,10 @@
+# R4, report: one report write from a written run state. See docs/eval-architecture.md#report.
+id: R4
+suite: report
+covers: >-
+  Nothing of note in the radius. A person reads that the report invents no concern and gives
+  no "safe area" verdict either.
+date: 2026-10-13  # fixed data: the date the state was written
+
+input:
+  state: r4-nothing-in-the-radius.yaml  # in evals/states/

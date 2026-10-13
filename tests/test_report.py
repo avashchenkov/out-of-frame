@@ -179,3 +179,45 @@ def test_a_longer_id_in_the_text_is_not_a_known_one():
 @pytest.mark.parametrize("draft", ["A site [[osm-way-1]].", "A site [osm-way-1]]."])
 def test_a_bracket_without_its_pair_is_told(draft):
     assert report.find_wrong_citations(draft, {"osm-way-1"})
+
+
+RAILWAY = SITE.model_copy(
+    update={"id": "osm-way-2", "details": {"railway": "rail", "category": "road_rail"}}
+)
+TRIAGED = Finding(
+    map_object_id="osm-way-2",
+    outcome="identified",
+    identified_type="railway",
+    status="operating",
+    key_facts=["railway=rail"],
+    evidence_id="overpass-1",
+)
+TWO = STATE.model_copy(update={"map_objects": [SITE, RAILWAY], "findings": [FOUND, TRIAGED]})
+
+
+def test_a_draft_that_leaves_out_an_object_is_written_again(monkeypatch):
+    first, second = "A site [osm-way-1].", "A site [osm-way-1]. A railway [osm-way-2]."
+    text, writer = write(monkeypatch, TWO, first, second)
+    assert "left out these objects" in writer.requests[1][-1].content
+    assert "osm-way-2" in writer.requests[1][-1].content and "A railway [2]." in text
+
+
+def test_a_draft_that_always_leaves_out_an_object_stops_the_run(monkeypatch):
+    with pytest.raises(ReportError, match="osm-way-2"):
+        write(monkeypatch, TWO, *["A site [osm-way-1]."] * REPORT_ATTEMPTS)
+
+
+@pytest.mark.parametrize("between", ["", " "])
+def test_citations_in_a_row_become_one(monkeypatch, between):
+    text, _ = write(monkeypatch, TWO, f"A site and a railway [osm-way-1]{between}[osm-way-2].")
+    assert "A site and a railway [1, 2]." in text
+
+
+def test_citations_in_two_paragraphs_stay_apart(monkeypatch):
+    text, _ = write(monkeypatch, TWO, "A site [osm-way-1]\n\n[osm-way-2] A railway.")
+    assert "A site [1, 2]\n\n[2] A railway." in text
+
+
+def test_the_report_says_which_kinds_it_checks(monkeypatch):
+    text, _ = write(monkeypatch, STATE, "A site [osm-way-1].")
+    assert "nearest 5 objects of each kind it checks: industrial and energy sites;" in text

@@ -36,10 +36,10 @@ def stub_the_judges(monkeypatch, answer_to=lambda schema: answer(ANSWERS[schema]
 
 
 def run_the_agent(monkeypatch, web_search=None, writer=None) -> dict:
-    """A run whose draft, by default, is about one object, so that it is one statement."""
+    """A run whose draft, by default, has one statement for each of its 11 objects."""
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)
-    writer = writer or FakeWriter("An object [osm-way-23156479].")
+    writer = writer or FakeWriter()
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
     web_search = MeteredWebSearch(web_search or FakeWebSearch([SNIPPET]))
     return judge.run_agent(FREIHEIT_22, DATE, web_search)
@@ -48,7 +48,7 @@ def run_the_agent(monkeypatch, web_search=None, writer=None) -> dict:
 def test_a_run_is_saved_with_its_draft_and_the_investigations_steps(monkeypatch):
     saved = run_the_agent(monkeypatch)
     assert saved["error"] is None and saved["date"] == "2026-10-10"
-    assert saved["draft"] == "An object [osm-way-23156479]."
+    assert saved["draft"].startswith("An object [osm-way-49572120]. An object")
     assert saved["state"]["report"].startswith(f"# What lies around {FREIHEIT_22}")
     steps = [step for step in saved["transcript"] if step["graph"]]
     assert any("write_finding" in step["update"] for step in steps)  # inside the investigation
@@ -106,9 +106,10 @@ def test_the_judges_grade_the_draft_of_a_saved_run(monkeypatch):
     assert grades["calibrated"] is False and grades["complete"] is True
     assert grades["run"] == run_file.name and len(grades["rubrics_sha256"]) == 3
     assert grades["research_scope_sha256"] and grades["prices_as_of"]
-    [support] = grades["support"]
-    assert support["statement"] == "An object [osm-way-23156479]."
-    assert support["cited"] == ["osm-way-23156479"] and support["grade"] == "supported"
+    support = grades["support"]
+    assert len(support) == 11 and support[0]["statement"] == "An object [osm-way-49572120]."
+    assert support[0]["cited"] == ["osm-way-49572120"]
+    assert {statement["grade"] for statement in support} == {"supported"}
     assert grades["interpretation"]["verdict"] == "pass"
     assert grades["no_verdict"]["verdict"] == "pass"
 
