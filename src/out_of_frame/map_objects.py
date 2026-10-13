@@ -46,12 +46,53 @@ def fetch_map_objects(origin: Coordinates) -> tuple[list[MapObject], Source]:
     for category, elements in zip(categories, split_by_count(response), strict=True):
         placed = [
             build_map_object(element, category.id, origin, source.id)
-            for element in elements
+            for element in drop_parts(elements)
             if "lat" in element or "bounds" in element  # not a relation of relations
         ]
         for map_object in group_into_objects(placed)[:MAP_OBJECTS_PER_CATEGORY]:
             objects.setdefault(map_object.id, map_object)  # an element of two categories once
     return list(objects.values()), source
+
+
+def drop_parts(elements: list[dict]) -> list[dict]:
+    """The elements of one category without the unnamed ones inside the area of a larger one,
+    such as a building inside the site it belongs to: the site stands for its parts. A named
+    element is an object of its own, such as a factory inside an industrial area."""
+    areas = [element for element in elements if is_area(element)]
+    return [
+        element
+        for element in elements
+        if "name" in element.get("tags", {})
+        or not any(area is not element and lies_inside(element, area) for area in areas)
+    ]
+
+
+def is_area(element: dict) -> bool:
+    """A closed way that is not a road or a railway, such as a site's outline."""
+    tags = element.get("tags", {})
+    if element["type"] != "way" or "highway" in tags or "railway" in tags:
+        return False
+    points = element.get("geometry") or []
+    return len(points) > 3 and points[0] == points[-1]
+
+
+def lies_inside(element: dict, area: dict) -> bool:
+    """Whether the element's centre lies inside the area, which is the larger of the two."""
+    if "lat" not in element and "bounds" not in element:
+        return False
+    if measure_bounds(element) >= measure_bounds(area):
+        return False
+    centre = find_centre(element)
+    outline = [project(centre, (point["lat"], point["lon"])) for point in area["geometry"]]
+    return contains_origin(outline)
+
+
+def measure_bounds(element: dict) -> float:
+    """The size of the element's bounds in square degrees; 0 for a node."""
+    if "bounds" not in element:
+        return 0.0
+    bounds = element["bounds"]
+    return (bounds["maxlat"] - bounds["minlat"]) * (bounds["maxlon"] - bounds["minlon"])
 
 
 def group_into_objects(elements: list[MapObject]) -> list[MapObject]:

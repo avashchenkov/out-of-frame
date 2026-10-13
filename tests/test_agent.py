@@ -94,9 +94,9 @@ def stub_the_models(monkeypatch, triage_answer=TRIAGE_CLEAR):
 INDUSTRY = [  # the five nearest industrial objects around Freiheit 22, nearest first
     "osm-way-49572120",  # Müllverbrennungsanlage Ruhleben, named, with complete tags (T3)
     "osm-way-23156479",  # Klärwerkstraße 1 and 1A
-    "osm-way-49572127",
     "osm-way-985575964",  # L1
-    "osm-way-49572126",
+    "osm-way-813407382",
+    "osm-way-185943862",
 ]
 
 

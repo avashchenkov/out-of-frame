@@ -52,14 +52,15 @@ def test_one_query_gets_the_nearest_objects_of_every_category(monkeypatch):
     objects, source = fetch_map_objects(FREIHEIT_22)
     [query] = queries
     categories = [map_object.details["category"] for map_object in objects]
-    # Of 29 industry elements and 37 road and rail elements, 28 and 6 objects.
+    # Of 29 industry elements and 37 road and rail elements, 6 objects of road and rail, and
+    # of industry fewer than 29: the buildings inside the Müllverbrennungsanlage are its parts.
     assert {name: categories.count(name) for name in set(categories)} == {
         "industry": MAP_OBJECTS_PER_CATEGORY,
         "road_rail": MAP_OBJECTS_PER_CATEGORY,
         "wastewater": 1,
     }
     industry = [o.distance_from_property_m for o in objects if o.details["category"] == "industry"]
-    assert industry == [95, 118, 203, 217, 240]  # the nearest, nearest first
+    assert industry == [95, 118, 217, 314, 343]  # the nearest, nearest first
     assert "around:1500," in query and '["landuse"="industrial"]' in query
     assert '["highway"~"^(motorway|trunk)$"]' in query
     assert (source.id, source.kind) == ("overpass-1", "map")
@@ -182,6 +183,44 @@ def test_a_road_and_a_railway_or_two_stages_are_never_one_object():
     ]
 
 
+def outline(id: int, side_m: float, tags: dict, east_m: float = 0) -> dict:
+    """A square way around a point east of Freiheit 22, with its bounds, as Overpass gives it."""
+    way = square_around_freiheit_22(side_m, tags)
+    for point in way["geometry"]:
+        point["lon"] += east_m / 67_700
+    lats = [point["lat"] for point in way["geometry"]]
+    lons = [point["lon"] for point in way["geometry"]]
+    bounds = {"minlat": min(lats), "maxlat": max(lats), "minlon": min(lons), "maxlon": max(lons)}
+    return way | {"id": id, "bounds": bounds}
+
+
+def test_a_building_inside_a_site_is_part_of_the_site():
+    site = outline(1, 400, {"landuse": "industrial", "name": "A plant"})
+    building = outline(2, 50, {"man_made": "works"}, east_m=100)
+    elsewhere = outline(3, 50, {"man_made": "works"}, east_m=1000)
+    assert map_objects.drop_parts([site, building, elsewhere]) == [site, elsewhere]
+
+
+def test_a_named_factory_inside_an_industrial_area_is_an_object_of_its_own():
+    area = outline(1, 400, {"landuse": "industrial"})
+    factory = outline(2, 50, {"man_made": "works", "name": "A factory"}, east_m=100)
+    assert map_objects.drop_parts([area, factory]) == [area, factory]
+
+
+def test_two_sites_of_the_same_size_are_both_kept():
+    one, other = (
+        outline(1, 400, {"landuse": "industrial"}),
+        outline(2, 400, {"landuse": "industrial"}),
+    )
+    assert map_objects.drop_parts([one, other]) == [one, other]
+
+
+def test_a_road_or_a_railway_loop_has_no_inside():
+    loop = outline(1, 400, {"railway": "rail"})
+    building = outline(2, 50, {"man_made": "works"})
+    assert map_objects.drop_parts([loop, building]) == [loop, building]
+
+
 def test_an_element_without_a_place_on_the_map_is_left_out(monkeypatch):
     count = {"type": "count"}
     nested = {"type": "relation", "id": 9, "tags": {"landuse": "industrial"}, "members": []}
@@ -206,7 +245,10 @@ def test_the_addresses_inside_every_area_come_from_one_more_query(monkeypatch):
         "Klärwerkstraße 1, 13597 Berlin",
         "Klärwerkstraße 1A, 13597 Berlin",
     ]
-    assert addresses["osm-way-49572127"] == []  # an area with no addresses inside
+    assert addresses["osm-way-985575964"] == [
+        "Klärwerkstraße 3, 13597 Berlin",
+        "Klärwerkstraße 7, 13597 Berlin",
+    ]
     assert len(addresses) == 5 and "way(23156479);map_to_area" in query
 
 

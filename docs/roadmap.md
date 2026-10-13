@@ -62,7 +62,7 @@ calibration.
 
    The result must demonstrate a supported finding and an honest unidentified outcome when
    evidence is missing; inspect the first report by hand.
-6. **Several objects and triage.** Extend the path to every map category: grouping, the
+6. ✅ **Several objects and triage.** Extend the path to every map category: grouping, the
    nearest five objects per category, code routing, triage and parallel investigations. The
    report must preserve clear findings, show unidentified and not investigated objects, and
    distinguish an empty result from a failure. To save time, the
@@ -82,7 +82,7 @@ calibration.
       short line with its distance; it never quotes map tags such as landuse=industrial, and
       gives no details the reader cannot use, such as an object's map addresses. A draft that leaves out an
       object is written again. R2–R4.
-   5. Live runs on Freiheit 22 and Corinthstraße 60; the person reads one report.
+   5. ✅ Live runs on Freiheit 22 and Corinthstraße 60; the person reads one report.
 7. **Input conversation.** Add extraction, address disambiguation, questions and LangGraph
    pauses. Check I1–I3 and code tests for applying changes and resuming the run. The user can
    resolve an ambiguous address and supply missing times; complete input starts research
@@ -109,7 +109,9 @@ calibration.
     limitation to publish: a site that several businesses share gets the type of the business
     that the investigation finds. At Klärwerkstraße 1 and 1a, runs found a cleaning business
     and a Jobcenter project, both commercial, and missed a metalwork shop with production halls
-    there.
+    there. From the live runs of step 6.5: a finding can cite a page that does not back its type
+    or status, such as an Impressum with an address only, or cite the map though a page it read
+    settles the status, so that a running S-Bahn line reads as "unknown whether in use".
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.

@@ -39,8 +39,8 @@ identified_types:
     nearby.
   railway: A railway or light railway line, or its tracks. It can bring train noise and
     vibration to people nearby.
-  other: The evidence settles what the object is, and no type above fits. Its type alone shows
-    no effect on people nearby.
+  other: The evidence settles what the object is, and no type above fits. Its type does not
+    say whether or how it can affect people nearby.
 
 categories:
   # Objects from OpenStreetMap.

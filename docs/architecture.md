@@ -164,14 +164,16 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    is then empty.
    - *Surroundings:* one Overpass query returns the map elements of each category
      within the category's circle. Code groups the elements into objects (one site or one road
-     can be several elements) and keeps the nearest N per category. Elements of one category
-     are one object when they have the same name, or without a name the same `ref`, such as a
-     road number, and the same stage: built, under construction or proposed. A road and a
-     railway are never one object. The road elements of one stage that have neither name nor
-     `ref` are one object, and so are such rail elements, such as service tracks; any other
-     element without a name is an object of its own. An object keeps the ID, details and
-     coordinates of its nearest element, and that element's distance; its addresses come from
-     that element's area. Code sends every
+     can be several elements) and keeps the nearest N per category. An element without a name
+     whose centre lies inside the area of a larger element of its category, such as a building
+     inside its site, is part of that element; a named one, such as a factory inside an
+     industrial area, is an object of its own. Elements of one category are one object when they have the same name, or without
+     a name the same `ref`, such as a road number, and the same stage: built, under
+     construction or proposed. A road and a railway are never one object. The road elements of
+     one stage that have neither name nor `ref` are one object, and so are such rail elements,
+     such as service tracks; any other element without a name is an object of its own. An
+     object keeps the ID, details and coordinates of its nearest element, and that element's
+     distance; its addresses come from that element's area. Code sends every
      `industry` object and any object tagged as proposed or under construction to
      investigation, within the cap.
      The model triages only the rest, one per call, from the name, tags and what it knows.

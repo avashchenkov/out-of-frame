@@ -2,8 +2,8 @@
   "version": 0.6,
   "generator": "Overpass API 0.7.62.11 87bfad18",
   "osm3s": {
-    "timestamp_osm_base": "2026-10-12T15:55:51Z",
-    "timestamp_areas_base": "2026-10-12T07:59:36Z",
+    "timestamp_osm_base": "2026-10-13T02:45:05Z",
+    "timestamp_areas_base": "2026-10-12T20:52:06Z",
     "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
   },
   "elements": [
@@ -125,17 +125,6 @@
       "type": "count",
       "id": 0,
       "tags": {
-        "nodes": "0",
-        "ways": "0",
-        "relations": "0",
-        "areas": "0",
-        "total": "0"
-      }
-    },
-    {
-      "type": "count",
-      "id": 0,
-      "tags": {
         "nodes": "2",
         "ways": "0",
         "relations": "0",
@@ -173,11 +162,264 @@
       "type": "count",
       "id": 0,
       "tags": {
-        "nodes": "0",
+        "nodes": "11",
         "ways": "0",
         "relations": "0",
         "areas": "0",
-        "total": "0"
+        "total": "11"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875569924,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "21",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875569931,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "23",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570093,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "27",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "name": "Okey",
+        "shop": "wholesale",
+        "source": "Geoportal Berlin / Hauskoordinaten",
+        "wholesale": "food"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570135,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "17",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570159,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "29-31",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "name": "mischau – Fleischerei",
+        "opening_hours": "Mo-Fr 08:00-18:00; Sa 08:00-13:00; PH,Su off",
+        "operator": "mischau Fleischwaren GmbH & Co. KG",
+        "phone": "+49 303000960",
+        "shop": "butcher",
+        "source": "Geoportal Berlin / Hauskoordinaten",
+        "website": "https://www.mischau.de",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570211,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "15",
+        "addr:inclusion": "potential",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570258,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "25",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "name": "Schmidt-Elsner",
+        "shop": "trade",
+        "source": "Geoportal Berlin / Hauskoordinaten",
+        "website": "https://www.schmidt-elsner.com/home"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570705,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "35",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 7548754041,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "37-39",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "name": "Roller Scholz",
+        "shop": "motorcycle",
+        "source": "Geoportal Berlin / Hauskoordinaten",
+        "website": "https://www.rollerscholz.de"
+      }
+    },
+    {
+      "type": "node",
+      "id": 7548770016,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "33",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "name": "AGO-Druckluft",
+        "shop": "trade",
+        "source": "Geoportal Berlin / Hauskoordinaten",
+        "trade": "yes",
+        "website": "https://www.ago-druckluft.de"
+      }
+    },
+    {
+      "type": "node",
+      "id": 12033152794,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:housenumber": "29",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "name": "mischau – Leckerladen",
+        "opening_hours": "Mo-Fr 08:00-18:00; Sa 08:00-13:00; PH,Su off",
+        "operator": "mischau Fleischwaren GmbH & Co. KG",
+        "payment:cards": "yes",
+        "payment:cash": "yes",
+        "payment:contactless": "yes",
+        "payment:credit_cards": "yes",
+        "payment:debit_cards": "yes",
+        "payment:visa": "yes",
+        "phone": "+49 3030009634",
+        "shop": "deli",
+        "source": "Geoportal Berlin / Hauskoordinaten;KAUPERTS",
+        "website": "https://mischau.de/leckerladen"
+      }
+    },
+    {
+      "type": "count",
+      "id": 0,
+      "tags": {
+        "nodes": "4",
+        "ways": "1",
+        "relations": "0",
+        "areas": "0",
+        "total": "5"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875569933,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "24",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570160,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "32",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570268,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "28",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2875570814,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "38",
+        "addr:inclusion": "potential",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Spandau",
+        "source": "Geoportal Berlin / Hauskoordinaten"
+      }
+    },
+    {
+      "type": "way",
+      "id": 185943862,
+      "tags": {
+        "addr:city": "Berlin",
+        "addr:country": "DE",
+        "addr:housenumber": "32",
+        "addr:postcode": "13597",
+        "addr:street": "Wiesendamm",
+        "addr:suburb": "Wilhelmstadt",
+        "landuse": "industrial",
+        "name": "RWG I",
+        "website": "https://www.rwg1.de/"
       }
     }
   ]
