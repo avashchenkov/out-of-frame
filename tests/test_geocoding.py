@@ -106,6 +106,14 @@ def test_buildings_without_a_postcode_in_two_districts_are_two_buildings(monkeyp
     )
 
 
+def test_one_building_named_with_two_districts_is_one_building(monkeypatch):
+    [point] = read_fixture("freiheit-22.json")
+    outline = copy.deepcopy(point)
+    outline["address"]["suburb"] = "Wilhelmstadt"  # the postcode is the same
+    address, reason = geocode(monkeypatch, [point, outline])
+    assert address.coordinates == FREIHEIT_22 and reason is None
+
+
 def test_an_address_point_and_its_building_outline_are_one_building(monkeypatch):
     [point] = read_fixture("freiheit-22.json")
     outline = point | {

@@ -17,9 +17,9 @@ from out_of_frame.finding import render
 from out_of_frame.state import Message, RunState
 
 
-class ExtractError(Exception):
-    """The extract answer was cut off or does not parse. The model failed, so the run stops, see
-    docs/architecture.md#failures."""
+class ConversationError(Exception):
+    """A model answer in the input phase was cut off, is empty or does not parse. The model
+    failed, so the run stops, see docs/architecture.md#failures."""
 
 
 class Change(BaseModel):
@@ -36,7 +36,7 @@ def extract(state: RunState) -> str | None:
     system = SystemMessage(render("extract.md.j2", property=state.property))
     answer: Any = build_extract_model().invoke([system, *build_chat(state.messages)])
     if answer["raw"].response_metadata.get("stop_reason") != "end_turn" or not answer["parsed"]:
-        raise ExtractError("the answer about the address was cut off or does not parse")
+        raise ConversationError("the answer about the address was cut off or does not parse")
     return answer["parsed"].property_address
 
 
@@ -54,7 +54,11 @@ def find_missing(state: RunState) -> list[str]:
 def ask(state: RunState, missing: list[str]) -> str:
     """The question to the user about what code found missing."""
     system = SystemMessage(render("ask.md.j2", missing=missing))
-    return build_ask_model().invoke([system, *build_chat(state.messages)]).text.strip()
+    answer = build_ask_model().invoke([system, *build_chat(state.messages)])
+    question = answer.text.strip()
+    if answer.response_metadata.get("stop_reason") != "end_turn" or not question:
+        raise ConversationError("the question to the user was cut off or is empty")
+    return question
 
 
 def build_chat(messages: list[Message]) -> list[BaseMessage]:

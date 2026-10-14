@@ -15,7 +15,7 @@ from langchain_core.callbacks import get_usage_metadata_callback
 from langgraph.types import Command
 
 from out_of_frame import agent
-from out_of_frame.conversation import ExtractError
+from out_of_frame.conversation import ConversationError
 from out_of_frame.finding import MissingFindingError
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.investigation import Context
@@ -73,7 +73,7 @@ def main() -> None:
             anthropic.APIError,
             pydantic.ValidationError,  # a model answer outside its schema, such as an unknown type
             PromptInjectionCheckError,
-            ExtractError,
+            ConversationError,
             MissingFindingError,
             ReportError,
         ) as error:

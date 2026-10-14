@@ -64,15 +64,16 @@ def explain(address: Address, source: Source) -> str | None:
 
 def find_buildings(results: list[dict]) -> list[dict]:
     """The matches with a house number, each building once: Nominatim can return a building
-    twice, as an address point and as its outline. The region and the district keep apart
-    buildings with the same street and number, even without a postcode."""
+    twice, as an address point and as its outline. Buildings with the same street and number
+    are kept apart by their region and postcode, or without a postcode by their district, the
+    part of the address that the user is offered to tell them apart."""
     buildings = {}
     for result in results:
         address = result["address"]
         if "house_number" in address:
-            region = address.get("ISO3166-2-lvl4")
-            key = region, find_district(address), address.get("road"), address["house_number"]
-            buildings.setdefault((*key, address.get("postcode")), result)
+            place = address.get("postcode") or find_district(address)
+            key = address.get("ISO3166-2-lvl4"), address.get("road"), address["house_number"], place
+            buildings.setdefault(key, result)
     return list(buildings.values())
 
 
