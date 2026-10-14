@@ -9,6 +9,8 @@ Recorded Nominatim search responses, kept as returned on 2026-10-10:
 Recorded on 2026-10-14:
 
 - `hauptstrasse-1-staaken.json`: "Hauptstraße 1, 13591 Berlin", one of them, in Staaken (I2).
+- `huttenstrasse-10.json`: "Huttenstraße 10, 10553 Berlin", one building, but in Frohnau with
+  the postcode 13465, not in Moabit.
 
 Data © OpenStreetMap contributors, available under the Open Database License (ODbL) 1.0:
 <https://www.openstreetmap.org/copyright>.

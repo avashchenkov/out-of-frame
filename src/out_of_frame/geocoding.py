@@ -14,6 +14,8 @@ from out_of_frame.state import Address, Coordinates, Source
 
 # The city's name as a word of its own, not as part of a street name such as Berliner Straße.
 BERLIN = re.compile(r"\bBerlin\b", re.IGNORECASE)
+# A German postcode: five digits as a word of their own.
+POSTCODE = re.compile(r"\b\d{5}\b")
 
 
 class GeocodingError(Exception):
@@ -25,8 +27,9 @@ def geocode(text: str, source_id: str) -> tuple[Address, Source]:
     """The address with its coordinates if Nominatim finds exactly one building with it in
     Berlin, and Nominatim's response, which says why when it does not. A match of a street or
     a district alone has no house number, so it does not count: its coordinates would not be
-    the property's. Code adds the city to an address that does not name it: Nominatim searches
-    the whole world, and returns only its first ten matches."""
+    the property's. Nor does a building with another postcode than the address names. Code adds
+    the city to an address that does not name it: Nominatim searches the whole world, and
+    returns only its first ten matches."""
     query = text if BERLIN.search(text) else f"{text}, Berlin"
     results = call_nominatim(query)
     source = Source(
@@ -38,8 +41,9 @@ def geocode(text: str, source_id: str) -> tuple[Address, Source]:
     )
     address = Address(text=text, source_id=source_id)
     in_berlin = [building for building in find_buildings(results) if is_in_berlin(building)]
-    if len(in_berlin) == 1:
-        [building] = in_berlin
+    candidates = match_postcode(text, in_berlin)
+    if len(candidates) == 1:
+        [building] = candidates
         coordinates = Coordinates(lat=float(building["lat"]), lon=float(building["lon"]))
         address = address.model_copy(update={"coordinates": coordinates})
     return address, source
@@ -52,9 +56,13 @@ def explain(address: Address, source: Source) -> str | None:
     results = json.loads(source.content)
     buildings = find_buildings(results)
     in_berlin = [building for building in buildings if is_in_berlin(building)]
+    candidates = match_postcode(address.text, in_berlin)
+    if candidates:
+        matches = "; ".join(name_building(building) for building in candidates)
+        return f"Several buildings in Berlin match {address.text!r}: {matches}."
     if in_berlin:
         matches = "; ".join(name_building(building) for building in in_berlin)
-        return f"Several buildings in Berlin match {address.text!r}: {matches}."
+        return f"{address.text!r} matches no building in Berlin with its postcode, only: {matches}."
     if buildings:
         return f"{address.text!r} is outside Berlin, and only Berlin is checked."
     if results:
@@ -75,6 +83,21 @@ def find_buildings(results: list[dict]) -> list[dict]:
             key = address.get("ISO3166-2-lvl4"), address.get("road"), address["house_number"], place
             buildings.setdefault(key, result)
     return list(buildings.values())
+
+
+def match_postcode(text: str, buildings: list[dict]) -> list[dict]:
+    """The buildings whose postcode does not differ from the one the text names, or all of
+    them if it names none. Nominatim can return the same street and number in another
+    district as its only match, and that building is another place."""
+    named = POSTCODE.search(text)
+    if named is None:
+        return buildings
+    postcode = named.group()
+    return [
+        building
+        for building in buildings
+        if building["address"].get("postcode", postcode) == postcode
+    ]
 
 
 def find_district(address: dict) -> str | None:

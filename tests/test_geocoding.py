@@ -135,6 +135,17 @@ def test_a_building_in_berlin_is_kept_after_one_with_the_same_address_elsewhere(
     assert address.coordinates == FREIHEIT_22 and reason is None
 
 
+def test_a_building_with_another_postcode_gives_no_coordinates(monkeypatch):
+    # Nominatim's only match is the same street and number in Frohnau, not in Moabit.
+    text = "Huttenstraße 10, 10553 Berlin"
+    address, reason = geocode(monkeypatch, read_fixture("huttenstrasse-10.json"), text)
+    assert address.coordinates is None
+    assert reason == (
+        "'Huttenstraße 10, 10553 Berlin' matches no building in Berlin with its postcode, only: "
+        "Huttenstraße 10, 13465 Berlin (Frohnau)."
+    )
+
+
 def test_a_building_outside_berlin_gives_no_coordinates(monkeypatch):
     [building] = read_fixture("freiheit-22.json")
     building["address"]["ISO3166-2-lvl4"] = "DE-BB"  # Brandenburg
