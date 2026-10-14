@@ -1,5 +1,5 @@
 {% for map_object in map_objects %}
-[{{ map_object.id }}] An object {{ map_object.distance_from_property_m | int }} m from the property. Its map data:
+[{{ map_object.id }}] An object {{ map_object.distance_from_property_m | int }} m from the property{% if map_object.id in plans %}, a development plan{% endif %}. Its map data:
 {{ map_object.map_text().strip() }}
 {% set finding = findings.get(map_object.id) %}
 {% if finding is none %}

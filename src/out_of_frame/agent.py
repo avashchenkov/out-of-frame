@@ -198,7 +198,7 @@ def triage_objects(state: RunState) -> dict:
     checked = [
         triage.triage(o)
         for o in state.map_objects
-        if not is_sent_by_code(o, find_source_kind(state, o))
+        if not is_sent_by_code(o, state.find_source_kind(o))
     ]
     return {"findings": [finding for finding in checked if finding is not None]}
 
@@ -207,9 +207,7 @@ def get_addresses(state: RunState) -> dict:
     """The addresses of the map objects to investigate, from one query, in place of the objects
     without them. A plan has none: it is found by its number. If Overpass fails, the objects
     are investigated without addresses: the map part of the report stays."""
-    chosen = [
-        o for o in choose_objects_to_investigate(state) if find_source_kind(state, o) == "map"
-    ]
+    chosen = [o for o in choose_objects_to_investigate(state) if state.find_source_kind(o) == "map"]
     try:
         addresses = map_objects.fetch_addresses(chosen, state.sources)
     except map_objects.MapError as error:
@@ -230,13 +228,6 @@ def choose_objects_to_investigate(state: RunState) -> list[MapObject]:
     return sorted(chosen, key=lambda o: o.distance_from_property_m)
 
 
-def find_source_kind(state: RunState, map_object: MapObject) -> ObjectSourceKind:
-    """The kind of the source that the object comes from, by its source ID."""
-    [kind] = [source.kind for source in state.sources if source.id == map_object.source_id]
-    assert kind in ("map", "plans")  # what get_map_objects and get_plans give
-    return kind
-
-
 def is_sent_by_code(map_object: MapObject, source_kind: ObjectSourceKind) -> bool:
     """Every plan and every industrial object goes to investigation, even with a name and
     complete data, and so does any object that is proposed or under construction; triage
@@ -254,7 +245,7 @@ def send_each_object_to_investigation(state: RunState) -> list[Send] | str:
     return [
         Send(
             "investigate_object",
-            ObjectToInvestigate(map_object=o, source_kind=find_source_kind(state, o)),
+            ObjectToInvestigate(map_object=o, source_kind=state.find_source_kind(o)),
         )
         for o in chosen
     ]

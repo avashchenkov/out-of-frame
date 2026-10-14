@@ -35,6 +35,7 @@ def write_report(state: RunState, date: dt.date) -> str:
     )
     findings = {finding.map_object_id: finding for finding in state.findings}
     known = {map_object.id for map_object in state.map_objects}
+    plans = {o.id for o in state.map_objects if state.find_source_kind(o) == "plans"}
     wrong: list[str] = []
     missing: list[str] = []
     for _ in range(REPORT_ATTEMPTS):
@@ -43,6 +44,7 @@ def write_report(state: RunState, date: dt.date) -> str:
             map_objects=state.map_objects,
             findings=findings,
             failures=state.failures,
+            plans=plans,
             wrong_citations=wrong,
             missing_objects=missing,
         )

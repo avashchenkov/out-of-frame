@@ -196,3 +196,9 @@ class RunState(Record):
     findings: Annotated[list[Finding], operator.add] = []
     failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
     report: str | None = None  # the model's draft, then the report with its references filled in
+
+    def find_source_kind(self, map_object: MapObject) -> ObjectSourceKind:
+        """The kind of the source that the object comes from, by its source ID."""
+        [kind] = [source.kind for source in self.sources if source.id == map_object.source_id]
+        assert kind in ("map", "plans")  # what the map and the plans give
+        return kind

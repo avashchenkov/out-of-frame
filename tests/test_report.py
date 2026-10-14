@@ -68,6 +68,21 @@ def write(monkeypatch, state=STATE, *drafts):
     return fill_references(write_report(state, DATE), state), writer
 
 
+def test_a_plan_is_marked_by_its_source_alone(monkeypatch):
+    plans = Source(id="bplan-wfs-1", kind="plans", request="", url="", content="")
+    fields = {"planname": "VIII-B6", "bp_rechtsstand": "In Kraft getreten", "category": "industry"}
+    plan = SITE.model_copy(update={"id": "obj-2", "details": fields, "source_id": plans.id})
+    site = SITE.model_copy(update={"id": "obj-3", "details": fields})  # the same data, from the map
+    state = STATE.model_copy(
+        update={"sources": [*STATE.sources, plans], "map_objects": [plan, site], "findings": []}
+    )
+    _, writer = write(monkeypatch, state)
+    system, task = writer.requests[0]
+    assert "[obj-2] An object 118 m from the property, a development plan. Its map" in task.content
+    assert "[obj-3] An object 118 m from the property. Its map" in task.content
+    assert "unknown whether building has started" in system.content
+
+
 def test_the_model_writes_a_draft_that_cites_object_ids(monkeypatch):
     monkeypatch.setattr(report, "build_report_model", lambda: FakeWriter("A site [osm-way-1]."))
     assert write_report(STATE, DATE) == "A site [osm-way-1]."

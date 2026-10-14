@@ -350,7 +350,7 @@ message is the input of the run and goes straight into `messages`.
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects`, and the kind of the entry of `sources` that its `source_id` names | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs and the objects left out (code) | `report` |
+| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; code reads the kind of the `sources` entry that each object's `source_id` names, which marks plans; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs and the objects left out (code) | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys` | `report` |
 
 ### The investigation subgraph
