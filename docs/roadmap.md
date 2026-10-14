@@ -97,7 +97,7 @@ calibration.
       reason to ask, and resuming the run.
    2. ✅ I2 in an input loop suite on recorded Nominatim responses; live runs from a listing and
       from an ambiguous address, and the person reads one conversation.
-8. **Development plans.** Add the B-Plan WFS branch and feed its objects into the existing
+8. ✅ **Development plans.** Add the B-Plan WFS branch and feed its objects into the existing
    investigation. Check E4 with no commute destinations, plus code tests for filtering,
    distances, limits and source failure. The report must distinguish a plan's legal status
    from evidence about whether building has started, including when that status is unknown.
@@ -107,7 +107,7 @@ calibration.
       distance to the nearest edge, the nearest N, one object per plan with its legal status
       and content, and a plan source failure. Code tests on a recorded WFS response.
    2. ✅ The investigation of a plan: what the plan allows, and whether building has started.
-   3. The report: a plan's legal status apart from whether building has started. A live run
+   3. ✅ The report: a plan's legal status apart from whether building has started. A live run
       at an E4 candidate address, and the person reads one report.
 9. **Commute.** Add Transitous journeys there and back. Test duration calculation, no route
    and unavailable outcomes; run the end-to-end cases with one and two destinations. The
@@ -133,7 +133,10 @@ calibration.
     or status, such as an Impressum with an address only, or cite the map though a page it read
     settles the status, so that a running S-Bahn line reads as "unknown whether in use".
     From step 7: the report can still call an object of type other harmless, such as "its type
-    alone does not show any effect" for a sewage pumping station. From step 8: E4's label.
+    alone does not show any effect" for a sewage pumping station. From step 8: E4's label, at
+    Teutonenstraße 10, 12524 Berlin: plan XV-25-1, in procedure; the district's press release of
+    2026-08-06 names it and an unused plot at Germanenstraße 2/6 for housing,
+    https://www.berlin.de/ba-treptow-koepenick/aktuelles/pressemitteilungen/2026/pressemitteilung.1700019.php.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.
