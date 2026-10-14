@@ -211,7 +211,7 @@ def get_addresses(state: RunState) -> dict:
         o for o in choose_objects_to_investigate(state) if find_source_kind(state, o) == "map"
     ]
     try:
-        addresses = map_objects.fetch_addresses(chosen)
+        addresses = map_objects.fetch_addresses(chosen, state.sources)
     except map_objects.MapError as error:
         log.warning("the addresses failed, so the objects are investigated without them: %s", error)
         return {}

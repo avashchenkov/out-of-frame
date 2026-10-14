@@ -123,28 +123,45 @@ def find_stage(tags: dict[str, str]) -> str:
     return next((stage for stage in stages if stage in ("construction", "proposed")), "built")
 
 
-def fetch_addresses(objects: list[MapObject]) -> dict[str, list[str]]:
+def fetch_addresses(objects: list[MapObject], sources: list[Source]) -> dict[str, list[str]]:
     """The street addresses of the buildings inside each object's area, by which an unnamed
-    object can be found on the web, by the object's ID, from one query. A single point, a road
-    and a railway have none, so they are not asked for."""
-    areas = [
-        map_object
-        for map_object in objects
-        if map_object.id.startswith(("osm-way-", "osm-relation-"))  # see build_map_object
-        and not {"highway", "railway"} & map_object.details.keys()
-    ]
+    object can be found on the web, by the object's ID, from one query. Each object must come
+    from a map response: the query names each area by its element there. A single point, a
+    road and a railway have none, so they are not asked for."""
+    elements = find_elements(objects, sources)
+    areas = [(o, e) for o, e in zip(objects, elements, strict=True) if can_contain_buildings(e)]
     if not areas:
         return {}
     query = "[out:json][timeout:90];"
-    for map_object in areas:
-        _, osm_type, osm_id = map_object.id.split("-")
-        query += f'{osm_type}({osm_id});map_to_area->.a;nwr(area.a)["addr:housenumber"];'
+    for _, element in areas:
+        query += f"{element['type']}({element['id']});map_to_area->.a;"
+        query += 'nwr(area.a)["addr:housenumber"];'
         query += "out count;out tags;"  # the count marks where an object's addresses start
     groups = split_by_count(call_overpass(query))
     return {
-        map_object.id: sorted({format_address(element["tags"]) for element in elements})
-        for map_object, elements in zip(areas, groups, strict=True)
+        map_object.id: sorted({format_address(found["tags"]) for found in group})
+        for (map_object, _), group in zip(areas, groups, strict=True)
     }
+
+
+def find_elements(objects: list[MapObject], sources: list[Source]) -> list[dict]:
+    """Each object's own element, from the map response that its source ID names: the element
+    with its OSM type and ID, as Overpass gave it."""
+    wanted = {map_object.source_id for map_object in objects}
+    by_id = {
+        source.id: {
+            build_id(element): element for element in json.loads(source.content)["elements"]
+        }
+        for source in sources
+        if source.id in wanted
+    }
+    return [by_id[map_object.source_id][map_object.id] for map_object in objects]
+
+
+def can_contain_buildings(element: dict) -> bool:
+    """A way or a relation that is not a road or a railway, such as a site's outline."""
+    tags = element.get("tags", {})
+    return element["type"] in ("way", "relation") and not {"highway", "railway"} & tags.keys()
 
 
 def split_by_count(response: dict) -> list[list[dict]]:
@@ -171,7 +188,7 @@ def build_map_object(
 ) -> MapObject:
     tags = element.get("tags", {})
     return MapObject(
-        id=f"osm-{element['type']}-{element['id']}",
+        id=build_id(element),
         name=tags.get("name"),
         details=tags | {"category": category},
         addresses=[],
@@ -179,6 +196,11 @@ def build_map_object(
         distance_from_property_m=round(measure_distance_m(origin, element)),
         source_id=source_id,
     )
+
+
+def build_id(element: dict) -> str:
+    """The ID of the object that the element makes, in the run state, such as osm-way-1."""
+    return f"osm-{element['type']}-{element['id']}"
 
 
 def find_centre(element: dict) -> Coordinates:

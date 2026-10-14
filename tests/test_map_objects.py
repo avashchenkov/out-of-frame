@@ -14,7 +14,7 @@ from out_of_frame.map_objects import (
     fetch_map_objects,
     group_into_objects,
 )
-from out_of_frame.state import Coordinates, MapObject
+from out_of_frame.state import Coordinates, MapObject, Source
 
 FREIHEIT_22 = Coordinates(lat=52.5292863, lon=13.2357896)
 
@@ -236,10 +236,10 @@ def test_a_point_is_measured_to_itself():
 
 def test_the_addresses_inside_every_area_come_from_one_more_query(monkeypatch):
     fake_overpass(monkeypatch, read_fixture("freiheit-22.json"))
-    objects, _ = fetch_map_objects(FREIHEIT_22)
+    objects, source = fetch_map_objects(FREIHEIT_22)
     industry = [o for o in objects if o.details["category"] == "industry"]
     queries = fake_overpass(monkeypatch, read_fixture("freiheit-22-addresses.json"))
-    addresses = fetch_addresses(industry)
+    addresses = fetch_addresses(industry, [source])
     [query] = queries
     assert addresses["osm-way-23156479"] == [
         "Klärwerkstraße 1, 13597 Berlin",
@@ -257,7 +257,31 @@ def test_a_point_a_road_and_a_railway_have_no_addresses_and_need_no_query(monkey
     node = {"type": "node", "id": 7, "lat": FREIHEIT_22.lat, "lon": FREIHEIT_22.lon}
     point = map_objects.build_map_object(node, "industry", FREIHEIT_22, "overpass-1")
     lines = [element(1, 50, highway="motorway"), element(2, 60, railway="rail")]
-    assert fetch_addresses([point, *lines]) == {} and queries == []
+    ways = [
+        {"type": "way", "id": 1, "tags": {"highway": "motorway"}},
+        {"type": "way", "id": 2, "tags": {"railway": "rail"}},
+    ]
+    response = json.dumps({"elements": [node, *ways]})
+    source = Source(id="overpass-1", kind="map", request="", url="", content=response)
+    assert fetch_addresses([point, *lines], [source]) == {} and queries == []
+
+
+def test_a_relation_is_an_area_too(monkeypatch):
+    queries = fake_overpass(monkeypatch, {"elements": [{"type": "count", "id": 0}]})
+    site = {"type": "relation", "id": 9, "tags": {"landuse": "industrial"}}
+    response = json.dumps({"elements": [site]})
+    source = Source(id="overpass-1", kind="map", request="", url="", content=response)
+    found = MapObject(
+        id=map_objects.build_id(site),
+        name=None,
+        details=site["tags"] | {"category": "industry"},
+        addresses=[],
+        coordinates=FREIHEIT_22,
+        distance_from_property_m=50,
+        source_id=source.id,
+    )
+    assert fetch_addresses([found], [source]) == {found.id: []}
+    assert "relation(9);map_to_area" in queries[0]
 
 
 def test_a_missing_part_of_an_address_is_left_out():

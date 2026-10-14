@@ -106,7 +106,7 @@ calibration.
    1. ✅ The plans: the square around the circle, the plans outside the circle dropped, the
       distance to the nearest edge, the nearest N, one object per plan with its legal status
       and content, and a plan source failure. Code tests on a recorded WFS response.
-   2. The investigation of a plan: what the plan allows, and whether building has started.
+   2. ✅ The investigation of a plan: what the plan allows, and whether building has started.
    3. The report: a plan's legal status apart from whether building has started. A live run
       at an E4 candidate address, and the person reads one report.
 9. **Commute.** Add Transitous journeys there and back. Test duration calculation, no route
