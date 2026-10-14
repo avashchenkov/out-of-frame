@@ -11,7 +11,7 @@ Finding: unidentified.
 {% endif %}
 
 {% endfor %}
-{% if not map_objects and "map" not in failures %}
+{% if not map_objects and "map" not in failures and "plans" not in failures %}
 No object of the checked kinds was found near the property.
 {% endif %}
 {% if failures %}

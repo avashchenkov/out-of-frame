@@ -29,12 +29,14 @@ from out_of_frame.web_search import MeteredWebSearch, TavilyWebSearch, WebSearch
 # docs/architecture.md#failures. The model never writes these.
 FAILURE_NOTICES = {
     "map": "The map could not be loaded, so the report may be incomplete.",
+    "plans": "Development plans could not be loaded, so the report may be incomplete.",
     "web search": "Web search failed, so an object may stay unidentified.",
 }
 # What each step has done, so that the user sees a run that takes a minute move. Steps that
 # are not listed, such as filling in the references, are not told.
 PROGRESS = {
     "get_map_objects": "Fetched the map.",
+    "get_plans": "Fetched the development plans.",
     "triage_objects": "Checked the objects that the map makes clear.",
     "investigate_object": "Investigated an object on the web.",
     "write_report": "Wrote the report.",
@@ -44,7 +46,7 @@ PROGRESS = {
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Check what lies around a Berlin address: industry, wastewater plants, "
-        "airports, major roads and railways."
+        "airports, major roads and railways, and development plans."
     )
     parser.add_argument(
         "message",
@@ -95,17 +97,22 @@ def run(message: str, web_search: MeteredWebSearch) -> RunState:
         context = Context(dt.date.today(), web_search)  # today's, after an answer days later
         for chunk in graph.stream(command, config, context=context, stream_mode="updates"):
             for node, update in chunk.items():
-                if not isinstance(update, dict):  # the question the run waits on, or no update
-                    continue
-                if node in PROGRESS:
-                    print(PROGRESS[node], file=sys.stderr)
-                for service in update.get("failures", []):
-                    print(FAILURE_NOTICES[service], file=sys.stderr)
+                tell_progress(node, update)
         question = agent.find_question(graph, config)
         if question is None:
             return RunState.model_validate(graph.get_state(config).values)
         print(question, file=sys.stderr)
         command = Command(resume=read_answer())
+
+
+def tell_progress(node: str, update) -> None:
+    """What the step has done and each service it found failed, on stderr."""
+    if not isinstance(update, dict):  # the question the run waits on, or no update
+        return
+    if node in PROGRESS and set(update) != {"failures"}:  # not "fetched" if it failed
+        print(PROGRESS[node], file=sys.stderr)
+    for service in update.get("failures", []):
+        print(FAILURE_NOTICES[service], file=sys.stderr)
 
 
 def read_answer() -> str:

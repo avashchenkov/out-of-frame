@@ -156,12 +156,13 @@ def test_with_no_objects_the_report_has_no_sources(monkeypatch):
     assert "Sources:" not in text and text.endswith(report.OSM_CREDIT)
 
 
-def test_a_map_failure_is_not_told_as_nothing_found(monkeypatch):
-    state = RunState(property=Address(text="Freiheit 22, 13597 Berlin"), failures=["map"])
+@pytest.mark.parametrize("service", ["map", "plans"])
+def test_a_source_failure_is_not_told_as_nothing_found(monkeypatch, service):
+    state = RunState(property=Address(text="Freiheit 22, 13597 Berlin"), failures=[service])
     _, writer = write(monkeypatch, state)
     task = writer.requests[0][-1].content
     assert "was found" not in task
-    assert "so their part of the report is missing: map." in task
+    assert f"so their part of the report is missing: {service}." in task
 
 
 @pytest.mark.parametrize(

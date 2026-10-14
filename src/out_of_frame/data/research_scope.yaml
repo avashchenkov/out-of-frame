@@ -13,8 +13,8 @@
 # evidence settles what the object is and no listed type fits. The agent and the eval labels
 # use the same lists. Types are coarse: one per kind of impact that matters to a buyer, with
 # clear borders between them. Each type ends with how such an object can affect people
-# nearby; the report takes the effect from that sentence alone.
-# TODO: in step 8, the types and statuses of planned objects, with the tasks that need them.
+# nearby; the report takes the effect from that sentence alone. A plan uses the same lists:
+# its type is what the plan allows, and its status says whether building has started.
 
 finding_statuses:
   operating: In use now.

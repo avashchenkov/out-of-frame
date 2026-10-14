@@ -10,9 +10,10 @@ from langchain_core.runnables import RunnableLambda
 from evals import judge
 from evals.graders import judges
 from evals.graders.judges import InterpretationGrade, NoVerdictGrade, SupportGrade
-from out_of_frame import geocoding, report
+from out_of_frame import cli, geocoding, report
 from out_of_frame.config import REPORT_ATTEMPTS
 from out_of_frame.geocoding import GeocodingError
+from out_of_frame.plans import PlansError
 from out_of_frame.web_search import MeteredWebSearch, WebSearchAccessError
 from tests.evals.test_judges import INTERPRETED, SUPPORTED, answer
 from tests.test_agent import (
@@ -45,9 +46,9 @@ def stub_the_judges(monkeypatch, answer_to=lambda schema: answer(ANSWERS[schema]
     monkeypatch.setattr(judges, "build_judge_model", build)
 
 
-def run_the_agent(monkeypatch, web_search=None, writer=None) -> dict:
+def run_the_agent(monkeypatch, web_search=None, writer=None, wfs=None) -> dict:
     """A run whose draft, by default, has one statement for each of its 11 objects."""
-    stub_the_sources(monkeypatch)
+    stub_the_sources(monkeypatch, wfs=wfs)
     stub_the_models(monkeypatch)
     writer = writer or FakeWriter()
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
@@ -64,6 +65,13 @@ def test_a_run_is_saved_with_its_draft_and_the_investigations_steps(monkeypatch)
     assert any("write_finding" in step["update"] for step in steps)  # inside the investigation
     assert saved["tool_calls"] == 5 and saved["prices_as_of"]  # a search in each of five
     json.loads(judge.save(saved, "run").read_text(encoding="utf-8"))
+
+
+def test_a_failed_source_is_told_and_not_as_fetched(monkeypatch, capsys):
+    run_the_agent(monkeypatch, wfs=PlansError("busy"))
+    err = capsys.readouterr().err
+    assert cli.FAILURE_NOTICES["plans"] in err and cli.PROGRESS["get_plans"] not in err
+    assert cli.PROGRESS["get_map_objects"] in err
 
 
 def test_a_run_that_stops_is_saved_with_its_error(monkeypatch):
@@ -94,7 +102,7 @@ def test_a_run_that_stops_late_is_saved_with_its_last_state(monkeypatch):
     assert "ReportError" in saved["error"] and saved["draft"] is None
     findings = saved["state"]["findings"]  # five investigated, six settled by triage
     assert len(findings) == 11 and {found["outcome"] for found in findings} == {"identified"}
-    assert saved["tool_calls"] == 5 and len(saved["state"]["sources"]) == 7  # address, map, 5 pages
+    assert saved["tool_calls"] == 5 and len(saved["state"]["sources"]) == 8  # 3 responses, 5 pages
 
 
 class StoppingWebSearch:

@@ -125,12 +125,12 @@ def find_stage(tags: dict[str, str]) -> str:
 
 def fetch_addresses(objects: list[MapObject]) -> dict[str, list[str]]:
     """The street addresses of the buildings inside each object's area, by which an unnamed
-    object can be found on the web, by the object's ID, from one query. A single point, a road
-    and a railway have no area, so they have none and are not asked for."""
+    object can be found on the web, by the object's ID, from one query. A single point, a road,
+    a railway and a plan have none, so they are not asked for: a plan is found by its name."""
     areas = [
         map_object
         for map_object in objects
-        if not map_object.id.startswith("osm-node-")  # see build_map_object
+        if map_object.id.startswith(("osm-way-", "osm-relation-"))  # see build_map_object
         and not {"highway", "railway"} & map_object.details.keys()
     ]
     if not areas:

@@ -9,7 +9,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from out_of_frame import research_scope
-from out_of_frame.config import MAP_OBJECTS_PER_CATEGORY, MODEL, REPORT_ATTEMPTS
+from out_of_frame.config import MAP_OBJECTS_PER_CATEGORY, MODEL, PLANS, REPORT_ATTEMPTS
 from out_of_frame.finding import render
 from out_of_frame.state import RunState, Source
 
@@ -109,14 +109,17 @@ def fill_references(draft: str, state: RunState) -> str:
 
 def describe_scope() -> str:
     """Which kinds of objects the report covers, from the research scope, so that the model
-    never has to say it. TODO: plans in step 8."""
+    never has to say it."""
     categories = [c for c in research_scope.load().categories if c.source == "overpass"]
     kinds = [c.name[0].lower() + c.name[1:] for c in categories]
     return (
         f"The report covers the nearest {MAP_OBJECTS_PER_CATEGORY} objects of each kind it "
-        f"checks: {'; '.join(kinds)}."
+        f"checks: {'; '.join(kinds)}; and the nearest {PLANS} development plans in force or "
+        "in procedure."
     )
 
 
 def name_source(source: Source) -> str:
-    return source.url if source.kind == "web search" else "OpenStreetMap"
+    """A web page by its URL, a map or plan response by the name of its source."""
+    names = {"map": "OpenStreetMap", "plans": "Berlin B-Plan WFS"}
+    return source.url if source.kind == "web search" else names[source.kind]

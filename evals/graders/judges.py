@@ -191,8 +191,9 @@ def combine(answers: list[Answer]) -> Verdict:
 
 
 def is_nothing_found(state: RunState) -> bool:
-    """Whether the map answered and no object of a checked kind lies in its radius."""
-    return not state.map_objects and "map" not in state.failures
+    """Whether the map and the plans answered and no object of a checked kind lies in its
+    radius."""
+    return not state.map_objects and not {"map", "plans"} & set(state.failures)
 
 
 def ask[T: Record](schema: type[T], prompt: str) -> T:

@@ -7,6 +7,7 @@ import pytest
 
 from out_of_frame import cli, finding, report
 from out_of_frame.map_objects import MapError
+from out_of_frame.plans import PlansError
 from tests.test_agent import (
     FREIHEIT_22,
     stub_the_conversation,
@@ -56,10 +57,13 @@ class ReportWriterThatSeesStderr(FakeWriter):
         return super().invoke(request)
 
 
-@pytest.mark.parametrize("service", ["map", "web search"])
+@pytest.mark.parametrize("service", ["map", "plans", "web search"])
 def test_a_failed_service_is_told_before_the_report_is_written(monkeypatch, capsys, service):
     if service == "map":
         stub_the_sources(monkeypatch, overpass=[MapError("busy")])
+    elif service == "plans":
+        stub_the_sources(monkeypatch, wfs=PlansError("busy"))
+        stub_the_models(monkeypatch)
     else:
         stub_the_sources(monkeypatch)
         stub_the_models(monkeypatch)
@@ -68,6 +72,9 @@ def test_a_failed_service_is_told_before_the_report_is_written(monkeypatch, caps
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
     run_cli(monkeypatch)
     assert cli.FAILURE_NOTICES[service] in writer.stderr_before
+    step = {"map": "get_map_objects", "plans": "get_plans"}.get(service)
+    if step:  # a source that failed is not told as fetched
+        assert cli.PROGRESS[step] not in writer.stderr_before
     assert capsys.readouterr().out.startswith("# What lies around")
 
 

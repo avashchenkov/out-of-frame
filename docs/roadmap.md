@@ -101,6 +101,14 @@ calibration.
    investigation. Check E4 with no commute destinations, plus code tests for filtering,
    distances, limits and source failure. The report must distinguish a plan's legal status
    from evidence about whether building has started, including when that status is unknown.
+   A plan's finding uses the same types and statuses as a map object's. To save time, as in
+   step 6, E4's label moves to step 10, and a person reads one live report. In this order:
+   1. The plans: the square around the circle, the plans outside the circle dropped, the
+      distance to the nearest edge, the nearest N, one object per plan with its legal status
+      and content, and a plan source failure. Code tests on a recorded WFS response.
+   2. The investigation of a plan: what the plan allows, and whether building has started.
+   3. The report: a plan's legal status apart from whether building has started. A live run
+      at an E4 candidate address, and the person reads one report.
 9. **Commute.** Add Transitous journeys there and back. Test duration calculation, no route
    and unavailable outcomes; run the end-to-end cases with one and two destinations. The
    report must give the right destination, direction and duration, or the missing-route reason.
@@ -124,6 +132,8 @@ calibration.
     there. From the live runs of step 6.5: a finding can cite a page that does not back its type
     or status, such as an Impressum with an address only, or cite the map though a page it read
     settles the status, so that a running S-Bahn line reads as "unknown whether in use".
+    From step 7: the report can still call an object of type other harmless, such as "its type
+    alone does not show any effect" for a sewage pumping station. From step 8: E4's label.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.

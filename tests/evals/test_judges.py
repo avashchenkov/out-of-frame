@@ -290,3 +290,11 @@ def test_a_no_fails_and_an_unknown_leaves_the_verdict_unknown(answers, verdict):
 def test_the_interpretation_verdict_comes_from_all_four_answers():
     no = QuestionAnswer(reason="It says nothing was found.", answer="no")
     assert INTERPRETED.model_copy(update={"tells_failures": no}).verdict == "fail"
+
+
+@pytest.mark.parametrize(
+    "failures, nothing_found", [([], True), (["map"], False), (["plans"], False)]
+)
+def test_nothing_is_found_only_when_the_map_and_the_plans_answered(failures, nothing_found):
+    state = RunState(property=Address(text="Freiheit 22, 13597 Berlin"), failures=failures)
+    assert judges.is_nothing_found(state) == nothing_found

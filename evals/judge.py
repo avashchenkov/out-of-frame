@@ -74,8 +74,7 @@ def run_agent(address: str, date: dt.date, web_search: MeteredWebSearch) -> dict
                 if graph:
                     continue
                 for node, update in chunk.items():
-                    if node in cli.PROGRESS:
-                        print(cli.PROGRESS[node], file=sys.stderr)
+                    cli.tell_progress(node, update)
                     if node == "write_report":
                         saved["draft"] = update["report"]
             question = agent.find_question(agent.build_graph(), config)

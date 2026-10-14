@@ -47,7 +47,17 @@ MAP_OBJECTS_PER_CATEGORY = int(os.environ.get("OUT_OF_FRAME_MAP_OBJECTS_PER_CATE
 # the run would wait for ever.
 INVESTIGATIONS_AT_ONCE = int(os.environ.get("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE", "3"))
 
-# Tries of one call to Nominatim or Overpass that fails for a while, such as on a timeout.
+# The public Berlin B-Plan WFS, which code asks for the development plans around the property.
+BPLAN_WFS_URL = os.environ.get(
+    "OUT_OF_FRAME_BPLAN_WFS_URL", "https://gdi.berlin.de/services/wfs/bplan"
+)
+
+# The plans kept, nearest first. Every one of them is investigated, so this is also the cap of
+# plan investigations, see docs/architecture.md#one-run.
+PLANS = int(os.environ.get("OUT_OF_FRAME_PLANS", "5"))
+
+# Tries of one call to Nominatim, Overpass or the B-Plan WFS that fails for a while, such as on
+# a timeout.
 SOURCE_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_SOURCE_ATTEMPTS", "3"))
 
 # Drafts of one report that cites an ID it was not given or leaves out an object, before the

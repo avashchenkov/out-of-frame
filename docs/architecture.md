@@ -326,8 +326,9 @@ in the research scope.
 The lists of finding types and statuses are in
 [research_scope.yaml](../src/out_of_frame/data/research_scope.yaml). Each type also says how
 such an object can affect people nearby, and the report takes the effect from it alone. The
-agent and the evals use the same lists; the agent never sees the truth labels. TODO: in step
-8, the types and statuses of planned objects, and N for plans, with their eval tasks.
+agent and the evals use the same lists; the agent never sees the truth labels. A plan uses
+the same lists: its type is what the plan allows, and its status says whether building has
+started. The plan's legal status, in procedure or in force, stays in its own data.
 
 ### What each step reads and writes
 

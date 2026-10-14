@@ -152,7 +152,7 @@ class InvestigationState(Record):
     web_search_failed: bool = False  # the finding is then unidentified; written states omit it
 
 
-type Service = Literal["map", "web search"]  # TODO: plans and transit, with their steps
+type Service = Literal["map", "plans", "web search"]  # TODO: transit, with its step (step 9)
 
 
 def add_new(old: list, new: list) -> list:

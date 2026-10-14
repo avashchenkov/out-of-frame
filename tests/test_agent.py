@@ -16,11 +16,12 @@ from out_of_frame import (
     geocoding,
     investigation,
     map_objects,
+    plans,
     prompt_injection,
     report,
 )
 from out_of_frame.agent import UnansweredQuestionError
-from out_of_frame.config import NOMINATIM_URL, OVERPASS_URL
+from out_of_frame.config import BPLAN_WFS_URL, NOMINATIM_URL, OVERPASS_URL
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.map_objects import MapError
 from out_of_frame.state import (
@@ -47,6 +48,10 @@ TRIAGE_CLEAR = {
 }
 
 DATE = dt.date(2026, 10, 10)
+NO_PLANS = {
+    layer: {"type": "FeatureCollection", "features": []}
+    for layer in ["bplan:a_bp_iv", "bplan:b_bp_fs"]
+}
 FREIHEIT_22 = "Freiheit 22, 13597 Berlin"
 
 
@@ -54,11 +59,19 @@ def read_fixture(path: str):
     return json.loads((FIXTURES / path).read_text(encoding="utf-8"))
 
 
-def stub_the_sources(monkeypatch, nominatim=None, overpass=None):
+def stub_the_sources(monkeypatch, nominatim=None, overpass=None, wfs=None):
     """Nominatim answers from a recorded response for each address it knows, by default only
     Freiheit 22, and with no match for any other. Overpass answers in turn: by default, the
     map objects around Freiheit 22, then the addresses inside the five industrial ones; an
-    answer that is an exception is raised."""
+    answer that is an exception is raised. The B-Plan WFS answers each layer from wfs, by
+    default with no plan, or raises wfs if it is an exception."""
+
+    def call_wfs(layer, bbox):
+        if isinstance(wfs, Exception):
+            raise wfs
+        return (wfs or NO_PLANS)[layer]
+
+    monkeypatch.setattr(plans, "call_wfs", call_wfs)
     recorded = nominatim or {FREIHEIT_22: "freiheit-22.json"}
 
     def call_nominatim(text):
@@ -155,7 +168,7 @@ def test_every_industrial_object_is_investigated_in_parallel(monkeypatch):
     assert {found.evidence_id for found in investigated} == {f"{id}/web-1" for id in INDUSTRY}
     assert {found.evidence_id for found in triaged} == {"overpass-1"}
     assert sorted(source.id for source in state.sources) == sorted(
-        ["nominatim-1", "overpass-1", *(f"{id}/web-1" for id in INDUSTRY)]
+        ["nominatim-1", "overpass-1", "bplan-wfs-1", *(f"{id}/web-1" for id in INDUSTRY)]
     )
     assert state.failures == []
     assert state.report is not None
@@ -218,6 +231,7 @@ def test_only_the_page_the_finding_cites_reaches_the_run_state_and_the_report(mo
     assert {source.url for source in state.sources} == {
         NOMINATIM_URL,
         OVERPASS_URL,
+        BPLAN_WFS_URL,
         "https://example.org",
     }
     assert state.report is not None and "example.com" not in state.report
@@ -300,6 +314,37 @@ def test_a_map_failure_is_recorded_and_the_run_goes_on(monkeypatch):
     assert state.report is not None  # which says that the map part is missing
 
 
+PLANS = [  # the five nearest plans around Freiheit 22, nearest first
+    "bplan-0508129",
+    "bplan-0508286",
+    "bplan-0500001VE",
+    "bplan-0508000B06",
+    "bplan-0508145",
+]
+
+
+def test_every_plan_is_investigated_without_triage_or_addresses(monkeypatch):
+    stub_the_sources(monkeypatch, wfs=read_fixture("bplan/freiheit-22.json"))
+    stub_the_models(monkeypatch)
+    triaged = stub_the_triage(monkeypatch, TRIAGE_CLEAR)
+    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    assert len(triaged) == 6  # the map objects that are not industry, as without plans
+    found = {finding.map_object_id: finding for finding in state.findings}
+    assert all(found[id].evidence_id == f"{id}/web-1" for id in PLANS)  # investigated
+    assert all(o.addresses == [] for o in state.map_objects if o.id in PLANS)
+    assert state.failures == [] and state.report is not None
+    assert "Berlin B-Plan WFS" in state.report  # the plans' own source
+
+
+def test_a_plans_failure_is_recorded_and_the_run_goes_on(monkeypatch):
+    stub_the_sources(monkeypatch, wfs=plans.PlansError("busy"))
+    stub_the_models(monkeypatch)
+    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    assert state.failures == ["plans"]
+    assert len(state.map_objects) == 11 and len(state.findings) == 11  # the map part stays
+    assert state.report is not None
+
+
 def test_without_their_addresses_the_objects_are_still_investigated(monkeypatch):
     stub_the_sources(
         monkeypatch, overpass=[read_fixture("overpass/freiheit-22.json"), MapError("busy")]
@@ -320,7 +365,11 @@ def test_a_web_search_failure_leaves_the_objects_unidentified(monkeypatch):
         Finding.unidentified(id) for id in sorted(INDUSTRY)
     ]
     assert state.failures == ["web search"]
-    assert [source.id for source in state.sources] == ["nominatim-1", "overpass-1"]
+    assert sorted(source.id for source in state.sources) == [
+        "bplan-wfs-1",
+        "nominatim-1",
+        "overpass-1",
+    ]
 
 
 def test_one_failed_investigation_leaves_the_others_their_findings(monkeypatch):
@@ -341,7 +390,7 @@ def test_one_failed_investigation_leaves_the_others_their_findings(monkeypatch):
     state = agent.run([FREIHEIT_22], DATE, FailingOnce([SNIPPET], fails=True))
     outcomes = sorted(found.outcome for found in state.findings if found.map_object_id in INDUSTRY)
     assert outcomes == ["identified"] * 4 + ["unidentified"]
-    assert state.failures == ["web search"] and len(state.sources) == 6  # address, map, 4 pages
+    assert state.failures == ["web search"] and len(state.sources) == 7  # 3 responses, 4 pages
 
 
 def test_with_fewer_than_two_investigations_at_once_the_graph_is_not_built(monkeypatch):
@@ -363,5 +412,9 @@ def test_with_no_object_to_investigate_the_report_is_still_written(monkeypatch):
     stub_the_models(monkeypatch)  # triage settles every object
     state = agent.run([FREIHEIT_22], DATE, FakeWebSearch())
     assert len(state.map_objects) == 6 and len(state.findings) == 6
-    assert [source.id for source in state.sources] == ["nominatim-1", "overpass-1"]
+    assert sorted(source.id for source in state.sources) == [
+        "bplan-wfs-1",
+        "nominatim-1",
+        "overpass-1",
+    ]
     assert state.report is not None

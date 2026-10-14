@@ -1,7 +1,7 @@
 """One run of the agent, from the user's first message to the report: the LangGraph graph of
 docs/architecture.md#one-run.
 
-TODO: B-Plans (step 8); journeys (step 9).
+TODO: a plan's own investigation and its part of the report (step 8); journeys (step 9).
 """
 
 import datetime as dt
@@ -22,6 +22,7 @@ from out_of_frame import (
     grounding,
     investigation,
     map_objects,
+    plans,
     report,
     triage,
 )
@@ -41,6 +42,10 @@ class ObjectToInvestigate(Record):
     map_object: MapObject
 
 
+# The steps that research starts with, in parallel, once the input is complete.
+RESEARCH_STARTS = ["get_map_objects", "get_plans"]
+
+
 class UnansweredQuestionError(Exception):
     """The agent asked a question after the user's replies had run out."""
 
@@ -58,7 +63,7 @@ def run(
     run's thread can read the state where the run stopped, even after an error."""
     graph, config = build_graph(), config or start_thread()
     command: RunState | Command = start(messages[0])
-    stop = ["get_map_objects"] if input_only else None
+    stop = RESEARCH_STARTS if input_only else None
     for reply in [*messages[1:], None]:
         graph.invoke(command, config, context=Context(date, web_search), interrupt_before=stop)
         question = find_question(graph, config)
@@ -98,6 +103,7 @@ def build_graph():
     builder.add_node(ask_for_missing)
     builder.add_node(wait_for_answer)
     builder.add_node(get_map_objects)
+    builder.add_node(get_plans)
     builder.add_node(triage_objects)
     builder.add_node(get_addresses)
     builder.add_node(investigate_object)
@@ -106,11 +112,11 @@ def build_graph():
     builder.add_edge(START, "extract_input")
     builder.add_edge("extract_input", "geocode_input")
     builder.add_conditional_edges(
-        "geocode_input", check_input, ["ask_for_missing", "get_map_objects"]
+        "geocode_input", check_input, ["ask_for_missing", *RESEARCH_STARTS]
     )
     builder.add_edge("ask_for_missing", "wait_for_answer")
     builder.add_edge("wait_for_answer", "extract_input")
-    builder.add_edge("get_map_objects", "triage_objects")
+    builder.add_edge(RESEARCH_STARTS, "triage_objects")  # once the map and the plans are in
     builder.add_edge("triage_objects", "get_addresses")
     builder.add_conditional_edges(
         "get_addresses", send_each_object_to_investigation, ["investigate_object", "write_report"]
@@ -144,9 +150,9 @@ def geocode_input(state: RunState) -> dict:
     return {"property": address, "sources": [source]}
 
 
-def check_input(state: RunState) -> str:
+def check_input(state: RunState) -> str | list[str]:
     """Research starts once nothing is missing or unclear in the input; code decides it."""
-    return "ask_for_missing" if conversation.find_missing(state) else "get_map_objects"
+    return "ask_for_missing" if conversation.find_missing(state) else RESEARCH_STARTS
 
 
 def ask_for_missing(state: RunState) -> dict:
@@ -170,6 +176,18 @@ def get_map_objects(state: RunState) -> dict:
     except map_objects.MapError as error:
         log.warning("the map failed: %s", error)
         return {"failures": ["map"]}
+    return {"map_objects": found, "sources": [source]}
+
+
+def get_plans(state: RunState) -> dict:
+    """The nearest development plans around the property. If the WFS fails, the plans part of
+    the report is missing."""
+    assert state.property is not None and state.property.coordinates is not None  # see check_input
+    try:
+        found, source = plans.fetch_plans(state.property.coordinates)
+    except plans.PlansError as error:
+        log.warning("the plans failed: %s", error)
+        return {"failures": ["plans"]}
     return {"map_objects": found, "sources": [source]}
 
 
@@ -199,17 +217,20 @@ def get_addresses(state: RunState) -> dict:
 def choose_objects_to_investigate(state: RunState) -> list[MapObject]:
     """Every object without a finding yet, nearest first: those that code sends to
     investigation and those that triage could not settle. At most five per category, as the
-    map keeps no more."""
+    map and the plans keep no more."""
     settled = {finding.map_object_id for finding in state.findings}
     chosen = [o for o in state.map_objects if o.id not in settled]
     return sorted(chosen, key=lambda o: o.distance_from_property_m)
 
 
 def is_sent_by_code(map_object: MapObject) -> bool:
-    """Every industrial object goes to investigation, even with a name and complete tags, and
-    so does any object that is proposed or under construction; triage checks the others."""
+    """Every industrial object and every plan goes to investigation, even with a name and
+    complete data, and so does any object that is proposed or under construction; triage
+    checks the others."""
     tags = map_object.details
-    return tags["category"] == "industry" or map_objects.find_stage(tags) != "built"
+    if tags["category"] in ("industry", "planned_objects"):
+        return True
+    return map_objects.find_stage(tags) != "built"
 
 
 def send_each_object_to_investigation(state: RunState) -> list[Send] | str:
