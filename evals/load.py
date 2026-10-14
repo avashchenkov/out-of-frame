@@ -12,6 +12,7 @@ import yaml
 from pydantic import ValidationError, model_validator
 
 from evals.graders.finding import Expected
+from evals.graders.input_loop import ExpectedDestination, ExpectedInput
 from out_of_frame import research_scope
 from out_of_frame.config import TOOL_CAP
 from out_of_frame.record import Record
@@ -64,14 +65,16 @@ class Label(Record):
 
 class TaskExpected(Record):
     """The label of a real object, the result that follows a written state, whether the
-    injection check should flag a page, or where the input loop should find the property."""
+    injection check should flag a page, or how the input loop should end: the property and
+    the places the user travels to."""
 
     label: Label | None = None
     outcome: Literal["identified", "unidentified"] | None = None
     identified_type: str | None = None
     status: str | None = None
     flagged: bool | None = None
-    property: Coordinates | None = None  # TODO: the destinations, with I1 and I3 (step 9)
+    property: Coordinates | None = None
+    destinations: list[ExpectedDestination] | None = None  # empty if the user travels nowhere
 
     @model_validator(mode="after")
     def check_one_kind(self) -> Self:
@@ -83,15 +86,18 @@ class TaskExpected(Record):
         kinds = [self.label is not None, bool(written), self.flagged is not None]
         if sum(kinds) + (self.property is not None) != 1:
             raise ValueError(
-                "give a label, or outcome, identified_type and status, or flagged, or property"
+                "give a label, or outcome, identified_type and status, or flagged, or property "
+                "and destinations"
             )
         if written and len(written) < 3:
             raise ValueError("give outcome, identified_type and status together")
+        if (self.property is None) != (self.destinations is None):
+            raise ValueError("give property and destinations together")
         return self
 
-    def result(self) -> Expected | bool | Coordinates:
-        if self.property is not None:
-            return self.property
+    def result(self) -> Expected | bool | ExpectedInput:
+        if self.property is not None and self.destinations is not None:
+            return ExpectedInput(property=self.property, destinations=self.destinations)
         if self.flagged is not None:
             return self.flagged
         if self.label:
@@ -125,9 +131,9 @@ class Task:
     suite: str
     date: dt.date | None  # None: the date of the trial
     inputs: Inputs
-    # bool: whether the injection check should flag the page; Coordinates: where the input loop
-    # should find the property; None for a report task, whose graders read only its state
-    expected: Expected | bool | Coordinates | None
+    # bool: whether the injection check should flag the page; ExpectedInput: how the input
+    # loop should end; None for a report task, whose graders read only its state
+    expected: Expected | bool | ExpectedInput | None
 
 
 def load_all() -> list[Task]:
@@ -185,8 +191,8 @@ def load(path: Path) -> Task:
     expected = task.expected.result() if task.expected else None
     if isinstance(expected, bool) != (task.suite == "injection check"):
         fail("an injection check task, and only it, expects flagged")
-    if isinstance(expected, Coordinates) != (task.suite == "input loop"):
-        fail("an input loop task, and only it, expects the property")
+    if isinstance(expected, ExpectedInput) != (task.suite == "input loop"):
+        fail("an input loop task, and only it, expects the property and the destinations")
     if isinstance(expected, Expected):
         check_expected(expected, fail)
     if task.date == "today" and task.suite != "live investigation":

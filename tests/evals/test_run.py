@@ -11,6 +11,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
 from evals.graders.finding import Expected
+from evals.graders.input_loop import ExpectedDestination, ExpectedInput
 from evals.load import TASKS, Task, load
 from evals.run import (
     NoWebSearch,
@@ -32,6 +33,7 @@ from out_of_frame.config import MODEL
 from out_of_frame.state import (
     Address,
     Coordinates,
+    Destination,
     Finding,
     InvestigationState,
     MapObject,
@@ -353,17 +355,24 @@ def test_a_part_runs_only_the_tasks_of_its_suites():
 STAAKEN = "Hauptstraße 1, 13591 Berlin"
 # The Staaken building in the recorded responses; tests never read a task's expected result.
 STAAKEN_BUILDING = Coordinates(lat=52.5288998, lon=13.1443516)
+# I2's first message, which the stubbed extract call does not take whole for the address.
+I2_FIRST = "Hauptstraße 1, Berlin. I work from home and travel nowhere regularly."
 
 
 def run_i2(monkeypatch, reply_address: str | None) -> Trial:
     """I2's input loop, with the extract call taking its reply for reply_address."""
-    stub_the_conversation(monkeypatch, {"The one in Staaken, please.": reply_address})
+    stub_the_conversation(
+        monkeypatch,
+        {I2_FIRST: "Hauptstraße 1, Berlin", "The one in Staaken, please.": reply_address},
+    )
     inputs = load(TASKS / "i2.yaml").inputs
     return run_input_loop(inputs, dt.date(2026, 10, 14), NoWebSearch())
 
 
 def test_the_input_loop_asks_resolves_the_answer_and_stops_before_research(monkeypatch):
-    asked = stub_the_conversation(monkeypatch, {"The one in Staaken, please.": STAAKEN})
+    asked = stub_the_conversation(
+        monkeypatch, {I2_FIRST: "Hauptstraße 1, Berlin", "The one in Staaken, please.": STAAKEN}
+    )
     trial = run_input_loop(load(TASKS / "i2.yaml").inputs, dt.date(2026, 10, 14), NoWebSearch())
     assert isinstance(trial.outcome, RunState) and trial.outcome.property is not None
     assert trial.outcome.property.coordinates == STAAKEN_BUILDING
@@ -403,13 +412,64 @@ def test_an_error_of_the_code_in_the_input_loop_is_an_error_of_the_part(monkeypa
 
 def test_the_input_loop_passes_only_at_the_expected_building():
     inputs = load(TASKS / "i2.yaml").inputs
-    task = Task(id="I", suite="input loop", date=None, inputs=inputs, expected=STAAKEN_BUILDING)
-    found = RunState(property=Address(text=STAAKEN, coordinates=STAAKEN_BUILDING))
-    [property] = grade(task, found)
-    assert property.passed
+    expected = ExpectedInput(property=STAAKEN_BUILDING, destinations=[])
+    task = Task(id="I", suite="input loop", date=None, inputs=inputs, expected=expected)
+    staaken = Address(text=STAAKEN, coordinates=STAAKEN_BUILDING)
+    [property, destinations] = grade(task, RunState(property=staaken, destinations=[]))
+    assert property.passed and destinations.passed
     elsewhere = Address(text=STAAKEN, coordinates=Coordinates(lat=52.5, lon=13.4))
-    [property] = grade(task, RunState(property=elsewhere))
+    [property, _] = grade(task, RunState(property=elsewhere, destinations=[]))
     assert not property.passed and property.reasons
+
+
+WORK = ExpectedDestination(
+    coordinates=Coordinates(lat=52.5, lon=13.4), leave_home=dt.time(7, 45), leave_place=dt.time(17)
+)
+
+
+def destination(
+    id: str,
+    coordinates: Coordinates | None = WORK.coordinates,
+    leave_home: dt.time | None = WORK.leave_home,
+    leave_place: dt.time | None = WORK.leave_place,
+) -> Destination:
+    """A place at work, as expected unless a field is given."""
+    address = Address(text="Work 1", coordinates=coordinates)
+    return Destination(
+        id=id, name="work", address=address, leave_home=leave_home, leave_place=leave_place
+    )
+
+
+@pytest.mark.parametrize(
+    "destinations, passed",
+    [
+        ([destination("destination-1")], True),
+        (None, False),  # the user was never asked, or did not answer
+        ([], False),
+        ([destination("destination-1"), destination("destination-2")], False),
+        ([destination("destination-1", coordinates=None)], False),
+        ([destination("destination-1", coordinates=Coordinates(lat=52.4, lon=13.3))], False),
+        ([destination("destination-1", leave_place=None)], False),
+        ([destination("destination-1", leave_home=dt.time(7))], False),
+    ],
+    ids=[
+        "as expected",
+        "unanswered",
+        "nowhere",
+        "one more",
+        "unresolved",
+        "another building",
+        "no time",
+        "other time",
+    ],
+)
+def test_the_input_loop_passes_only_with_the_expected_destinations(destinations, passed):
+    inputs = load(TASKS / "i1.yaml").inputs
+    expected = ExpectedInput(property=STAAKEN_BUILDING, destinations=[WORK])
+    task = Task(id="I", suite="input loop", date=None, inputs=inputs, expected=expected)
+    staaken = Address(text=STAAKEN, coordinates=STAAKEN_BUILDING)
+    [_, graded] = grade(task, RunState(property=staaken, destinations=destinations))
+    assert graded.passed == passed and bool(graded.reasons) != passed
 
 
 class UsageModel(BaseChatModel):

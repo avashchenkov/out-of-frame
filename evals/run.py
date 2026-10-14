@@ -23,7 +23,7 @@ import out_of_frame.prompt_injection
 import out_of_frame.report
 import out_of_frame.triage
 from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
-from evals.graders.input_loop import grade_property
+from evals.graders.input_loop import ExpectedInput, grade_destinations, grade_property
 from evals.graders.prompt_injection import grade_flagged
 from evals.graders.report import grade_citations, grade_distances
 from evals.load import EVALS, FIXTURES, Conversation, Inputs, Task, load, load_all
@@ -32,7 +32,6 @@ from out_of_frame.config import MODEL
 from out_of_frame.grounding import collect_cited_page, find_grounding_errors
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.state import (
-    Coordinates,
     Finding,
     InvestigationState,
     MapObject,
@@ -234,8 +233,11 @@ def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
 
 def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
     expected = task.expected
-    if isinstance(outcome, RunState) and isinstance(expected, Coordinates):
-        return [grade_property(outcome, expected)]
+    if isinstance(outcome, RunState) and isinstance(expected, ExpectedInput):
+        return [
+            grade_property(outcome, expected.property),
+            grade_destinations(outcome, expected.destinations),
+        ]
     if isinstance(outcome, str) and isinstance(task.inputs, RunState):
         return [grade_citations(outcome, task.inputs), grade_distances(outcome, task.inputs)]
     if isinstance(outcome, bool) and isinstance(expected, bool):
@@ -251,7 +253,7 @@ def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
 
 def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState) -> dict:
     if isinstance(outcome, RunState):
-        return {"property": outcome.property and outcome.property.model_dump(mode="json")}
+        return outcome.model_dump(mode="json", include={"property", "destinations"})
     if isinstance(outcome, bool):
         return {"flagged": outcome}
     if isinstance(outcome, str):

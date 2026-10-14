@@ -36,23 +36,28 @@ def fake_nominatim(monkeypatch, answer) -> list[dict]:
     return requests
 
 
-def geocode(monkeypatch, results, text="Freiheit 22, 13597 Berlin") -> tuple[Address, str | None]:
-    """The geocoded address and why it has no coordinates, if it has none."""
+def geocode(
+    monkeypatch, results, text="Freiheit 22, 13597 Berlin", berlin_only=True
+) -> tuple[Address, str | None]:
+    """The geocoded address and why it has no coordinates, if it has none: the property's, by
+    default, or with berlin_only False a destination's."""
     fake_nominatim(monkeypatch, results)
-    address, source = geocoding.geocode(text, "nominatim-1")
-    return address, geocoding.explain(address, source)
+    address, source = geocoding.geocode(text, "nominatim-1", berlin_only=berlin_only)
+    return address, geocoding.explain(address, source, berlin_only=berlin_only)
 
 
 def test_one_building_in_berlin_gives_its_coordinates_and_the_response(monkeypatch):
     results = read_fixture("freiheit-22.json")
     requests = fake_nominatim(monkeypatch, results)
-    address, source = geocoding.geocode("Freiheit 22, 13597 Berlin", "nominatim-1")
+    address, source = geocoding.geocode(
+        "Freiheit 22, 13597 Berlin", "nominatim-1", berlin_only=True
+    )
     assert address == Address(
         text="Freiheit 22, 13597 Berlin", coordinates=FREIHEIT_22, source_id="nominatim-1"
     )
     assert source.id == "nominatim-1" and source.kind == "geocoding"
     assert source.request == "Freiheit 22, 13597 Berlin" and json.loads(source.content) == results
-    assert geocoding.explain(address, source) is None
+    assert geocoding.explain(address, source, berlin_only=True) is None
     [request] = requests
     # Without addressdetails, a match has no address to check.
     params = {"q": "Freiheit 22, 13597 Berlin", "format": "jsonv2", "addressdetails": 1}
@@ -169,7 +174,7 @@ def test_no_match_gives_no_coordinates(monkeypatch):
 )
 def test_the_city_is_added_to_an_address_that_does_not_name_it(monkeypatch, text, query):
     requests = fake_nominatim(monkeypatch, [])
-    _, source = geocoding.geocode(text, "nominatim-1")
+    _, source = geocoding.geocode(text, "nominatim-1", berlin_only=True)
     assert requests[0]["params"]["q"] == query and source.request == query
 
 
@@ -179,5 +184,81 @@ def test_the_city_is_added_to_an_address_that_does_not_name_it(monkeypatch, text
 def test_nominatim_is_tried_again_and_then_fails(monkeypatch, answer):
     requests = fake_nominatim(monkeypatch, answer)
     with pytest.raises(GeocodingError):
-        geocoding.geocode("Freiheit 22, 13597 Berlin", "nominatim-1")
+        geocoding.geocode("Freiheit 22, 13597 Berlin", "nominatim-1", berlin_only=True)
     assert len(requests) == SOURCE_ATTEMPTS
+
+
+POTSDAM = "Am Kanal 47, 14467 Potsdam"
+
+
+def test_a_destination_outside_berlin_gives_its_coordinates_without_berlin_in_the_query(
+    monkeypatch,
+):
+    requests = fake_nominatim(monkeypatch, read_fixture("am-kanal-47-potsdam.json"))
+    address, source = geocoding.geocode(POTSDAM, "nominatim-1", berlin_only=False)
+    assert address.coordinates == Coordinates(lat=52.3971923, lon=13.0592866)
+    assert requests[0]["params"]["q"] == POTSDAM and source.request == POTSDAM
+    assert geocoding.explain(address, source, berlin_only=False) is None
+
+
+def test_the_buildings_that_match_a_destination_are_named_with_their_town(monkeypatch):
+    potsdam = read_fixture("am-kanal-47-potsdam.json")[0]
+    [berlin] = read_fixture("freiheit-22.json")
+    elsewhere = copy.deepcopy(potsdam)
+    elsewhere["address"] |= {"postcode": "15711", "city": "Königs Wusterhausen"}
+    del elsewhere["address"]["suburb"]
+    address, reason = geocode(monkeypatch, [potsdam, berlin, elsewhere], "Am Kanal 47", False)
+    assert address.coordinates is None
+    assert reason == (
+        "Several buildings match 'Am Kanal 47': "
+        "Am Kanal 47, 14467 Potsdam (Historische Innenstadt); "
+        "Freiheit 22, 13597 Berlin (Spandau); Am Kanal 47, 15711 Königs Wusterhausen."
+    )
+
+
+def test_buildings_with_one_postcode_in_two_towns_are_two_buildings(monkeypatch):
+    potsdam = read_fixture("am-kanal-47-potsdam.json")[0]
+    village = copy.deepcopy(potsdam)
+    village["address"]["city"] = "Geltow"  # the same street, number and postcode
+    del village["address"]["suburb"]
+    address, reason = geocode(monkeypatch, [potsdam, village], POTSDAM, berlin_only=False)
+    assert address.coordinates is None
+    assert reason == (
+        "Several buildings match 'Am Kanal 47, 14467 Potsdam': "
+        "Am Kanal 47, 14467 Potsdam (Historische Innenstadt); Am Kanal 47, 14467 Geltow."
+    )
+
+
+@pytest.mark.parametrize(
+    "results, reason",
+    [
+        ([], "No place matches 'Am Kanal 47, 14467 Potsdam'."),
+        (
+            read_fixture("freiheit-street.json"),
+            "'Am Kanal 47, 14467 Potsdam' matches only a street or an area, not one building.",
+        ),
+        (
+            read_fixture("freiheit-22.json"),
+            "'Am Kanal 47, 14467 Potsdam' matches no building with its postcode, only: "
+            "Freiheit 22, 13597 Berlin (Spandau).",
+        ),
+    ],
+    ids=["no match", "a street", "another postcode"],
+)
+def test_a_destination_without_coordinates_is_explained_without_berlin(
+    monkeypatch, results, reason
+):
+    address, found = geocode(monkeypatch, results, POTSDAM, berlin_only=False)
+    assert address.coordinates is None and found == reason
+
+
+def test_each_request_to_nominatim_waits_a_second_after_the_last_one(monkeypatch):
+    fake_nominatim(monkeypatch, [])
+    clock, waits = [100.0], []
+    monkeypatch.setattr(geocoding.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(geocoding.time, "sleep", waits.append)
+    monkeypatch.setattr(geocoding, "last_request_at", float("-inf"))
+    geocoding.call_nominatim("Freiheit 22")
+    clock[0] = 100.25
+    geocoding.call_nominatim("Freiheit 22")
+    assert waits == [0.0, 0.75]

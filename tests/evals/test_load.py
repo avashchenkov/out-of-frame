@@ -108,9 +108,12 @@ BROKEN = [
     ),
     (
         "t1.yaml",
-        lambda task, state: task.update(expected={"property": {"lat": 52.5, "lon": 13.1}}),
-        "only it, expects the property",
+        lambda task, state: task.update(
+            expected={"property": {"lat": 52.5, "lon": 13.1}, "destinations": []}
+        ),
+        "only it, expects the property and the destinations",
     ),
+    ("i2.yaml", lambda task, state: task["expected"].pop("destinations"), "together"),
 ]
 
 

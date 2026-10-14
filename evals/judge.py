@@ -1,10 +1,10 @@
-"""Run the agent on an address and grade its report with the three LLM judges of
-docs/eval-architecture.md#llm-judges. The judges are not calibrated until roadmap step 10, so
-their grades are printed and saved, never quoted.
+"""Run the agent on a first message that completes the input, and grade its report with the
+three LLM judges of docs/eval-architecture.md#llm-judges. The judges are not calibrated until
+roadmap step 10, so their grades are printed and saved, never quoted.
 
 The run is saved before the judges start, so that a saved run can be judged again without
 running the agent. Run with the keys in .env:
-uv run --env-file .env python -m evals.judge "Freiheit 22, 13597 Berlin"
+uv run --env-file .env python -m evals.judge "Freiheit 22, 13597 Berlin. I travel nowhere."
 uv run --env-file .env python -m evals.judge evals/results/<run>.json
 
 TODO: in step 10, the end-to-end suite of evals/run.py runs the agent on labelled tasks.
@@ -46,14 +46,14 @@ RUBRICS = ["support.md.j2", "interpretation.md.j2", "no_verdict.md.j2"]
 RESEARCH_SCOPE = files("out_of_frame").joinpath("data/research_scope.yaml")
 
 
-def run_agent(address: str, date: dt.date, web_search: MeteredWebSearch) -> dict:
+def run_agent(message: str, date: dt.date, web_search: MeteredWebSearch) -> dict:
     """One run of the agent, as it is saved: the draft that the judges grade, the final state,
     each step's update, the investigations' steps among them, and the cost. A run that stops,
     even when web search refuses the key or the run is cancelled, is saved too, with its error
     and its last state: it has paid for its calls."""
-    saved = {"address": address, "date": date.isoformat(), "model": MODEL, "draft": None}
+    saved = {"message": message, "date": date.isoformat(), "model": MODEL, "draft": None}
     saved |= {"transcript": [], "error": None}
-    start, config = agent.start(address), agent.start_thread()
+    start, config = agent.start(message), agent.start_thread()
     end: dict | RunState = start
     with get_usage_metadata_callback() as usage:
         try:
@@ -78,7 +78,7 @@ def run_agent(address: str, date: dt.date, web_search: MeteredWebSearch) -> dict
                     if node == "write_report":
                         saved["draft"] = update["report"]
             question = agent.find_question(agent.build_graph(), config)
-            if question is not None:  # the judges need a run that the address alone completes
+            if question is not None:  # the judges need a run that the first message completes
                 raise agent.UnansweredQuestionError(question)
         except Exception, KeyboardInterrupt:
             saved["error"] = traceback.format_exc()
@@ -165,7 +165,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("target", help="a precise address, or a saved run's .json file")
+    parser.add_argument(
+        "target",
+        help="the user's first message, which must complete the input: a precise address and "
+        "where the user travels, if anywhere, with the times; or a saved run's .json file",
+    )
     args = parser.parse_args()
     if not os.environ.get("ANTHROPIC_API_KEY"):
         parser.error("set ANTHROPIC_API_KEY, for example in .env: see .env.example")

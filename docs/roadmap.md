@@ -114,9 +114,9 @@ calibration.
    report must give the right destination, direction and duration, or the missing-route reason.
    From step 7: the input conversation asks where the user travels and when, a destination
    may be outside Berlin, and I1 and I3 check it. In this order:
-   1. The input: `destinations`. The extract call gives null for no change, an empty list for
-      nowhere, or the whole new list with the ID of each destination it keeps; code gives a
-      new one its ID. Code geocodes each destination's address as one building, like the
+   1. ✅ The input: `destinations`. The extract call gives null for no change, an empty list for
+      nowhere, or the whole new list with the ID of each destination it keeps; code gives a new
+      one its ID. Code geocodes each destination's address as one building, like the
       property's, but anywhere: without the added "Berlin", the Berlin filter or "Berlin" in
       the places it offers. Code finds everything missing at once: the property, where the user
       travels, a destination's address and both of its times. Nominatim gets at most one

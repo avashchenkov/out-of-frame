@@ -23,7 +23,8 @@ app to name itself in the User-Agent.
 which can be empty. A match can be a building, a street or a whole district, so coordinates
 alone do not mean the address was found. Several matches can be different places. An empty
 list means no match, not that the service is down. A search covers the whole world and returns
-the first ten matches, so code adds "Berlin" to an address that does not name the city.
+the first ten matches, so code adds "Berlin" to a property's address that does not name the
+city; a destination may be anywhere.
 
 ## Overpass
 

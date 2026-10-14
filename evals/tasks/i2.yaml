@@ -4,13 +4,13 @@ id: I2
 suite: input loop
 covers: >-
   An ambiguous address, a street name in several districts: the agent asks which one is meant,
-  and resolves the answer.
+  and resolves the answer. The user travels nowhere, so that only the address is asked for.
 date: 2026-10-14  # fixed data, recorded on 2026-10-10 and 2026-10-14; the input phase needs no date
 
 # What the agent gets: the user's first message, then a reply to each expected question.
 input:
   messages:
-    - Hauptstraße 1, Berlin
+    - Hauptstraße 1, Berlin. I work from home and travel nowhere regularly.
     - The one in Staaken, please.
   # Nominatim answers each request from its recorded response; any other request fails.
   sources:
@@ -25,6 +25,8 @@ input:
       request: Hauptstraße 1, 13591 Berlin  # the Staaken building as the question offers it
       fixture: nominatim/hauptstrasse-1-staaken.json
 
-# Read only by the graders: the Staaken building, as both responses give it.
+# Read only by the graders: the Staaken building, as both responses give it, and no
+# destination, as the user travels nowhere.
 expected:
   property: {lat: 52.5288998, lon: 13.1443516}
+  destinations: []

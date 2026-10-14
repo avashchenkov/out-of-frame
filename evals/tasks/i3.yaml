@@ -1,0 +1,35 @@
+# I3, input loop: the input phase runs until the input is complete, on recorded Nominatim
+# responses. See docs/eval-architecture.md#input-loop.
+id: I3
+suite: input loop
+covers: >-
+  A full first message, with a Berlin address, a destination outside Berlin and both clock
+  times: the agent asks nothing, and the input is complete after the first message.
+date: 2026-10-15  # fixed data, recorded on 2026-10-14 and 2026-10-15; the input phase needs no date
+
+# What the agent gets: the user's first message, and no reply, as no question is expected.
+input:
+  messages:
+    - >-
+      Please check Hauptstraße 1, 13591 Berlin. I commute to the library at Am Kanal 47, 14467
+      Potsdam: I leave home at 8:15 and leave the library at 16:45.
+  # Nominatim answers each request from its recorded response; any other request fails.
+  sources:
+    - id: nominatim-1
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Hauptstraße 1, 13591 Berlin
+      fixture: nominatim/hauptstrasse-1-staaken.json
+    - id: nominatim-2
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Am Kanal 47, 14467 Potsdam  # in Brandenburg
+      fixture: nominatim/am-kanal-47-potsdam.json
+
+# Read only by the graders: the buildings, as the responses give them, and the clock times.
+expected:
+  property: {lat: 52.5288998, lon: 13.1443516}
+  destinations:
+    - coordinates: {lat: 52.3971923, lon: 13.0592866}
+      leave_home: "08:15"
+      leave_place: "16:45"

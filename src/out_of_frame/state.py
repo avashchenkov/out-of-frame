@@ -1,9 +1,9 @@
 """The run state as a logical data model, see docs/architecture.md#the-state.
 
-TODO: Destination and Journey, and the run state's fields for them, with the steps that use
-them (step 9).
+TODO: Journey, and the run state's field for it, with the step that plans the journeys (step 9).
 """
 
+import datetime as dt
 import operator
 from typing import Annotated, Literal, Self
 
@@ -26,6 +26,16 @@ class Address(Record):
     text: str  # as the extract call took it from the conversation; code never changes it
     coordinates: Coordinates | None = None  # only for exactly one precise match
     source_id: str | None = None  # the Nominatim response for this text, once it is geocoded
+
+
+class Destination(Record):
+    """A place that the user travels to regularly. What the user has not given yet is null."""
+
+    id: str  # set by code, see conversation.apply
+    name: str  # the user's own word for it, such as work
+    address: Address | None = None  # anywhere, not only in Berlin
+    leave_home: dt.time | None = None  # when the user leaves home for it, in Berlin's time
+    leave_place: dt.time | None = None  # when the user leaves it for home
 
 
 class Source(Record):
@@ -187,10 +197,13 @@ def replace_by_id(old: list, new: list) -> list:
 class RunState(Record):
     """The state of one run, see docs/architecture.md#the-state. LangGraph appends a node's
     messages, sources, map objects and findings to the lists, a map object in place of the one
-    with its ID, adds each new failure, and replaces the property and the report."""
+    with its ID, adds each new failure, and replaces the property, the destinations and the
+    report."""
 
     messages: Annotated[list[Message], operator.add] = []  # the conversation in the input phase
     property: Address | None = None  # null until the user gives its address
+    # Null until the user says where they travel, empty if nowhere; replaced as a whole list.
+    destinations: list[Destination] | None = None
     sources: Annotated[list[Source], operator.add] = []
     map_objects: Annotated[list[MapObject], replace_by_id] = []
     findings: Annotated[list[Finding], operator.add] = []

@@ -22,11 +22,13 @@ from out_of_frame import (
 )
 from out_of_frame.agent import UnansweredQuestionError
 from out_of_frame.config import BPLAN_WFS_URL, NOMINATIM_URL, OVERPASS_URL
+from out_of_frame.conversation import Change, ExtractedDestination
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.map_objects import MapError
 from out_of_frame.state import (
     Address,
     Coordinates,
+    Destination,
     Finding,
     MapObject,
     Message,
@@ -94,13 +96,14 @@ def stub_the_sources(monkeypatch, nominatim=None, overpass=None, wfs=None):
 
 def stub_the_conversation(monkeypatch, addresses: dict[str, str | None] | None = None) -> list:
     """The extract call takes the user's whole last message for the property's address, or
-    finds the address that addresses gives for it, None for none; the questions are Question 1,
-    Question 2 and so on. Returns what code found missing for each question."""
+    finds the address that addresses gives for it, None for none, and the user travels nowhere;
+    the questions are Question 1, Question 2 and so on. Returns what code found missing for each
+    question."""
     asked = []
 
     def extract(state):
         last = state.messages[-1].text
-        return (addresses or {}).get(last, last)
+        return Change(property_address=(addresses or {}).get(last, last), destinations=[])
 
     def ask(state, missing):
         asked.append(missing)
@@ -291,6 +294,60 @@ def test_a_reply_without_an_address_leaves_the_address_as_it_was(monkeypatch):
     street = ["'Freiheit, Berlin' matches only a street or an area, not one building."]
     assert asked == [street, street]  # the address was geocoded again and is still a street
     assert state.property is not None and state.property.text == FREIHEIT_22
+
+
+POTSDAM = "Am Kanal 47, 14467 Potsdam"
+
+
+def test_the_agent_asks_where_the_user_travels_and_when_then_goes_on(monkeypatch):
+    stub_the_models(monkeypatch)
+    stub_the_sources(
+        monkeypatch, {FREIHEIT_22: "freiheit-22.json", POTSDAM: "am-kanal-47-potsdam.json"}
+    )
+    asked = stub_the_conversation(monkeypatch)
+    work = ExtractedDestination(
+        id=None, name="work", address=POTSDAM, leave_home=None, leave_place=None
+    )
+    times = work.model_copy(
+        update={"id": "destination-1", "leave_home": "08:00", "leave_place": "16:30"}
+    )
+    changes = {
+        FREIHEIT_22: Change(property_address=FREIHEIT_22, destinations=None),
+        "I work in Potsdam.": Change(property_address=None, destinations=[work]),
+        "At 8:00 and 16:30.": Change(property_address=None, destinations=[times]),
+    }
+    monkeypatch.setattr(conversation, "extract", lambda state: changes[state.messages[-1].text])
+    state = agent.run([*changes], DATE, FakeWebSearch())
+    assert asked == [
+        ["The user has not said where they travel regularly, if anywhere."],
+        [
+            "The user has not given the clock time when they leave home for 'work'.",
+            "The user has not given the clock time when they leave 'work' for home.",
+        ],
+    ]
+    # Each address is geocoded again after each message; the destination may be outside Berlin.
+    assert [source.request for source in state.sources if source.kind == "geocoding"] == [
+        FREIHEIT_22,
+        FREIHEIT_22,
+        POTSDAM,
+        FREIHEIT_22,
+        POTSDAM,
+    ]
+    potsdam = Address(
+        text=POTSDAM,
+        coordinates=Coordinates(lat=52.3971923, lon=13.0592866),
+        source_id="nominatim-5",
+    )
+    assert state.destinations == [
+        Destination(
+            id="destination-1",
+            name="work",
+            address=potsdam,
+            leave_home=dt.time(8),
+            leave_place=dt.time(16, 30),
+        )
+    ]
+    assert state.report is not None
 
 
 def test_a_question_after_the_replies_have_run_out_fails_the_run(monkeypatch):

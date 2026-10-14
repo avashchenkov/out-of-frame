@@ -1,10 +1,11 @@
 """One run of the agent, from the user's first message to the report: the LangGraph graph of
 docs/architecture.md#one-run.
 
-TODO: a plan's part of the report (step 8); journeys (step 9).
+TODO: journeys (step 9).
 """
 
 import datetime as dt
+import itertools
 import logging
 import uuid
 from functools import cache
@@ -126,29 +127,42 @@ def build_graph():
     builder.add_edge("write_report", "fill_references")
     builder.add_edge("fill_references", END)
     # The state's own records, which the checkpointer may load back without a warning.
-    records = ["Address", "Finding", "MapObject", "Message", "Source"]
+    records = ["Address", "Destination", "Finding", "MapObject", "Message", "Source"]
     serde = JsonPlusSerializer(allowed_msgpack_modules=[("out_of_frame.state", r) for r in records])
     graph = builder.compile(checkpointer=InMemorySaver(serde=serde))
     return graph.with_config(max_concurrency=INVESTIGATIONS_AT_ONCE)
 
 
 def extract_input(state: RunState) -> dict:
-    """The change that the user's last message makes: a new address replaces the old one with
-    its coordinates; everything else stays as it was."""
-    text = conversation.extract(state)
-    if text is None:
-        return {}
-    return {"property": Address(text=text)}
+    """The changes that the user's last message makes, see conversation.apply; everything else
+    stays as it was."""
+    return conversation.apply(conversation.extract(state), state)
 
 
 def geocode_input(state: RunState) -> dict:
-    """The property's address geocoded again after each message, and the response kept, so
-    that code can say why it does not resolve."""
-    if state.property is None:
-        return {}
-    number = 1 + sum(source.kind == "geocoding" for source in state.sources)
-    address, source = geocoding.geocode(state.property.text, f"nominatim-{number}")
-    return {"property": address, "sources": [source]}
+    """Every address geocoded again after each message, and each response kept, so that code
+    can say why an address does not resolve. The property must be in Berlin; a destination may
+    be anywhere."""
+    numbers = itertools.count(1 + sum(source.kind == "geocoding" for source in state.sources))
+    sources = []
+
+    def geocode(address: Address | None, berlin_only: bool) -> Address | None:
+        if address is None:
+            return None
+        source_id = f"nominatim-{next(numbers)}"
+        geocoded, source = geocoding.geocode(address.text, source_id, berlin_only=berlin_only)
+        sources.append(source)
+        return geocoded
+
+    changes: dict = {"property": geocode(state.property, berlin_only=True)}
+    if state.destinations is not None:
+        changes["destinations"] = [
+            destination.model_copy(
+                update={"address": geocode(destination.address, berlin_only=False)}
+            )
+            for destination in state.destinations
+        ]
+    return changes | {"sources": sources}
 
 
 def check_input(state: RunState) -> str | list[str]:

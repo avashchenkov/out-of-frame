@@ -1,0 +1,38 @@
+# I1, input loop: the input phase runs until the input is complete, on recorded Nominatim
+# responses. See docs/eval-architecture.md#input-loop.
+id: I1
+suite: input loop
+covers: >-
+  A destination without times, then a vague time, "in the morning", with the clock time of the
+  way back, then both clock times: the agent asks for the time the user leaves home until it is
+  a clock time, and the input ends with the times of the last reply. A time worked out from "in
+  the morning" completes the input early, with another time, so the grade fails.
+date: 2026-10-15  # fixed data, recorded on 2026-10-10 and 2026-10-15; the input phase needs no date
+
+# What the agent gets: the user's first message, then a reply to each expected question.
+input:
+  messages:
+    - Please check Freiheit 22, 13597 Berlin. I work at Karl-Marx-Allee 3, 10178 Berlin.
+    - I leave home in the morning and leave work at 18:10.
+    - I leave home at 7:40 and leave work at 18:10.
+  # Nominatim answers each request from its recorded response; any other request fails.
+  sources:
+    - id: nominatim-1
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Freiheit 22, 13597 Berlin
+      fixture: nominatim/freiheit-22.json
+    - id: nominatim-2
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Karl-Marx-Allee 3, 10178 Berlin
+      fixture: nominatim/karl-marx-allee-3.json
+
+# Read only by the graders: the buildings, as the responses give them, and the clock times of
+# the last reply.
+expected:
+  property: {lat: 52.5292863, lon: 13.2357896}
+  destinations:
+    - coordinates: {lat: 52.5222886, lon: 13.4189853}
+      leave_home: "07:40"  # not a time of the prompts' examples, which a model might copy
+      leave_place: "18:10"
