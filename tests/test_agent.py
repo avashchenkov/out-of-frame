@@ -189,13 +189,15 @@ def test_an_object_that_triage_cannot_settle_is_investigated(monkeypatch):
 
 def test_code_sends_industry_and_anything_proposed_to_investigation():
     def sent(**tags):
-        return agent.is_sent_by_code(build_object(tags))
+        return agent.is_sent_by_code(build_object(tags), "map")
 
     assert sent(category="industry", name="A plant", power="plant")  # T3
     assert sent(category="road_rail", highway="proposed", proposed="motorway")
     assert sent(category="road_rail", railway="construction", construction="rail")
     assert not sent(category="road_rail", railway="rail", ref="6107")
     assert not sent(category="wastewater", man_made="wastewater_plant")
+    rail = build_object({"category": "road_rail", "railway": "rail", "ref": "6107"})
+    assert agent.is_sent_by_code(rail, "plans")  # the source decides, not the category
 
 
 def build_object(details: dict, id: str = "osm-way-1", distance: float = 100) -> MapObject:
@@ -327,8 +329,19 @@ def test_every_plan_is_investigated_without_triage_or_addresses(monkeypatch):
     stub_the_sources(monkeypatch, wfs=read_fixture("bplan/freiheit-22.json"))
     stub_the_models(monkeypatch)
     triaged = stub_the_triage(monkeypatch, TRIAGE_CLEAR)
+    kinds = {}  # the kind of source that each investigation is given, by object ID
+    investigate = investigation.investigate
+
+    def keep_the_kind(map_object, source_kind, date, web_search):
+        kinds[map_object.id] = source_kind
+        return investigate(map_object, source_kind, date, web_search)
+
+    monkeypatch.setattr(investigation, "investigate", keep_the_kind)
     state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
     assert len(triaged) == 6  # the map objects that are not industry, as without plans
+    assert {id: kind for id, kind in kinds.items() if kind == "plans"} == dict.fromkeys(
+        PLANS, "plans"
+    )  # the map objects are given "map"
     found = {finding.map_object_id: finding for finding in state.findings}
     assert all(found[id].evidence_id == f"{id}/web-1" for id in PLANS)  # investigated
     assert all(o.addresses == [] for o in state.map_objects if o.id in PLANS)

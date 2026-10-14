@@ -1,7 +1,7 @@
 """One run of the agent, from the user's first message to the report: the LangGraph graph of
 docs/architecture.md#one-run.
 
-TODO: a plan's own investigation and its part of the report (step 8); journeys (step 9).
+TODO: a plan's part of the report (step 8); journeys (step 9).
 """
 
 import datetime as dt
@@ -29,7 +29,7 @@ from out_of_frame import (
 from out_of_frame.config import INVESTIGATIONS_AT_ONCE
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
-from out_of_frame.state import Address, MapObject, Message, RunState
+from out_of_frame.state import Address, MapObject, Message, ObjectSourceKind, RunState
 from out_of_frame.web_search import WebSearch
 
 log = logging.getLogger(__name__)
@@ -40,6 +40,7 @@ class ObjectToInvestigate(Record):
     investigations can run in parallel."""
 
     map_object: MapObject
+    source_kind: ObjectSourceKind
 
 
 # The steps that research starts with, in parallel, once the input is complete.
@@ -194,15 +195,21 @@ def get_plans(state: RunState) -> dict:
 def triage_objects(state: RunState) -> dict:
     """Triage of each object that code does not send to investigation, one at a time: a clear
     one gets its finding, and any other goes to investigation."""
-    checked = [triage.triage(o) for o in state.map_objects if not is_sent_by_code(o)]
+    checked = [
+        triage.triage(o)
+        for o in state.map_objects
+        if not is_sent_by_code(o, find_source_kind(state, o))
+    ]
     return {"findings": [finding for finding in checked if finding is not None]}
 
 
 def get_addresses(state: RunState) -> dict:
-    """The addresses of the objects to investigate, from one query, in place of the objects
-    without them. If Overpass fails, they are investigated without addresses: the map part of
-    the report stays."""
-    chosen = choose_objects_to_investigate(state)
+    """The addresses of the map objects to investigate, from one query, in place of the objects
+    without them. A plan has none: it is found by its number. If Overpass fails, the objects
+    are investigated without addresses: the map part of the report stays."""
+    chosen = [
+        o for o in choose_objects_to_investigate(state) if find_source_kind(state, o) == "map"
+    ]
     try:
         addresses = map_objects.fetch_addresses(chosen)
     except map_objects.MapError as error:
@@ -223,12 +230,19 @@ def choose_objects_to_investigate(state: RunState) -> list[MapObject]:
     return sorted(chosen, key=lambda o: o.distance_from_property_m)
 
 
-def is_sent_by_code(map_object: MapObject) -> bool:
-    """Every industrial object and every plan goes to investigation, even with a name and
+def find_source_kind(state: RunState, map_object: MapObject) -> ObjectSourceKind:
+    """The kind of the source that the object comes from, by its source ID."""
+    [kind] = [source.kind for source in state.sources if source.id == map_object.source_id]
+    assert kind in ("map", "plans")  # what get_map_objects and get_plans give
+    return kind
+
+
+def is_sent_by_code(map_object: MapObject, source_kind: ObjectSourceKind) -> bool:
+    """Every plan and every industrial object goes to investigation, even with a name and
     complete data, and so does any object that is proposed or under construction; triage
     checks the others."""
     tags = map_object.details
-    if tags["category"] in ("industry", "planned_objects"):
+    if source_kind == "plans" or tags["category"] == "industry":
         return True
     return map_objects.find_stage(tags) != "built"
 
@@ -237,7 +251,13 @@ def send_each_object_to_investigation(state: RunState) -> list[Send] | str:
     chosen = choose_objects_to_investigate(state)
     if not chosen:
         return "write_report"
-    return [Send("investigate_object", ObjectToInvestigate(map_object=o)) for o in chosen]
+    return [
+        Send(
+            "investigate_object",
+            ObjectToInvestigate(map_object=o, source_kind=find_source_kind(state, o)),
+        )
+        for o in chosen
+    ]
 
 
 def investigate_object(state: ObjectToInvestigate, runtime: Runtime[Context]) -> dict:
@@ -245,7 +265,9 @@ def investigate_object(state: ObjectToInvestigate, runtime: Runtime[Context]) ->
     search failure go into the run state. Each investigation numbers its pages from web-1, so
     in the run state a page's ID also names its object, such as osm-way-1/web-1."""
     context = runtime.context
-    end = investigation.investigate(state.map_object, context.date, context.web_search)
+    end = investigation.investigate(
+        state.map_object, state.source_kind, context.date, context.web_search
+    )
     assert end.finding is not None  # every path through the subgraph ends with a finding
     cited = grounding.collect_cited_page(end.finding.evidence_id, end.pages)
     sources = [page.model_copy(update={"id": f"{state.map_object.id}/{page.id}"}) for page in cited]

@@ -103,7 +103,7 @@ calibration.
    from evidence about whether building has started, including when that status is unknown.
    A plan's finding uses the same types and statuses as a map object's. To save time, as in
    step 6, E4's label moves to step 10, and a person reads one live report. In this order:
-   1. The plans: the square around the circle, the plans outside the circle dropped, the
+   1. ✅ The plans: the square around the circle, the plans outside the circle dropped, the
       distance to the nearest edge, the nearest N, one object per plan with its legal status
       and content, and a plan source failure. Code tests on a recorded WFS response.
    2. The investigation of a plan: what the plan allows, and whether building has started.

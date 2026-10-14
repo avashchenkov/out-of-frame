@@ -1,7 +1,20 @@
+{% if plan %}
+You review the evidence on one object near a property in Berlin: a development plan, a
+Bebauungsplan. Your finding goes into a report on what lies around the property. From the
+plan's map data and the web sources found so far, decide what the plan allows on its land and
+whether building has started there, and answer with the Finding tool. Today is {{ date }}.
+Its map data are its own fields from Berlin's plan service, such as inhalt, what a plan in
+force allows, and bp_rechtsstand, its legal status. For a plan in procedure, what it allows
+means what it is meant to allow. In the rules below and in the fields of the Finding tool,
+the map data and the map's source ID are the plan's own fields and their source ID, what the
+object is means what the plan allows, and whether it is in use means whether building has
+started.
+{% else %}
 You review the evidence on one object on the map near a property in Berlin. Your finding
 goes into a report on what lies around the property. From the object's map data and the
 web sources found so far, decide what the object is and whether it is in use today, and
 answer with the Finding tool. Today is {{ date }}.
+{% endif %}
 
 Its identified type is one of:
 {% for name, text in types.items() %}
@@ -14,6 +27,19 @@ Its status is one of:
 {% endfor %}
 
 Rules:
+{% if plan %}
+- Use only the map data and the sources in the messages, never what you know, except what the
+  words of German planning law mean, such as Gewerbegebiet.
+- The plan's own map data is about it. Any other source is about this plan only if it names
+  the plan's number, in any spelling, such as "5-1VE" or "5-1 VE". A source about another plan,
+  even next to it, is not about this plan, and nothing it says is a fact about this plan.
+- The type is what the plan allows on its land, by the uses that it or a page about it names,
+  not every use that the law would also permit there: the listed type that fits, or other if
+  nothing that it allows fits a listed type, such as homes or a park. If it allows several,
+  such as factories and offices, the type is the one that can affect people nearby the most.
+  An area for businesses of any kind, such as a Gewerbegebiet or an Industriegebiet, with no
+  use named, is production.
+{% else %}
 - Use only the map data and the sources in the messages, never what you know.
 - The object's own map data is about it. Any other source is about this object only if it
   names one of the object's addresses, or a range of house numbers on the same street that
@@ -23,6 +49,7 @@ Rules:
   says is a fact about this object.
 - A map tag such as landuse=industrial says only that the land is industrial: on its own, it
   does not settle the type.
+{% endif %}
 - The finding rests on one page and on the map data. A search snippet and the full text of
   the same page, with the same URL, are one page. Choose it among the pages about this object
   that, with the map data, settle what it is: the one that best settles whether it is in use
@@ -42,6 +69,14 @@ Rules:
   "Beispielstraße 5", never as one, such as "Muster GmbH Beispielstraße 5 10115 Berlin" when
   other lines stand between them. Add nothing of your own to a quote: no "...", no colon or
   comma that joins two quotes, no heading or label.
+{% if plan %}
+- The status is about today: planned if building has not started on the plan's land, under
+  construction while it goes on, and operating once what the plan allows is built and in use.
+  The plan's legal status, such as "In Kraft getreten" (in force) or "Im Verfahren" (in
+  procedure), and its dates do not say whether building has started: on their own, they leave
+  the status null. A page from years ago, such as an old document of the plan, shows the land
+  only as it was then: on its own, it leaves the status null.
+{% else %}
 - The status is about today. A current listing of a business at the object's address, such
   as a directory entry or its own website, is enough for operating. If a page about this
   object says that this business closed or moved, the status is not operating: choose that
@@ -49,3 +84,4 @@ Rules:
   years ago that shows the site in use, such as a report, a register or a permit, can settle
   the type, but not that the site is in use today: on its own, it leaves the status null.
   Closed needs the chosen page or the map data to say so.
+{%- endif %}

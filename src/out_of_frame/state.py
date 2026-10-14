@@ -141,15 +141,27 @@ class ToolResult(Record):
 HistoryEntry = Annotated[ToolCall | ToolResult, Field(discriminator="role")]
 
 
+# The kinds of Source that a map object comes from: the map, or the development plans.
+type ObjectSourceKind = Literal["map", "plans"]
+
+
 class InvestigationState(Record):
     """The state of one investigation subgraph run. LangGraph appends a node's history and pages
     to the lists, and replaces the other fields."""
 
     map_object: MapObject
+    source_kind: ObjectSourceKind  # of the Source that map_object.source_id names
     history: Annotated[list[HistoryEntry], operator.add]
     pages: Annotated[list[Source], operator.add]
     finding: Finding | None
     web_search_failed: bool = False  # the finding is then unidentified; written states omit it
+
+    @classmethod
+    def start(cls, map_object: MapObject, source_kind: ObjectSourceKind) -> Self:
+        """The state that an investigation starts from: its object and the kind of its source."""
+        return cls(
+            map_object=map_object, source_kind=source_kind, history=[], pages=[], finding=None
+        )
 
 
 type Service = Literal["map", "plans", "web search"]  # TODO: transit, with its step (step 9)

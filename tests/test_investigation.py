@@ -9,7 +9,7 @@ from out_of_frame import finding, investigation, prompt_injection
 from out_of_frame.config import TOOL_CAP
 from out_of_frame.state import Finding, Source, ToolCall, ToolResult
 from out_of_frame.web_search import PageText, WebSearchError
-from tests.test_finding import ANSWER, MAP_OBJECT, FakeModel
+from tests.test_finding import ANSWER, MAP_OBJECT, PLAN, FakeModel
 
 DATE = dt.date(2026, 10, 9)
 SNIPPET = PageText("https://example.org", "Test GmbH makes parts at Teststraße 1.")
@@ -58,7 +58,7 @@ def investigate(monkeypatch, searcher, web_search, answer=ANSWER, flag_injection
     monkeypatch.setattr(investigation, "build_search_model", lambda: searcher)
     monkeypatch.setattr(finding, "build_finding_model", lambda: finder)
     monkeypatch.setattr(prompt_injection, "flag_injections", flag_injections)
-    return investigation.investigate(MAP_OBJECT, DATE, web_search), finder
+    return investigation.investigate(MAP_OBJECT, "map", DATE, web_search), finder
 
 
 def test_a_search_and_a_grounded_finding(monkeypatch):
@@ -89,6 +89,17 @@ def test_the_model_sees_the_prompt_and_the_history_at_each_step(monkeypatch):
         assert f"at most {TOOL_CAP}" in request[0].content and "2026-10-09" in request[0].content
     assert len(first) == 2  # the prompt and the task
     assert last[1:] == finding.build_chat(state)
+
+
+def test_the_search_prompt_of_a_plan_asks_for_its_number(monkeypatch):
+    searcher = FakeSearcher()
+    monkeypatch.setattr(investigation, "build_search_model", lambda: searcher)
+    monkeypatch.setattr(finding, "build_finding_model", lambda: FakeModel(ANSWER))
+    investigation.investigate(PLAN, "plans", DATE, FakeWebSearch())
+    [[system, task]] = searcher.requests
+    assert "for example by the plan's number" in system.content
+    assert "names the plan's number" in system.content and "next door" not in system.content
+    assert "planname=VIII-B6" in task.content and "inhalt=Gewerbegebiet" in task.content
 
 
 def test_pages_are_numbered_across_tool_calls(monkeypatch):

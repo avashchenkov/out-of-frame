@@ -22,15 +22,16 @@ class MissingFindingError(Exception):
 
 def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
     """Ask the model what the investigation found about its map object."""
-    map_object = state.map_object
+    map_object, plan = state.map_object, state.source_kind == "plans"
     scope = research_scope.load()
     system = render(
         "finding.md.j2",
         date=date.isoformat(),
         types=scope.identified_types,
         statuses=scope.finding_statuses,
+        plan=plan,
     )
-    instruction = render("finding_instruction.md.j2", map_object=map_object)
+    instruction = render("finding_instruction.md.j2", map_object=map_object, plan=plan)
     request = [SystemMessage(system), *build_chat(state), HumanMessage(instruction)]
     reply = build_finding_model().invoke(request)
     calls = [call for call in reply.tool_calls if call["name"] == "Finding"]
@@ -43,7 +44,9 @@ def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
 def build_chat(state: InvestigationState) -> list[BaseMessage]:
     """The investigation as a chat: the task, then each tool call and the pages it returned."""
     pages = {page.id: page for page in state.pages}
-    task = render("investigation_task.md.j2", map_object=state.map_object)
+    task = render(
+        "investigation_task.md.j2", map_object=state.map_object, plan=state.source_kind == "plans"
+    )
     chat: list[BaseMessage] = [HumanMessage(task)]
     for n, entry in enumerate(state.history):
         if isinstance(entry, ToolCall):

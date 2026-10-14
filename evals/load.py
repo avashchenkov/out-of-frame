@@ -155,9 +155,11 @@ def load(path: Path) -> Task:
         fail("an input loop task, and only it, gives the user's messages")
     match task.suite, task.input.map_object, state, task.input.page:
         case "live investigation", MapObject() as map_object, None, None:
-            if map_object.source_id not in [source.id for source in task.input.sources]:
-                fail("the map object's source is not among the task's sources")
-            inputs = map_object
+            match [s.kind for s in task.input.sources if s.id == map_object.source_id]:
+                case ["map" | "plans" as kind]:
+                    inputs = InvestigationState.start(map_object, kind)
+                case _:
+                    fail("the map object's source must be one map or plans source of the task")
         case "triage", MapObject() as map_object, None, None:
             inputs = map_object
         case "finding", None, InvestigationState(), None:

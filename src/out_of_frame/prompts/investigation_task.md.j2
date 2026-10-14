@@ -1,2 +1,6 @@
+{% if plan %}
+Find out what this development plan allows and whether building has started on its land. Its map data, source ID {{ map_object.source_id }}:
+{% else %}
 Find out what this map object is and whether it is in use. Its map data, source ID {{ map_object.source_id }}:
+{% endif %}
 {{ map_object.map_text().strip() }}

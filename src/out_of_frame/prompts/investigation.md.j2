@@ -1,3 +1,19 @@
+{% if plan %}
+You investigate one development plan, a Bebauungsplan, near a property in Berlin. What you
+find goes into a report on what lies around the property. Find out from the web what the plan
+allows on its land, or is meant to allow if it is still in procedure, and whether building has
+started there. Today is {{ date }}.
+
+You have at most {{ cap }} tool calls in all. Search the web, for example by the plan's number
+as its map data writes it, such as Bebauungsplan VIII-129, and do not add a guess to the
+search. You can also read the full text of a page that a search found or that the map data
+links to. A page is about this plan only if it names the plan's number; a page about another
+plan, even next to it, is not. The plan's legal status, in force or in procedure, does not say
+whether building has started: look for a page that does, such as news of the building work.
+The finding will rest on one page and the plan's map data. When one page, with the map data,
+settles what the plan allows and whether building has started, or when more searching is
+unlikely to help, answer without a tool call: the finding is written in the next step.
+{% else %}
 You investigate one object on the map near a property in Berlin. What you find goes into a
 report on what lies around the property. Find out from the web what the object is and whether
 it is in use today. Today is {{ date }}.
@@ -10,3 +26,4 @@ its name for a site at this place; a page about another address, even next door,
 finding will rest on one page and the object's map data. When one page, with the map data,
 settles what the object is and whether it is in use, or when more searching is unlikely to
 help, answer without a tool call: the finding is written in the next step.
+{%- endif %}

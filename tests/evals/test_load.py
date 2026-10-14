@@ -5,6 +5,7 @@ import pytest
 import yaml
 
 from evals.load import STATES, TASKS, TaskFormatError, load
+from out_of_frame.state import InvestigationState
 
 
 def read(path):
@@ -19,6 +20,14 @@ def write(path, data):
 @pytest.mark.parametrize("path", sorted(TASKS.glob("*.yaml")), ids=lambda p: p.name)
 def test_task_loads(path):
     load(path)
+
+
+@pytest.mark.parametrize("kind", ["map", "plans"])
+def test_a_live_task_starts_with_the_kind_of_its_object_source(tmp_path, kind):
+    task = read(TASKS / "l1.yaml")
+    task["input"]["sources"][0]["kind"] = kind
+    inputs = load(write(tmp_path / "l1.yaml", task)).inputs
+    assert isinstance(inputs, InvestigationState) and inputs.source_kind == kind
 
 
 def set_label(field, value):
@@ -48,7 +57,17 @@ def drop_calls(task, state):
 
 BROKEN = [
     ("l1.yaml", set_label("identified_type", "no such type"), "unknown identified type"),
-    ("l1.yaml", set_object("source_id", "other"), "not among the task's sources"),
+    ("l1.yaml", set_object("source_id", "other"), "one map or plans source of the task"),
+    (
+        "l1.yaml",
+        lambda task, state: task["input"]["sources"][0].update(kind="web search"),
+        "one map or plans source of the task",
+    ),
+    (
+        "l1.yaml",
+        lambda task, state: task["input"]["sources"].append(task["input"]["sources"][0]),
+        "one map or plans source of the task",
+    ),
     (
         "l1.yaml",
         lambda task, state: task["input"]["sources"][0].update(fixture="none.json"),

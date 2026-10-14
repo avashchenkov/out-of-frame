@@ -345,10 +345,10 @@ message is the input of the run and goes straight into `messages`.
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
 | Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
-| Research | Triage | model + code | one remaining map object per call: `id`, `source_id` (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_id` |
-| Research | Get the addresses of the objects to investigate | code | `map_objects`, `findings`: which objects go to investigation, computed by code | `map_objects[].addresses` of those objects |
+| Research | Triage | model + code | one remaining map object per call: `id`, `source_id`, and the kind of the `sources` entry that it names, which keeps plans out (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_id` |
+| Research | Get the addresses of the objects to investigate | code | `map_objects`, `findings`: which objects go to investigation, computed by code; the kind of the `sources` entry that each one's `source_id` names: only map objects have addresses | `map_objects[].addresses` of those objects |
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
-| Research | Investigate each object, one run per object | model + code | one entry of `map_objects` | one entry of `findings`, the source it cites, `failures` |
+| Research | Investigate each object, one run per object | model + code | one entry of `map_objects`, and the kind of the entry of `sources` that its `source_id` names | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs and the objects left out (code) | `report` |
 | Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys` | `report` |
@@ -356,9 +356,10 @@ message is the input of the run and goes straight into `messages`.
 ### The investigation subgraph
 
 Each investigation is a LangGraph subgraph with its own state. Code starts one run per unclear
-object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets only
-its object. The model sees the object's name, details without the category, and addresses, not its coordinates or
-distance: it searches by address. The run's field names differ from the run state's, so nothing passes between them by
+object, in parallel, with `Send`, LangGraph's way to run a node once per item. A run gets its
+object and the kind of the source that the object comes from, map or plans: a plan gets its own
+prompts. The model sees the object's name, details without the category, and addresses, not its coordinates or
+distance: it searches by address, or a plan by its number. The run's field names differ from the run state's, so nothing passes between them by
 accident. When it ends, code writes its finding into `findings`, the snippet or page the
 finding cites into `sources`, if it cites one, and web search into `failures` if it failed.
 
@@ -371,6 +372,7 @@ snippet and page for prompt injection before it is stored, and code drops what i
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
 | `map_object` | MapObject | The object under investigation | Replace |
+| `source_kind` | map or plans | The kind of the source that the object comes from: a plan gets its own prompts | Replace |
 | `history` | list of messages | The model's tool calls and the results it was shown | Append |
 | `pages` | list of Source | Snippets and pages that passed the check, each with an ID | Append |
 | `finding` | Finding, or null | The finding; a rejected one is replaced with an unidentified one | Replace |
@@ -378,10 +380,10 @@ snippet and page for prompt injection before it is stored, and code drops what i
 
 | Step | Who | Reads | Writes |
 |---|---|---|---|
-| Search the web or read a page | model + code | `map_object`, `history`, `pages` | `history`: the tool call, which code runs; if web search fails, `web_search_failed` and `finding` as unidentified |
+| Search the web or read a page | model + code | `map_object`, `source_kind`, `history`, `pages` | `history`: the tool call, which code runs; if web search fails, `web_search_failed` and `finding` as unidentified |
 | Check each snippet and page for prompt injection | model + code | each snippet and page the tool returned | `history` and `pages`: only what passes (code) |
-| Enough? or cap reached | model + code | `map_object`, `history`, `pages`; code counts the tool calls | nothing |
-| Write the finding | model + code | `map_object`, `history`, `pages` | `finding`; code sets `map_object_id` |
+| Enough? or cap reached | model + code | `map_object`, `source_kind`, `history`, `pages`; code counts the tool calls | nothing |
+| Write the finding | model + code | `map_object`, `source_kind`, `history`, `pages` | `finding`; code sets `map_object_id` |
 | Finding grounded? | code | `finding`, `map_object.name`, `map_object.details`, `map_object.addresses`, `map_object.source_id`, `pages` | if not, `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides

@@ -15,7 +15,15 @@ from langgraph.runtime import Runtime
 from out_of_frame import finding, prompt_injection
 from out_of_frame.config import MODEL, PAGE_CHARS, TOOL_CAP
 from out_of_frame.grounding import find_grounding_errors
-from out_of_frame.state import Finding, InvestigationState, MapObject, Source, ToolCall, ToolResult
+from out_of_frame.state import (
+    Finding,
+    InvestigationState,
+    MapObject,
+    ObjectSourceKind,
+    Source,
+    ToolCall,
+    ToolResult,
+)
 from out_of_frame.web_search import TOOLS, PageText, WebSearch, WebSearchError
 
 log = logging.getLogger(__name__)
@@ -30,10 +38,12 @@ class Context:
     web_search: WebSearch
 
 
-def investigate(map_object: MapObject, date: dt.date, web_search: WebSearch) -> InvestigationState:
+def investigate(
+    map_object: MapObject, source_kind: ObjectSourceKind, date: dt.date, web_search: WebSearch
+) -> InvestigationState:
     """Investigate one map object to the end: its finding passed the grounding check, or the
-    object is unidentified."""
-    start = InvestigationState(map_object=map_object, history=[], pages=[], finding=None)
+    object is unidentified. The kind of its source says whether it is a plan."""
+    start = InvestigationState.start(map_object, source_kind)
     end = build_graph().invoke(start, context=Context(date, web_search))
     return InvestigationState.model_validate(end)
 
@@ -57,7 +67,10 @@ def build_graph():
 def search_or_stop(state: InvestigationState, runtime: Runtime[Context]) -> dict:
     """The model makes one tool call, or answers without one when it has enough."""
     system = finding.render(
-        "investigation.md.j2", cap=TOOL_CAP, date=runtime.context.date.isoformat()
+        "investigation.md.j2",
+        cap=TOOL_CAP,
+        date=runtime.context.date.isoformat(),
+        plan=state.source_kind == "plans",
     )
     answer = build_search_model().invoke([SystemMessage(system), *finding.build_chat(state)])
     if not answer.tool_calls:

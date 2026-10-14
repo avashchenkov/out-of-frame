@@ -110,11 +110,12 @@ def draft_finding(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial
 
 
 def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
-    """The investigation subgraph on one map object. The transcript has each step's update, so
-    that a finding that the grounding check replaced can still be read, with the reasons."""
-    if not isinstance(inputs, MapObject):
-        raise TypeError("investigate needs a task with a map object")
-    start = InvestigationState(map_object=inputs, history=[], pages=[], finding=None)
+    """The investigation subgraph from its start: one map object and the kind of its source.
+    The transcript has each step's update, so that a finding that the grounding check
+    replaced can still be read, with the reasons."""
+    if not isinstance(inputs, InvestigationState) or inputs.history:
+        raise TypeError("investigate needs a live investigation task")
+    start = inputs
     context = out_of_frame.investigation.Context(date, web_search)
     steps = out_of_frame.investigation.build_graph().stream(
         start, context=context, stream_mode=["updates", "values"]
@@ -225,7 +226,8 @@ def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
     """A task from a written state is graded against its own pages only, so the agent cannot add
     or change evidence. A live task is graded against the page the agent stored for its
     finding."""
-    if isinstance(task.inputs, InvestigationState):
+    if task.suite == "finding":
+        assert isinstance(task.inputs, InvestigationState)  # see evals/load.py
         return task.inputs.pages
     return outcome.sources
 

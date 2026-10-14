@@ -16,6 +16,7 @@ map_object:
   coordinates: {lat: 52.52801, lon: 13.23528}  # the centre of the way's bounds
   distance_from_property_m: 118
   source_id: overpass-1  # the map response the object came from; see evals/fixtures/overpass/
+source_kind: map  # the kind of the map object's source
 
 history:
   - {role: model, tool: search, query: "Klärwerkstraße 1, 13597 Berlin"}

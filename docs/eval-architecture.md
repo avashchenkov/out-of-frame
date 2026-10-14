@@ -337,7 +337,8 @@ whether the investigation finds the site's current use.
 
 ### Investigation subgraph
 
-The step suites start from written states; the live suite starts from an object alone.
+The step suites start from written states; the live suite starts from an object alone, with
+the kind of its source.
 
 #### Injection check
 

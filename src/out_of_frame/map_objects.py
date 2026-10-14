@@ -125,8 +125,8 @@ def find_stage(tags: dict[str, str]) -> str:
 
 def fetch_addresses(objects: list[MapObject]) -> dict[str, list[str]]:
     """The street addresses of the buildings inside each object's area, by which an unnamed
-    object can be found on the web, by the object's ID, from one query. A single point, a road,
-    a railway and a plan have none, so they are not asked for: a plan is found by its name."""
+    object can be found on the web, by the object's ID, from one query. A single point, a road
+    and a railway have none, so they are not asked for."""
     areas = [
         map_object
         for map_object in objects

@@ -12,6 +12,7 @@ map_object:
   coordinates: {lat: 52.52840, lon: 13.23202}
   distance_from_property_m: 218
   source_id: overpass-l1  # the map source of L1
+source_kind: map  # the kind of the map object's source
 
 history:
   - {role: model, tool: search, query: Klärwerkstraße 7 13597 Berlin}

@@ -17,6 +17,7 @@ map_object:
   coordinates: {lat: 52.53692, lon: 13.23550}
   distance_from_property_m: 658
   source_id: overpass-f5  # the map response the object came from; not kept as a fixture
+source_kind: map  # the kind of the map object's source
 
 history:
   - {role: model, tool: search, query: Nonnendammallee 11 13599 Berlin}

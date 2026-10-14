@@ -27,6 +27,15 @@ MAP_OBJECT = MapObject(
     distance_from_property_m=100,
     source_id="map-1",
 )
+PLAN = MapObject(
+    id="obj-2",  # the ID says nothing: the kind of its source says that it is a plan
+    name="Bebauungsplan VIII-B6",
+    details={"planname": "VIII-B6", "inhalt": "Gewerbegebiet", "category": "planned_objects"},
+    addresses=[],
+    coordinates=Coordinates(lat=52.5, lon=13.2),
+    distance_from_property_m=315,
+    source_id="bplan-wfs-1",
+)
 SNIPPET = Source(
     id="web-1",
     kind="web search",
@@ -43,6 +52,7 @@ PAGE = Source(
 )
 STATE = InvestigationState(
     map_object=MAP_OBJECT,
+    source_kind="map",
     history=[
         ToolCall(role="model", tool="search", query="Teststraße 1 Berlin"),
         ToolResult(role="tool", pages=["web-1"]),
@@ -123,10 +133,39 @@ def test_the_request_has_the_prompt_the_history_and_the_last_instruction(monkeyp
 )
 def test_the_last_message_names_the_object(name, addresses):
     map_object = MAP_OBJECT.model_copy(update={"name": name, "addresses": addresses})
-    text = finding.render("finding_instruction.md.j2", map_object=map_object)
+    text = finding.render("finding_instruction.md.j2", map_object=map_object, plan=False)
     assert all(address in text for address in addresses)
     assert ("Its name: Test GmbH." in text) == (name is not None)
     assert "\n\n" not in text
+
+
+@pytest.mark.parametrize(
+    "map_object, source_kind, rule, task, last",
+    [
+        (MAP_OBJECT, "map", "A map tag such as", "what this map object is", "this map object"),
+        # The same object as a plan: only the kind of its source differs.
+        (
+            MAP_OBJECT,
+            "plans",
+            "names\n  the plan's number",
+            "what this development plan",
+            "this plan",
+        ),
+    ],
+)
+def test_a_plan_gets_its_own_rules_and_a_map_object_keeps_the_map_rules(
+    monkeypatch, map_object, source_kind, rule, task, last
+):
+    model = FakeModel(ANSWER)
+    monkeypatch.setattr(finding, "build_finding_model", lambda: model)
+    state = STATE.model_copy(update={"map_object": map_object, "source_kind": source_kind})
+    finding.draft_finding(state, dt.date(2026, 10, 3))
+    system, first, *_, instruction = model.request
+    assert rule in system.content and task in first.content and last in instruction.content
+    plan_words = "in the fields of the Finding tool"  # its descriptions say map data, in use
+    assert (plan_words in system.content) == (source_kind == "plans")
+    other = "A map tag such as" if source_kind == "plans" else "the plan's number"
+    assert other not in system.content
 
 
 def test_the_finding_is_the_answer_with_the_map_object_id_from_code(monkeypatch):
