@@ -86,7 +86,7 @@ flowchart TD
         direction TB
         RS(["Report starts"]):::milestone
         W["Write the report<br/>from the state, with its own prompt<br/>why each object matters, from its type<br/>unidentified and not investigated<br/>objects at the end"]:::model
-        REF["Fill in the references<br/>from the evidence"]:::code
+        REF["Fill in the references<br/>from the evidence,<br/>add the journeys"]:::code
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
         RS --> W --> REF
@@ -195,8 +195,9 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
      Each direction has an outcome: found, no route or unavailable. Each destination has its
      own times, so two people with different schedules are two destinations.
 3. **Report.** Unidentified and not investigated objects are not removed; they are listed at
-   the end. The model gives each journey's mean duration briefly, from `journeys`. Code fills
-   in the references (see [Grounding](#grounding)) and adds the credits the licences require:
+   the end. Code fills in the references (see [Grounding](#grounding)) and adds the journeys:
+   each with its destination, direction and mean duration, or why it has none. They are plain
+   data, so no model writes them. Code also adds the credits the licences require:
    "© OpenStreetMap contributors" with its link, and a link to the Transitous sources page if
    there are journeys.
 
@@ -350,8 +351,8 @@ message is the input of the run and goes straight into `messages`.
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects`, and the kind of the entry of `sources` that its `source_id` names | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model + code | code joins `journeys` to `destinations[]`: `id`, `name`; code reads the kind of the `sources` entry that each object's `source_id` names, which marks plans; model reads journeys with destination names in place of IDs, `map_objects` without the category, `findings`, `failures`; on a retry, the unknown IDs and the objects left out (code) | `report` |
-| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys` | `report` |
+| Report | Write the report | model + code | code reads the kind of the `sources` entry that each object's `source_id` names, which marks plans; model reads `map_objects` without the category, `findings`, `failures` other than transit; on a retry, the unknown IDs and the objects left out (code) | `report` |
+| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys`, `destinations[]`: `id`, `name` | `report` |
 
 ### The investigation subgraph
 

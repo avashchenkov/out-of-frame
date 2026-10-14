@@ -47,7 +47,7 @@ tasks built during the MVP; see [MVP](#mvp).
 | Search | component | One search or page read | An object, with a written search history or none | none | 5 | — |
 | Enough | component | One decision to stop or search again | A written search history | none | 4 | — |
 | Finding | component | Write the finding | A written search history and its pages | none | 8 | F1, F2, F4–F8 |
-| Report | component | One report write, or one rewrite after unknown IDs or an object left out | A run state with all findings | none | 6 | R2–R4 |
+| Report | component | One report write, or one rewrite after unknown IDs or an object left out | A run state with all findings | none | 5 | R2–R4 |
 | Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | L1 |
 
 **Component tasks start from fixed data,** except the live investigation, which searches the
@@ -98,7 +98,7 @@ name in its first line.
 | Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N4 | Code: stops or searches again |
 | Write the finding | Research, investigation | Finding, live investigation | F1–F8, L1–L3 | Code: outcome, type and status against the label, evidence ID and key facts; support judge |
-| Write the report | Report | Report | R1–R6 | Code: every finding in the report, IDs, distances and durations; support, interpretation and no verdict judges |
+| Write the report | Report | Report | R1–R4, R6 | Code: every finding in the report, IDs and distances; support, interpretation and no verdict judges |
 
 The input loop checks only the input state at the end. Whether the agent asks is decided by
 code, so the Ask suite grades the question itself. Its wording is
@@ -209,7 +209,8 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
   fetched, not the live page, or the object's name, details without the category, and
   addresses from the map or plan, so the grade can be repeated. It does not compare sources. A general reason that fits
   the object's type, such as smell for a wastewater plant, counts as supported; a reason for
-  another kind of object does not. Journeys in the report are checked against `journeys`.
+  another kind of object does not. Code adds the journeys after the draft, so no judge grades
+  them.
 - **Search relevance:** does each search query, and each page the model chooses to read, aim
   at the object and its location, and does it help settle what is unclear? Each tool call is
   graded on its own, never against an expected one, so the agent's path stays free. The
@@ -411,11 +412,11 @@ label; the support judge grades the finding.
 | R2 | Unidentified objects, objects over the investigation cap, and findings with status unknown, closed and planned | The first two are listed with their distance, marked as unidentified or not investigated; each status is given as in its finding, and a `null` status is not turned into a status |
 | R3 | One source failed after its retries | The rest of the report stays; never "nothing found" for that source |
 | R4 | Nothing of note in the radius | No invented concern, and no "safe area" verdict either |
-| R5 | Journeys found, one with no route and one unavailable | Each journey is given with its destination and direction; no route and unavailable are never given a duration |
 | R6 | A rewrite: the run state and the unknown IDs of the first draft | Only known IDs are cited, and every finding is still in the report |
 
-In every report task, code also checks that each cited ID is known, and that each distance and
-duration equals the value in the run state.
+In every report task, code also checks that each cited ID is known, and that each distance
+equals the value in the run state. Code adds the journeys after the draft, so no report task
+covers them; code tests do.
 
 ### Left out
 
@@ -458,7 +459,7 @@ flowchart TD
         GS(["Grading the outcome<br/>with its suite's graders"]):::milestone
         SC[("Expected results<br/>read only here")]:::data
         MATCH["Findings against labels<br/>nearest label<br/>within tolerance"]:::code
-        CG["Other code graders<br/>IDs, key facts, distances, durations<br/>flagged or not, input state"]:::code
+        CG["Other code graders<br/>IDs, key facts, distances<br/>flagged or not, input state"]:::code
         JG["LLM judges<br/>support, interpretation,<br/>no verdict"]:::model
         CAL[("Calibration sets<br/>graded once by a person")]:::data
         MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: precision and recall per type<br/>live suites: unsupported share, cost")]:::data

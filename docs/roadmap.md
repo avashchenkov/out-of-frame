@@ -113,7 +113,30 @@ calibration.
    and unavailable outcomes; run the end-to-end cases with one and two destinations. The
    report must give the right destination, direction and duration, or the missing-route reason.
    From step 7: the input conversation asks where the user travels and when, a destination
-   may be outside Berlin, and I1 and I3 check it.
+   may be outside Berlin, and I1 and I3 check it. In this order:
+   1. The input: `destinations`. The extract call gives null for no change, an empty list for
+      nowhere, or the whole new list with the ID of each destination it keeps; code gives a
+      new one its ID. Code geocodes each destination's address as one building, like the
+      property's, but anywhere: without the added "Berlin", the Berlin filter or "Berlin" in
+      the places it offers. Code finds everything missing at once: the property, where the user
+      travels, a destination's address and both of its times. Nominatim gets at most one
+      request a second. Code tests with a stubbed model and recorded Nominatim responses; I2
+      and the pipeline tests get a user who travels nowhere. I1 and I3 in the input loop suite,
+      whose grader also checks the destinations and their times, and the person reads one
+      conversation.
+   2. The journeys: the commute branch, a third research start next to the map and the plans.
+      Code plans them on the first Wednesday after the date that is neither a public holiday
+      nor 24 or 31 December, at the user's times in Berlin's time zone; Wednesday is never a
+      movable holiday. Each journey is the mean of the first three connections that leave at
+      the user's time or later, or of fewer. No walk is asked for as a direct route, since
+      Transitous then drops the connections slower than it. No connection is no route; a failed
+      request makes its journey unavailable and adds transit to `failures`, which the CLI
+      tells. The User-Agent names the version, as Transitous asks. Code tests on recorded
+      Transitous responses: the mean, no route and unavailable.
+   3. The report: code adds the journeys after the model's text, each with its destination,
+      direction and duration, or why it has none, and the link to the Transitous sources if
+      there are journeys; the model no longer reads transit in `failures`. Code tests; live
+      runs with one and two destinations, and the person reads one report.
 10. **Judge calibration and MVP results.** Calibrate the three MVP judges against human grades
     of the first real outputs and deliberately faulty examples. Complete and run every
     [MVP task](eval-architecture.md#mvp), several trials each; check that the labels cover
@@ -137,6 +160,8 @@ calibration.
     Teutonenstraße 10, 12524 Berlin: plan XV-25-1, in procedure; the district's press release of
     2026-08-06 names it and an unused plot at Germanenstraße 2/6 for housing,
     https://www.berlin.de/ba-treptow-koepenick/aktuelles/pressemitteilungen/2026/pressemitteilung.1700019.php.
+    From step 9: the support rubric's TODOs for B-Plans and journeys go with calibration; code
+    adds the journeys after the draft, so no judge grades them.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.
