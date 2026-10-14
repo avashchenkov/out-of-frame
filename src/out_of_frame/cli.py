@@ -52,6 +52,8 @@ def main() -> None:
         "listing; the agent asks for what is missing",
     )
     args = parser.parse_args()
+    if not args.message.strip():  # the model gets no empty message
+        parser.error("give an address or a listing")
     logging.basicConfig(format="%(levelname)s %(name)s: %(message)s")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         parser.exit(1, "Set ANTHROPIC_API_KEY, for example in .env: see .env.example.\n")
@@ -103,5 +105,13 @@ def run(message: str, web_search: MeteredWebSearch) -> RunState:
         if question is None:
             return RunState.model_validate(graph.get_state(config).values)
         print(question, file=sys.stderr)
+        command = Command(resume=read_answer())
+
+
+def read_answer() -> str:
+    """The user's answer, asked for again while it is empty: the model gets no empty message."""
+    answer = ""
+    while not answer.strip():
         print("> ", end="", file=sys.stderr, flush=True)
-        command = Command(resume=input())
+        answer = input()
+    return answer

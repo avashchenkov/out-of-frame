@@ -103,6 +103,25 @@ def test_the_agent_asks_in_the_terminal_and_goes_on_with_the_answer(monkeypatch,
     assert out.startswith(f"# What lies around {FREIHEIT_22}\n")  # stdout holds only the report
 
 
+def test_an_empty_answer_is_asked_for_again(monkeypatch, capsys):
+    stub_the_sources(
+        monkeypatch, {"Freiheit, Berlin": "freiheit-street.json", FREIHEIT_22: "freiheit-22.json"}
+    )
+    stub_the_models(monkeypatch)
+    answers = ["", "  ", FREIHEIT_22]
+    monkeypatch.setattr("builtins.input", lambda: answers.pop(0))
+    run_cli(monkeypatch, "Freiheit, Berlin")
+    out, err = capsys.readouterr()
+    assert err.startswith("Question 1\n> > > ") and answers == []
+    assert out.startswith(f"# What lies around {FREIHEIT_22}\n")
+
+
+def test_an_empty_message_exits_at_once(monkeypatch, capsys):
+    with pytest.raises(SystemExit) as stopped:
+        run_cli(monkeypatch, " ")
+    assert stopped.value.code == 2 and "give an address or a listing" in capsys.readouterr().err
+
+
 def test_without_an_answer_the_run_stops(monkeypatch, capsys):
     stub_the_sources(monkeypatch, {"Freiheit, Berlin": "freiheit-street.json"})
 
