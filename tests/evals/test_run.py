@@ -1,5 +1,6 @@
 """The runner on hand-written tasks: trials run, are graded and are recorded."""
 
+import dataclasses
 import datetime as dt
 import functools
 import json
@@ -21,14 +22,24 @@ from evals.run import (
     grade,
     investigate,
     run,
+    run_input_loop,
     select_tasks,
     triage_object,
     trust_every_page,
 )
-from out_of_frame import finding, investigation, prices, prompt_injection
+from out_of_frame import conversation, finding, investigation, prices, prompt_injection
 from out_of_frame.config import MODEL
-from out_of_frame.state import Coordinates, Finding, InvestigationState, MapObject, Source
+from out_of_frame.state import (
+    Address,
+    Coordinates,
+    Finding,
+    InvestigationState,
+    MapObject,
+    RunState,
+    Source,
+)
 from out_of_frame.web_search import PageText, WebSearchAccessError
+from tests.test_agent import stub_the_conversation
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_finding import MAP_OBJECT as ADDRESSED_OBJECT
 from tests.test_investigation import SEARCH, SNIPPET, FakeSearcher, FakeWebSearch
@@ -268,7 +279,8 @@ def test_triage_grades_an_object_it_sends_to_investigation_as_unidentified(monke
 
 
 def test_a_triage_finding_passes_only_with_key_facts_from_the_map_data():
-    task = load(TASKS / "t1.yaml")
+    expected = Expected("identified", "airport", "operating")  # never the task's own
+    task = dataclasses.replace(load(TASKS / "t1.yaml"), expected=expected)
     assert isinstance(task.inputs, MapObject)
     finding = Finding(
         map_object_id=task.inputs.id,
@@ -304,8 +316,71 @@ def test_a_part_runs_only_the_tasks_of_its_suites():
     assert {task.suite for task in select_tasks("triage_object", [])} == {"triage"}
     assert {task.suite for task in select_tasks("write_report", [])} == {"report"}
     assert {task.suite for task in select_tasks("trust_every_page", [])} == {"injection check"}
+    assert {task.suite for task in select_tasks("run_input_loop", [])} == {"input loop"}
     with pytest.raises(ValueError, match="cannot run L1"):
         select_tasks("draft_finding", [TASKS / "l1.yaml"])
+
+
+STAAKEN = "Hauptstraße 1, 13591 Berlin"
+# The Staaken building in the recorded responses; tests never read a task's expected result.
+STAAKEN_BUILDING = Coordinates(lat=52.5288998, lon=13.1443516)
+
+
+def run_i2(monkeypatch, reply_address: str | None) -> Trial:
+    """I2's input loop, with the extract call taking its reply for reply_address."""
+    stub_the_conversation(monkeypatch, {"The one in Staaken, please.": reply_address})
+    inputs = load(TASKS / "i2.yaml").inputs
+    return run_input_loop(inputs, dt.date(2026, 10, 14), NoWebSearch())
+
+
+def test_the_input_loop_asks_resolves_the_answer_and_stops_before_research(monkeypatch):
+    asked = stub_the_conversation(monkeypatch, {"The one in Staaken, please.": STAAKEN})
+    trial = run_input_loop(load(TASKS / "i2.yaml").inputs, dt.date(2026, 10, 14), NoWebSearch())
+    assert isinstance(trial.outcome, RunState) and trial.outcome.property is not None
+    assert trial.outcome.property.coordinates == STAAKEN_BUILDING
+    assert len(asked) == 1 and asked[0][0].startswith("Several buildings in Berlin match")
+    assert [message["role"] for message in trial.transcript] == ["user", "agent", "user"]
+    assert trial.outcome.map_objects == [] and trial.outcome.report is None  # no research
+
+
+@pytest.mark.parametrize(
+    "reply_address, failure, roles",
+    [
+        ("Hauptstraße 1, Staaken", "no recorded Nominatim response", ["user", "agent", "user"]),
+        (None, "UnansweredQuestionError", ["user", "agent", "user", "agent"]),
+    ],
+    ids=["no recorded response", "a question after the last reply"],
+)
+def test_an_input_loop_that_ends_early_keeps_the_conversation(
+    monkeypatch, reply_address, failure, roles
+):
+    trial = run_i2(monkeypatch, reply_address)
+    assert isinstance(trial.outcome, RunState) and trial.outcome.property is not None
+    assert trial.outcome.property.coordinates is None  # so that its grade fails
+    *conversation, ended = trial.transcript
+    assert [message["role"] for message in conversation] == roles
+    assert failure in ended["failure"]
+
+
+def test_an_error_of_the_code_in_the_input_loop_is_an_error_of_the_part(monkeypatch):
+    def fail(state):
+        raise KeyError("address")  # a bug, not the agent's failure
+
+    stub_the_conversation(monkeypatch)
+    monkeypatch.setattr(conversation, "extract", fail)
+    with pytest.raises(KeyError):
+        run_input_loop(load(TASKS / "i2.yaml").inputs, dt.date(2026, 10, 14), NoWebSearch())
+
+
+def test_the_input_loop_passes_only_at_the_expected_building():
+    inputs = load(TASKS / "i2.yaml").inputs
+    task = Task(id="I", suite="input loop", date=None, inputs=inputs, expected=STAAKEN_BUILDING)
+    found = RunState(property=Address(text=STAAKEN, coordinates=STAAKEN_BUILDING))
+    [property] = grade(task, found)
+    assert property.passed
+    elsewhere = Address(text=STAAKEN, coordinates=Coordinates(lat=52.5, lon=13.4))
+    [property] = grade(task, RunState(property=elsewhere))
+    assert not property.passed and property.reasons
 
 
 class UsageModel(BaseChatModel):

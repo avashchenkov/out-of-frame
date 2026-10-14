@@ -1,0 +1,30 @@
+# I2, input loop: the input phase runs until the input is complete, on recorded Nominatim
+# responses. See docs/eval-architecture.md#input-loop.
+id: I2
+suite: input loop
+covers: >-
+  An ambiguous address, a street name in several districts: the agent asks which one is meant,
+  and resolves the answer.
+date: 2026-10-14  # fixed data, recorded on 2026-10-10 and 2026-10-14; the input phase needs no date
+
+# What the agent gets: the user's first message, then a reply to each expected question.
+input:
+  messages:
+    - Hauptstraße 1, Berlin
+    - The one in Staaken, please.
+  # Nominatim answers each request from its recorded response; any other request fails.
+  sources:
+    - id: nominatim-1
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Hauptstraße 1, Berlin
+      fixture: nominatim/hauptstrasse-1.json  # four buildings, one of them in Staaken
+    - id: nominatim-2
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Hauptstraße 1, 13591 Berlin  # the Staaken building as the question offers it
+      fixture: nominatim/hauptstrasse-1-staaken.json
+
+# Read only by the graders: the Staaken building, as both responses give it.
+expected:
+  property: {lat: 52.5288998, lon: 13.1443516}

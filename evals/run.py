@@ -12,6 +12,7 @@ import traceback
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from unittest import mock
 
 from langchain_core.callbacks import get_usage_metadata_callback
 from pydantic_core import to_jsonable_python
@@ -22,14 +23,22 @@ import out_of_frame.prompt_injection
 import out_of_frame.report
 import out_of_frame.triage
 from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
+from evals.graders.input_loop import grade_property
 from evals.graders.prompt_injection import grade_flagged
 from evals.graders.report import grade_citations, grade_distances
-from evals.load import EVALS, Inputs, Task, load, load_all
-from out_of_frame import prices
+from evals.load import EVALS, FIXTURES, Conversation, Inputs, Task, load, load_all
+from out_of_frame import agent, geocoding, prices
 from out_of_frame.config import MODEL
 from out_of_frame.grounding import collect_cited_page, find_grounding_errors
 from out_of_frame.prices import compute_run_cost
-from out_of_frame.state import Finding, InvestigationState, MapObject, RunState, Source
+from out_of_frame.state import (
+    Coordinates,
+    Finding,
+    InvestigationState,
+    MapObject,
+    RunState,
+    Source,
+)
 from out_of_frame.web_search import (
     MeteredWebSearch,
     PageText,
@@ -53,8 +62,9 @@ class Outcome:
 class Trial:
     """What a part returns. The harness counts the tool calls and the cost itself."""
 
-    outcome: Outcome | bool | str  # bool: whether the injection check flagged the page; str: a
-    # report's draft
+    # bool: whether the injection check flagged the page; str: a report's draft; RunState: the
+    # input state where the input loop ends
+    outcome: Outcome | bool | str | RunState
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
 
 
@@ -149,6 +159,39 @@ def write_report(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     return Trial(out_of_frame.report.write_report(inputs, date), transcript=[])
 
 
+class UnrecordedRequestError(LookupError):
+    """The agent geocoded a text that the input loop task has no recorded response for."""
+
+
+def run_input_loop(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """The input loop until the input is complete, with the task's replies in turn, on the
+    task's recorded Nominatim responses. A request with no recorded response, or a question
+    after the replies have run out, ends the trial where the agent stopped, with an input that
+    is not complete, so that its grade fails. The transcript is the conversation, with the
+    reason it ended early."""
+    if not isinstance(inputs, Conversation):
+        raise TypeError("run_input_loop needs an input loop task")
+    recorded = {source.request: FIXTURES / source.fixture for source in inputs.sources}
+
+    def replay(text: str) -> list[dict]:
+        if text not in recorded:
+            raise UnrecordedRequestError(f"no recorded Nominatim response for {text!r}")
+        return json.loads(recorded[text].read_text(encoding="utf-8"))
+
+    graph, config = agent.build_graph(), agent.start_thread()
+    failure = None
+    with mock.patch.object(geocoding, "call_nominatim", replay):
+        try:
+            agent.run(inputs.messages, date, web_search, input_only=True, config=config)
+        except (agent.UnansweredQuestionError, UnrecordedRequestError) as error:  # its failure
+            failure = repr(error)
+    state = RunState.model_validate(graph.get_state(config).values)
+    transcript: list[dict] = [message.model_dump() for message in state.messages]
+    if failure is not None:
+        transcript.append({"failure": failure})
+    return Trial(state, transcript)
+
+
 PARTS: dict[str, Part] = {
     "abstain": abstain,
     "trust_every_page": trust_every_page,
@@ -157,6 +200,7 @@ PARTS: dict[str, Part] = {
     "investigate": investigate,
     "triage_object": triage_object,
     "write_report": write_report,
+    "run_input_loop": run_input_loop,
 }
 # The suites that each part can run.
 PART_SUITES = {
@@ -167,12 +211,13 @@ PART_SUITES = {
     "investigate": {"live investigation"},
     "triage_object": {"triage"},
     "write_report": {"report"},
+    "run_input_loop": {"input loop"},
 }
 
 
 def find_map_object(inputs: Inputs) -> MapObject:
-    if isinstance(inputs, PageText | RunState):
-        raise TypeError("an injection check or report task has no one map object")
+    if isinstance(inputs, PageText | RunState | Conversation):
+        raise TypeError("an injection check, report or input loop task has no one map object")
     return inputs if isinstance(inputs, MapObject) else inputs.map_object
 
 
@@ -185,8 +230,10 @@ def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
     return outcome.sources
 
 
-def grade(task: Task, outcome: Outcome | bool | str) -> list[Grade]:
+def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
     expected = task.expected
+    if isinstance(outcome, RunState) and isinstance(expected, Coordinates):
+        return [grade_property(outcome, expected)]
     if isinstance(outcome, str) and isinstance(task.inputs, RunState):
         return [grade_citations(outcome, task.inputs), grade_distances(outcome, task.inputs)]
     if isinstance(outcome, bool) and isinstance(expected, bool):
@@ -200,7 +247,9 @@ def grade(task: Task, outcome: Outcome | bool | str) -> list[Grade]:
     raise TypeError(f"{task.id}: the part's outcome does not fit the task's expected result")
 
 
-def dump_outcome(task: Task, outcome: Outcome | bool | str) -> dict:
+def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState) -> dict:
+    if isinstance(outcome, RunState):
+        return {"property": outcome.property and outcome.property.model_dump(mode="json")}
     if isinstance(outcome, bool):
         return {"flagged": outcome}
     if isinstance(outcome, str):

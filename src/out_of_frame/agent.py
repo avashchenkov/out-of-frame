@@ -45,13 +45,22 @@ class UnansweredQuestionError(Exception):
     """The agent asked a question after the user's replies had run out."""
 
 
-def run(messages: list[str], date: dt.date, web_search: WebSearch) -> RunState:
+def run(
+    messages: list[str],
+    date: dt.date,
+    web_search: WebSearch,
+    input_only: bool = False,
+    config: RunnableConfig | None = None,
+) -> RunState:
     """A run without a person: the first message starts it, and each next one answers the
-    agent's next question, as in the evals."""
-    graph, config = build_graph(), start_thread()
+    agent's next question, as in the evals. With input_only, the run stops once the input is
+    complete, before research starts, as in the input loop suite. A caller that gives the
+    run's thread can read the state where the run stopped, even after an error."""
+    graph, config = build_graph(), config or start_thread()
     command: RunState | Command = start(messages[0])
+    stop = ["get_map_objects"] if input_only else None
     for reply in [*messages[1:], None]:
-        graph.invoke(command, config, context=Context(date, web_search))
+        graph.invoke(command, config, context=Context(date, web_search), interrupt_before=stop)
         question = find_question(graph, config)
         if question is None:
             break

@@ -23,7 +23,7 @@ TASKS = EVALS / "tasks"
 STATES = EVALS / "states"
 FIXTURES = EVALS / "fixtures"
 
-type Inputs = MapObject | InvestigationState | RunState | PageText
+type Inputs = MapObject | InvestigationState | RunState | PageText | Conversation
 
 
 class TaskFormatError(Exception):
@@ -38,6 +38,14 @@ class RecordedSource(Record):
     url: str
     request: str
     fixture: str
+
+
+class Conversation(Record):
+    """What an input loop task gives the agent: the user's messages, the first one and a reply
+    to each expected question, and the recorded Nominatim responses it geocodes from."""
+
+    messages: list[str]
+    sources: list[RecordedSource]
 
 
 class Label(Record):
@@ -55,14 +63,15 @@ class Label(Record):
 
 
 class TaskExpected(Record):
-    """The label of a real object, the result that follows a written state, or whether the
-    injection check should flag a page."""
+    """The label of a real object, the result that follows a written state, whether the
+    injection check should flag a page, or where the input loop should find the property."""
 
     label: Label | None = None
     outcome: Literal["identified", "unidentified"] | None = None
     identified_type: str | None = None
     status: str | None = None
     flagged: bool | None = None
+    property: Coordinates | None = None  # TODO: the destinations, with I1 and I3 (step 9)
 
     @model_validator(mode="after")
     def check_one_kind(self) -> Self:
@@ -71,13 +80,18 @@ class TaskExpected(Record):
             "identified_type",
             "status",
         } & self.model_fields_set  # null counts as given
-        if (self.label is not None) + bool(written) + (self.flagged is not None) != 1:
-            raise ValueError("give a label, or outcome, identified_type and status, or flagged")
+        kinds = [self.label is not None, bool(written), self.flagged is not None]
+        if sum(kinds) + (self.property is not None) != 1:
+            raise ValueError(
+                "give a label, or outcome, identified_type and status, or flagged, or property"
+            )
         if written and len(written) < 3:
             raise ValueError("give outcome, identified_type and status together")
         return self
 
-    def result(self) -> Expected | bool:
+    def result(self) -> Expected | bool | Coordinates:
+        if self.property is not None:
+            return self.property
         if self.flagged is not None:
             return self.flagged
         if self.label:
@@ -87,6 +101,7 @@ class TaskExpected(Record):
 
 
 class TaskInput(Record):
+    messages: list[str] = []  # the user's messages in an input loop task
     map_object: MapObject | None = None
     sources: list[RecordedSource] = []
     state: str | None = None
@@ -95,7 +110,9 @@ class TaskInput(Record):
 
 class TaskFile(Record):
     id: str
-    suite: Literal["finding", "live investigation", "injection check", "triage", "report"]
+    suite: Literal[
+        "finding", "live investigation", "injection check", "triage", "report", "input loop"
+    ]
     covers: str
     date: dt.date | Literal["today"]
     input: TaskInput
@@ -108,9 +125,9 @@ class Task:
     suite: str
     date: dt.date | None  # None: the date of the trial
     inputs: Inputs
-    # bool: whether the injection check should flag the page; None for a report task, whose
-    # graders read only its state
-    expected: Expected | bool | None
+    # bool: whether the injection check should flag the page; Coordinates: where the input loop
+    # should find the property; None for a report task, whose graders read only its state
+    expected: Expected | bool | Coordinates | None
 
 
 def load_all() -> list[Task]:
@@ -134,6 +151,8 @@ def load(path: Path) -> Task:
     except (ValidationError, OSError, yaml.YAMLError) as e:
         fail(str(e))
 
+    if bool(task.input.messages) != (task.suite == "input loop"):
+        fail("an input loop task, and only it, gives the user's messages")
     match task.suite, task.input.map_object, state, task.input.page:
         case "live investigation", MapObject() as map_object, None, None:
             if map_object.source_id not in [source.id for source in task.input.sources]:
@@ -149,10 +168,14 @@ def load(path: Path) -> Task:
             inputs = state
         case "injection check", None, None, PageText() as page:
             inputs = page
+        case "input loop", None, None, None:
+            if any(source.kind != "geocoding" for source in task.input.sources):
+                fail("an input loop task replays only geocoding responses")
+            inputs = Conversation(messages=task.input.messages, sources=task.input.sources)
         case _:
             fail(
                 "a live investigation or triage task gives a map object, a finding or report "
-                "task a state, an injection check task a page"
+                "task a state, an injection check task a page, an input loop task messages"
             )
 
     if (task.expected is None) != (task.suite == "report"):
@@ -160,6 +183,8 @@ def load(path: Path) -> Task:
     expected = task.expected.result() if task.expected else None
     if isinstance(expected, bool) != (task.suite == "injection check"):
         fail("an injection check task, and only it, expects flagged")
+    if isinstance(expected, Coordinates) != (task.suite == "input loop"):
+        fail("an input loop task, and only it, expects the property")
     if isinstance(expected, Expected):
         check_expected(expected, fail)
     if task.date == "today" and task.suite != "live investigation":

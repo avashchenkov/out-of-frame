@@ -80,6 +80,18 @@ BROKEN = [
         "unknown evidence",
     ),
     ("t2.yaml", lambda task, state: task.pop("expected"), "only it, has no"),
+    ("i2.yaml", lambda task, state: task["input"].pop("messages"), "gives the user's messages"),
+    ("t1.yaml", lambda task, state: task["input"].update(messages=["Hi"]), "user's messages"),
+    (
+        "i2.yaml",
+        lambda task, state: task["input"]["sources"][0].update(kind="map"),
+        "only geocoding",
+    ),
+    (
+        "t1.yaml",
+        lambda task, state: task.update(expected={"property": {"lat": 52.5, "lon": 13.1}}),
+        "only it, expects the property",
+    ),
 ]
 
 

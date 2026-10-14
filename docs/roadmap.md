@@ -83,19 +83,19 @@ calibration.
       gives no details the reader cannot use, such as an object's map addresses. A draft that leaves out an
       object is written again. R2–R4.
    5. ✅ Live runs on Freiheit 22 and Corinthstraße 60; the person reads one report.
-7. **Input conversation.** The first message can be any text: an address, a listing or a
+7. ✅ **Input conversation.** The first message can be any text: an address, a listing or a
    greeting. Add extraction, the address check, questions and LangGraph pauses, for the
    property's address only: where the user travels and when comes with the journeys in step 9.
    The user can resolve an ambiguous address; a precise Berlin address starts research without
    a question. The state is kept in memory: the graph saves it after each step and goes on
    from there when the user answers, but a run that stops is not continued once the process
    has ended. A known MVP limitation; the architecture allows a store on disk. In this order:
-   1. The input loop: `messages`; the extract call, whose change code applies; the check by
+   1. ✅ The input loop: `messages`; the extract call, whose change code applies; the check by
       code, with the Nominatim response kept as a source; the question, which offers only the
       matches code found; a pause in memory for the answer; the CLI asks in the terminal. Code
       tests with a stubbed model and recorded Nominatim responses: applying changes, each
       reason to ask, and resuming the run.
-   2. I2 in an input loop suite on recorded Nominatim responses; live runs from a listing and
+   2. ✅ I2 in an input loop suite on recorded Nominatim responses; live runs from a listing and
       from an ambiguous address, and the person reads one conversation.
 8. **Development plans.** Add the B-Plan WFS branch and feed its objects into the existing
    investigation. Check E4 with no commute destinations, plus code tests for filtering,
