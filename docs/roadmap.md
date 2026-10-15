@@ -142,12 +142,13 @@ calibration.
     [MVP task](eval-architecture.md#mvp), several trials each; check that the labels cover
     every category. Publish results with failures and limitations. Add one Docker
     image for the CLI; the keys are passed at run time, never built into the image.
-    From the first hand grades: the support and interpretation rubrics count an effect on a
-    resident, such as traffic, as backed only when the type's line or a source gives it, and
-    the person checks the grades of evals/calibration/ against the changed rubrics.
-    From step 6: the labelling script, F2 and F6; the support rubric checks the type of a
-    triage finding only against its label, as the eval architecture says, since triage may use
-    what the model knows; the interpretation rubric lets an object whose type alone shows no
+    From the first hand grades: the support rubric counts an effect on a resident, such as
+    traffic, as backed only when the type's line or the cited page gives it, and the
+    interpretation rubric only when the type's line gives its kind; the person checks the
+    grades of evals/calibration/ against the changed rubrics.
+    From step 6: the labelling script, F2 and F6; the support rubric grades a triage finding by
+    its map data, like any other, since triage settles only what the map makes clear; the
+    interpretation rubric lets an object whose type alone shows no
     effect have one short sentence, as the report prompt asks since step 6.4. A known
     limitation to publish: a site that several businesses share gets the type of the business
     that the investigation finds. At Klärwerkstraße 1 and 1a, runs found a cleaning business
@@ -166,7 +167,71 @@ calibration.
     legal status ("because the plan is only planned"), against its own rule; it called
     CURVE-Campus an office site, though its page also names manufacturing and a TV studio; and
     it said what a plan in procedure allows, where the finding prompt says what it is meant to
-    allow, so "XV-25-1 allows housing" reads as a permission.
+    allow, so "XV-25-1 allows housing" reads as a permission. In this order:
+    1. The rubrics, before anything is graded, and two fixes of the report prompt they need.
+       - Support: the type's line backs a general effect of that type; a specific one, such as
+         how often, needs the cited page. Map data back the status their tags show, as triage
+         reads them, so a triage finding is graded like any other. A plan's WFS fields back its
+         legal status and, where they name it, what it is meant to allow, never whether
+         building has started; a plan in procedure is only meant to allow its uses.
+       - Interpretation, which sees no pages: an identified object needs a meaning only if its
+         type's line gives an effect, and one whose type shows none may have one short
+         sentence. A meaning fits only if it is of the kind the type's line gives; calling an
+         object of type other harmless is a no, and so is giving a plan's legal status as the
+         reason that building has or has not started.
+       - Both judges' templates mark a plan as one, as the report prompt does. The journeys,
+         B-Plan and question TODOs go: no judge grades journeys or questions in the MVP.
+       - The report prompt says what a plan in procedure is meant to allow, not what it allows,
+         and never that the type of an object of type other shows no effect.
+       - The person checks the grades of evals/calibration/ against the changed rubrics.
+    2. The end-to-end tasks, E1–E5, with their labels.
+       - First the task format: an end-to-end suite with its messages, the expected input as in
+         the input loop, the expected outcome of each journey, and a list of labels, each with
+         its object ID and category, or marked as left out with the reason.
+       - The labelling script records the Overpass and WFS responses at an address as fixtures
+         and writes a label for each object the agent can see there: the nearest N per category
+         and the nearest N plans, both 5 by default, with the ID, category, coordinates and
+         tolerance from the agent's own code.
+       - The addresses: E1 at Freiheit 22 with one destination, E4 at Teutonenstraße 10 with
+         two, and E2, E3 and E5 at the candidates of the eval architecture, where the user
+         travels nowhere. The property and each destination geocode to one building, and each
+         first message completes the input, so the judges grade only reports. As soon as the
+         script lists an address's objects, the object it is chosen for must be among them; if
+         not, the next candidate is tried.
+       - Labels as the [eval architecture](eval-architecture.md#ground-truth-labels) says:
+         Claude proposes each type, status and page, with the Tavily search that finds it; a
+         new Claude session, Codex and Grok each check them without seeing the others' checks;
+         the person reads every label with its checks and settles each disputed one. E4's label
+         in the note above is a proposal like any other. While labelling E2, Claude also keeps
+         the pages that F2 and F6 need.
+       - Code grades the input, the findings against the labels and the journeys, as the eval
+         architecture says. Grader tests; in CI, the task format, and every category has a
+         scored label at one address at least.
+    3. F2 and F6 in the finding suite, from the pages kept in 10.2, rewritten in new words.
+    4. The end-to-end suite in evals/run.py: the whole agent on live sources from the task's
+       messages, each run saved as evals/judge.py saves it and graded by code at once; no judge
+       grades it before calibration. The fixed component suites report pass@k and pass^k
+       averaged over their tasks; the live investigation and end-to-end suites report their own
+       metrics, as the eval architecture lists. One trial of each task gives the first real
+       outputs.
+    5. Calibration, by the rules of the [eval architecture](eval-architecture.md#llm-judges).
+       Each judge's set takes examples from these outputs and from the saved runs of the
+       earlier steps, plus faulty ones made on purpose, on top of them: at least one for each
+       question the judge answers, and the report failures noted above that the trials do not
+       show. About fifteen statements for support, with supported, unsupported and contradicted
+       at least once each, and eight reports each for interpretation and no verdict. The person
+       grades them on a form, as in step 5.6; only then do the judges run on them, and a script
+       checks each judge version against the grades. A judge that still fails after a few
+       changes is left out, with its axis.
+    6. The full run: every MVP task, three trials each. evals/run.py runs a judge only if the
+       calibration script has recorded that its version passed: the support judge on the
+       end-to-end suite, and the interpretation and no verdict judges on it and on the report
+       suite.
+    7. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
+       and CI builds it.
+    8. The results in docs/results.md: each suite's scores, its failures, the known
+       limitations above, and the cost of the one-page rule in the end-to-end scores. The
+       README says what the agent does, how to run the CLI and the evals, and links the results.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.

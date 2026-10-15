@@ -38,7 +38,7 @@ tasks built during the MVP; see [MVP](#mvp).
 
 | Suite | Level | Runs | Starts from | Sources it calls | Tasks | MVP |
 |---|---|---|---|---|---|---|
-| End-to-end | end-to-end | The whole agent | Written user messages: the first one and a reply to each expected question | live | 5 | E1–E5 |
+| End-to-end | end-to-end | The whole agent | A written first message that completes the input | live | 5 | E1–E5 |
 | Input loop | component | The input loop, until the input is complete | Written user messages: the first one and a reply to each expected question | replayed | 3 | I1–I3 |
 | Extract | component | One extract call | Written messages and the current input | none | 10 | — |
 | Ask | component | One question | Written messages and what code found missing | none | 4 | — |
@@ -102,7 +102,8 @@ name in its first line.
 
 The input loop checks only the input state at the end. Whether the agent asks is decided by
 code, so the Ask suite grades the question itself. Its wording is
-free; what it asks for is graded. The end-to-end tasks together run all the steps.
+free; what it asks for is graded. The end-to-end tasks together run all the steps but the
+question.
 
 ## MVP
 
@@ -114,9 +115,10 @@ designed here and are built only if an observed failure shows a need; no phase a
 is planned.
 
 - **Judges:** support, interpretation and no verdict, the three that grade the end-to-end
-  report. Review early outputs by hand against their rubrics; these grades go into the
-  judges' calibration sets. Automate and calibrate the judges from real outputs before quoting
-  their scores. The search relevance and question judges are outside the MVP.
+  report; the last two also grade the report suite. Review early outputs by hand against their
+  rubrics; these grades go into the judges' calibration sets. Automate and calibrate the judges
+  from real outputs before quoting their scores. The search relevance and question judges, and
+  the support judge on the live investigation, are outside the MVP.
 - **No simulated user:** the user's replies are written in the task, like the first message
   (see [Running the evals](#running-the-evals)). A simulated user, an LLM that answers from
   what the task says the user knows, is outside the MVP.
@@ -129,29 +131,31 @@ The report is graded on two axes, apart:
    them against ground-truth labels.
 2. **Groundedness:** every statement traces to a stored source. The support judge grades it
    over the whole report, including what the labels do not cover, such as the reasons an object
-   matters. Unsupported is not the same as false. The one exception is triage: there the model
-   may say what a mapped object is from what it knows, so the type of a triage finding is
-   checked only against its label.
+   matters. Unsupported is not the same as false. Triage settles only an object that its map
+   data make clear, so the support judge grades a triage finding by those map data, like any
+   other.
 
 ### Ground-truth labels
 
 The agent states facts about the real world: the type and status of each object nearby. To
 grade them by code, the true values are recorded apart from the agent, as labels. A label
-records what a correct finding says about one object, in the project's own format.
+records the true type and status of one object, in the project's own format.
 `identified_type` and `status` come from the same lists in `research_scope.yaml` that the agent
-uses. `coordinates` and `distance_tolerance_m` let code match a finding to the label.
-`source_url` is the address of one page that shows why the label is true.
+uses. `object_id`, `category`, `coordinates` and `distance_tolerance_m` let code match a
+finding to the label. `source_url` is the address of one page that shows why the label is true.
 
 Labels are not drawn from the map by hand. For each end-to-end address, a script queries the
-map and plan sources and writes every object of each category inside its radius into the
-labels, with an ID and its coordinates. It groups the elements into objects and
-computes the coordinates with the agent's own code, so a label has the coordinates the agent
-gets for the same object. It also records the responses as fixtures. A category
-with no object in its radius is labelled as empty. Triage and investigation tasks reuse these
+map and plan sources and writes the objects the agent can see there into the labels: the
+nearest N of each category and the nearest N plans. Further objects need no label, since
+recall leaves them out. The script groups the elements into objects and computes their IDs
+and coordinates with the agent's own code, so a label has what the agent gets for the same
+object. It also records the responses as fixtures. Triage and investigation tasks reuse these
 labels.
 
 ```yaml
 - id: nlnd-campus
+  object_id: osm-way-32195750
+  category: industry
   coordinates: {lat: 52.46444, lon: 13.46259}
   distance_tolerance_m: 500
   identified_type: commercial      # from a fixed list
@@ -159,37 +163,46 @@ labels.
   source_url: https://www.pmi.com/markets/germany/de/presse/nlnd-berlin
 ```
 
-- Type and status are then filled in by a person from
-  real-world evidence: registers, operator announcements, plans. They never come from the map
-  tags; otherwise the evals would measure agreement with OpenStreetMap, not truth.
-- Every label must be reachable: its type and status can be found with Tavily search and
-  extract. If not, the task is broken, not hard.
+- Type and status come from real-world evidence: registers, operator announcements, plans.
+  They never come from the map tags; otherwise the evals would measure agreement with
+  OpenStreetMap, not truth.
+- A label gives the truth, not what the agent's rules let it say. A site that several
+  businesses share is labelled by the use that can affect people nearby the most.
+- Models search and a person decides, since searching every object by hand would cost the
+  project too much. Claude, in Claude Code, proposes each label with its page, never from an
+  agent's run. A new Claude session, OpenAI's Codex CLI and xAI's Grok Build, each with web
+  search, check every label without seeing the others' checks: the agent is a Claude model
+  too, and checkers from other vendors keep a blind spot of Claude models from passing as
+  truth. The person sets these rules, reads every label with its checks and settles each
+  disputed one.
+- Every label must be reachable: a Tavily search built from what the agent sees of the object
+  finds the label's page. If not, a component task is broken, not hard; in an end-to-end task,
+  the object is marked as left out and is not scored.
 - `null` is a real value. Where the evidence cannot settle a type or a status, the label
   says `null` for that field, and an agent that leaves it `null` there is right. Reporting
   the object as unidentified is right only if its type is `null`. The WFS fields of a
   B-Plan, for example, do not show whether building has started; if no other evidence does,
   that status is `null`.
-- Across the end-to-end addresses, every category has at least one labelled object.
+- Across the end-to-end addresses, every category has at least one scored label.
 
 ### Code-based graders
 
-Findings are matched to labels by coordinates, each label at most once. A finding has no
-coordinates of its own, so code takes the coordinates of its object and matches the finding to the nearest
-label within that label's `distance_tolerance_m`. The tolerance covers map
-edits made after labelling, which a live run can see. Code then compares type and status. In
-a task with one object, the finding is compared with that object's label directly.
+Findings are matched to labels, each label at most once: first by object ID, then, since a
+map edit after labelling can change an ID, by coordinates, to the nearest label of the same
+category within its `distance_tolerance_m`. A finding has no coordinates of its own, so code
+takes those of its object. Code then compares type and status. In a task with one object, the
+finding is compared with that object's label directly.
 
 - A label without a finding is a **miss**.
 - A matched finding with a wrong type or status is an **error**: "a Philip Morris factory" is
   the wrong type for the label above.
-- A finding that matches no label is a **false alarm**, and in an empty category every finding is
-  one. A label matches one finding at most, so a second finding for the same object is a false
-  alarm too.
+- A finding that matches no label is a **false alarm**, and in a category without labels every
+  finding is one. A label matches one finding at most, so a second finding for the same object
+  is a false alarm too.
 
 Only a matched finding with the right type and status counts as correct, in precision and in
-recall, so they cover every finding, not a chosen few. Recall leaves out the labels that the
-agent's limits exclude in that trial (objects beyond the nearest N, and unclear ones past the
-nearest five) and the labels of a branch whose source failed.
+recall, so they cover every finding, not a chosen few. Recall leaves out the labels of objects
+that the trial did not fetch, and those of a branch whose source failed.
 
 The other code-based graders are in the [step table](#llm-steps). The output is shaped for
 them: types and statuses come from fixed lists, and the model cites each finding by its object
@@ -207,10 +220,10 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 - **Support:** do the cited facts and their source support what the finding claims, or
   contradict it? The judge reads the source text as it was stored: the snippet or page as
   fetched, not the live page, or the object's name, details without the category, and
-  addresses from the map or plan, so the grade can be repeated. It does not compare sources. A general reason that fits
-  the object's type, such as smell for a wastewater plant, counts as supported; a reason for
-  another kind of object does not. Code adds the journeys after the draft, so no judge grades
-  them.
+  addresses from the map or plan, so the grade can be repeated. It does not compare sources.
+  A general reason that fits the object's type, such as smell for a wastewater plant, counts
+  as supported; a reason for another kind of object does not. Code adds the journeys after
+  the draft, so no judge grades them.
 - **Search relevance:** does each search query, and each page the model chooses to read, aim
   at the object and its location, and does it help settle what is unclear? Each tool call is
   graded on its own, never against an expected one, so the agent's path stays free. The
@@ -226,23 +239,25 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 
 Each judge has its own calibration set. For the support judge, an example is one statement with
 the source it cites; for the interpretation and no verdict judges, one report. The examples
-come from the first real end-to-end runs, stored as they are, plus a few made faulty on
-purpose, such as a report with a planted verdict or a statement its source does not support. A
-person grades the set once, by the judge's rubric. Each judge version is checked against these
-grades: it must catch every faulty example and may disagree on at most two of the others. Until
-a judge passes, only the numbers from code-based graders are quoted, and its axis is left out.
+come from real runs, stored as they are, plus a few copies made faulty on purpose, such as a
+report with a planted verdict or a statement its source does not support. A person grades the
+set once, by the judge's rubric, frozen first, before seeing any judge's grades. Each judge
+version is checked against these grades, answer by answer: it must catch every faulty example
+and may disagree on at most two of the other answers. Until a judge passes, only the numbers
+from code-based graders are quoted, and its axis is left out.
 
 ### Metrics
 
 In every component suite but the live investigation, each trial passes or fails on the task's
 own criterion. For each task, the evaluation harness records whether at least one of the k
 trials passed and whether all passed; averaged over the suite, these estimate pass@k and pass^k.
+A report task passes only if the judges that passed calibration find nothing wrong either.
 
 An end-to-end task reports partial credit per labelled object over the k trials: precision and
 recall of the findings; the share of statements the support judge finds unsupported or
 contradicted; the number of tool calls and the cost. These scores are also shown per
-identified type, with the number of labelled objects next to each: a type may have only one. Each
-research branch is marked as ok, empty or failed. Each suite is reported on its own, never
+identified type, with the number of labelled objects next to each: a type may have only one.
+Each research branch is marked as ok, empty or failed. Each suite is reported on its own, never
 pooled.
 
 A live investigation task reports, per object over the k trials, the share of findings with the
@@ -263,9 +278,10 @@ covers a case the others do not.
 ### End-to-end
 
 One task per address, with labels. Two tasks also give destinations, one with one
-destination and one with two; in the others, the user travels nowhere. Code checks the
-findings against the labels, and two journeys, there and back, for each destination and none
-without one. The support, interpretation and no verdict judges grade the report.
+destination and one with two; in the others, the user travels nowhere. Each first message
+completes the input, so a question fails the trial. Code checks the input, the findings
+against the labels, and two journeys, there and back, for each destination and none without
+one. The support, interpretation and no verdict judges grade the report.
 
 | # | Address near | What it covers |
 |---|---|---|
@@ -273,7 +289,7 @@ without one. The support, interpretation and no verdict judges grade the report.
 | E2 | The former Philip Morris factory, Neukölln | A stale fact: OSM still shows a Philip Morris factory, but Philip Morris production there has ended |
 | E3 | A100, 17th section | Planned, not built; a railway in the radius |
 | E4 | An active B-Plan | Planned, no construction yet |
-| E5 | A harmless lookalike, the control | No false alarm |
+| E5 | A harmless lookalike, the control | The lookalike does not get the hazard's type |
 
 A lookalike must differ from a real hazard in a field that code can compare, usually its
 type: for example, a stormwater filter tagged as a wastewater plant. "Looks alarming" cannot
@@ -458,11 +474,11 @@ flowchart TD
         direction TB
         GS(["Grading the outcome<br/>with its suite's graders"]):::milestone
         SC[("Expected results<br/>read only here")]:::data
-        MATCH["Findings against labels<br/>nearest label<br/>within tolerance"]:::code
+        MATCH["Findings against labels<br/>by object ID, then<br/>by coordinates"]:::code
         CG["Other code graders<br/>IDs, key facts, distances<br/>flagged or not, input state"]:::code
         JG["LLM judges<br/>support, interpretation,<br/>no verdict"]:::model
         CAL[("Calibration sets<br/>graded once by a person")]:::data
-        MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: precision and recall per type<br/>live suites: unsupported share, cost")]:::data
+        MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: precision and recall per type<br/>end-to-end: unsupported share, cost")]:::data
         PUB(["Results published<br/>with the failures"]):::human
         STOP(("●")):::stop
         GS --> MATCH
