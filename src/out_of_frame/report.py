@@ -38,7 +38,7 @@ def write_report(state: RunState, date: dt.date) -> str:
     )
     findings = {finding.map_object_id: finding for finding in state.findings}
     known = {map_object.id for map_object in state.map_objects}
-    plans = {o.id for o in state.map_objects if state.find_source_kind(o) == "plans"}
+    plans = find_plans(state)
     wrong: list[str] = []
     missing: list[str] = []
     for _ in range(REPORT_ATTEMPTS):
@@ -60,6 +60,11 @@ def write_report(state: RunState, date: dt.date) -> str:
         f"{REPORT_ATTEMPTS} drafts had wrong citations or left out objects, last: "
         + ", ".join(wrong + missing)
     )
+
+
+def find_plans(state: RunState) -> set[str]:
+    """The IDs of the objects that are development plans, not map objects."""
+    return {o.id for o in state.map_objects if state.find_source_kind(o) == "plans"}
 
 
 def find_reported_failures(state: RunState) -> list[Service]:

@@ -5,8 +5,10 @@
 # pages. Without its run file, an example cannot be judged again. run_sha256 shows that a run
 # file is the one that was graded.
 
+# Rechecked on 2026-10-15 against the rubric of roadmap step 10.1: Codex and Grok checked each
+# grade on its run file without the judges' grades, and the person confirmed them.
 graded: '2026-10-12'
-rubric_sha256: 4fc2dabffeecc09f46749fa7a7ce311b2a8a4e5159aa5aa280a34caa1e348b57
+rubric_sha256: dacc2f227f3d3c10cec60db11b6440c64d491d5624ff5fc51f1b06b660f88cbb
 examples:
 - run: 2026-10-12T01-51-48-538796Z-run.json
   run_sha256: 361a29009f2399a159d238e1198e1473176450a72862652e94680f379c64c824
@@ -20,7 +22,8 @@ examples:
   answers:
     explains_meaning:
       answer: 'yes'
-      reason: 'It says what a cleaning business means for people nearby: no effect from its type.'
+      reason: A commercial site needs no more than one short sentence with what it is and its
+        distance, and the report gives them.
     lists_unclear_objects:
       answer: 'yes'
       reason: There is no unclear object.
@@ -29,7 +32,7 @@ examples:
       reason: No source failed.
     fits_type:
       answer: 'yes'
-      reason: No effect on neighbours fits a cleaning service.
+      reason: No effect on people nearby fits the type commercial.
 - run: 2026-10-12T01-46-31-102269Z-run.json
   run_sha256: fd9a5e50375505bb531022820ede71593de7b3e15c46717aba1f8ac91b2f2491
   draft: 'Klärwerkstraße 1 and 1A lie about 118 m from the property, on land the map data marks as industrial
@@ -44,7 +47,8 @@ examples:
   answers:
     explains_meaning:
       answer: 'yes'
-      reason: 'It says what the service means for people nearby: no effect from its type.'
+      reason: A commercial site needs no more than one short sentence with what it is and its
+        distance, and the report gives them.
     lists_unclear_objects:
       answer: 'yes'
       reason: There is no unclear object.
@@ -53,7 +57,7 @@ examples:
       reason: No source failed.
     fits_type:
       answer: 'yes'
-      reason: No effect on neighbours fits a training service for the Jobcenter.
+      reason: No effect on people nearby fits the type commercial.
 - run: 2026-10-12T01-45-18-783505Z-run.json
   run_sha256: c4181c1bcfe8e2a67ca5ee8f04ed583741eec92f650d5cd4a67024e21b0e8f5c
   draft: The map source failed after its retries, so this part of the report is missing. No objects near

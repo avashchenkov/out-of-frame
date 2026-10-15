@@ -20,7 +20,7 @@ from evals.graders.judges import (
     split_into_statements,
 )
 from out_of_frame.state import Address, Finding, RunState
-from tests.test_report import DATE, MAP, PAGE, SITE, STATE
+from tests.test_report import DATE, MAP, PAGE, SITE, STATE, with_a_plan
 
 SUPPORTED = SupportGrade(reason="The page says so.", grade="supported")
 YES = QuestionAnswer(reason="It does.", answer="yes")
@@ -251,6 +251,26 @@ def test_the_interpretation_judge_is_told_what_was_not_identified_or_investigate
     judge_interpretation("A site [osm-way-1].", state)
     assert "- osm-way-1, 118 m from the property: could not be identified\n" in prompts[0]
     assert "- osm-way-2, 230 m from the property: not investigated\n" in prompts[0]
+
+
+def test_the_support_judge_is_told_which_object_is_a_plan(monkeypatch):
+    prompts = stub_the_judge(monkeypatch, answer(SUPPORTED))
+    statement = Statement("A plan [obj-2] and a site [obj-3].", ("obj-2", "obj-3"))
+    judge_support(statement, with_a_plan(), DATE)
+    [prompt] = prompts
+    plan, site = prompt.split('<object id="obj-3">')
+    site = site.split("</object>")[0]
+    assert "A development plan. Distance from the property, computed from its data: 118 m" in plan
+    assert "Plan data:\n" in plan and "Map data:" not in plan
+    assert "development plan" not in site and "Map data:\n" in site
+
+
+def test_the_interpretation_judge_is_told_which_object_is_a_plan(monkeypatch):
+    prompts = stub_the_judge(monkeypatch, answer(INTERPRETED))
+    judge_interpretation("A plan [obj-2] and a site [obj-3].", with_a_plan())
+    [prompt] = prompts
+    assert "- obj-2, 118 m from the property, a development plan: not investigated" in prompt
+    assert "- obj-3, 118 m from the property: not investigated" in prompt
 
 
 def test_the_no_verdict_judge_gets_only_the_draft(monkeypatch):

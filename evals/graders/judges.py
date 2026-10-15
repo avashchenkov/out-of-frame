@@ -21,7 +21,7 @@ from out_of_frame import research_scope
 from out_of_frame.config import JUDGE_MODEL
 from out_of_frame.grounding import collect_cited_page
 from out_of_frame.record import Record
-from out_of_frame.report import CITATION, find_reported_failures
+from out_of_frame.report import CITATION, find_plans, find_reported_failures
 from out_of_frame.state import RunState
 
 type Answer = Literal["yes", "no", "unknown"]
@@ -151,6 +151,7 @@ def judge_support(statement: Statement, state: RunState, date: dt.date) -> Suppo
         date=date.isoformat(),
         statement=statement.text,
         objects=cited,
+        plans=find_plans(state),
         findings=findings,
         pages=pages,
         failures=find_reported_failures(state),
@@ -169,6 +170,7 @@ def judge_interpretation(draft: str, state: RunState) -> InterpretationGrade:
         "interpretation.md.j2",
         draft=draft,
         map_objects=state.map_objects,
+        plans=find_plans(state),
         findings={finding.map_object_id: finding for finding in state.findings},
         failures=find_reported_failures(state),
         nothing_found=is_nothing_found(state),

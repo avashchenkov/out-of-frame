@@ -5,8 +5,10 @@
 # pages. Without its run file, an example cannot be judged again. run_sha256 shows that a run
 # file is the one that was graded.
 
+# Rechecked on 2026-10-15 against the rubric of roadmap step 10.1: Codex and Grok checked each
+# grade on its run file without the judges' grades, and the person confirmed them.
 graded: '2026-10-12'
-rubric_sha256: bb89e4551482d307039a956e744a4d05a8a263ed5b2b9ca9cfa54a967e1489c9
+rubric_sha256: d251a9eb3e2547c7b2d4a66f3b58dbbe98e5add8d11b64a057c89e29fd33c0fa
 examples:
 - run: 2026-10-12T01-51-48-538796Z-run.json
   run_sha256: 361a29009f2399a159d238e1198e1473176450a72862652e94680f379c64c824

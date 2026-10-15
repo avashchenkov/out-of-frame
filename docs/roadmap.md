@@ -168,7 +168,8 @@ calibration.
     CURVE-Campus an office site, though its page also names manufacturing and a TV studio; and
     it said what a plan in procedure allows, where the finding prompt says what it is meant to
     allow, so "XV-25-1 allows housing" reads as a permission. In this order:
-    1. The rubrics, before anything is graded, and two fixes of the report prompt they need.
+    1. ✅ The rubrics, before anything is graded, and two fixes of the report prompt they
+       need.
        - Support: the type's line backs a general effect of that type; a specific one, such as
          how often, needs the cited page. Map data back the status their tags show, as triage
          reads them, so a triage finding is graded like any other. A plan's WFS fields back its
