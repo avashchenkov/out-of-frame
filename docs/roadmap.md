@@ -161,7 +161,12 @@ calibration.
     2026-08-06 names it and an unused plot at Germanenstraße 2/6 for housing,
     https://www.berlin.de/ba-treptow-koepenick/aktuelles/pressemitteilungen/2026/pressemitteilung.1700019.php.
     From step 9: the support rubric's TODOs for B-Plans and journeys go with calibration; code
-    adds the journeys after the draft, so no judge grades them.
+    adds the journeys after the draft, so no judge grades them. From the live report at
+    Teutonenstraße 10: the report explained that building had not started on XV-25-1 by its
+    legal status ("because the plan is only planned"), against its own rule; it called
+    CURVE-Campus an office site, though its page also names manufacturing and a TV studio; and
+    it said what a plan in procedure allows, where the finding prompt says what it is meant to
+    allow, so "XV-25-1 allows housing" reads as a permission.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are
 available if an observed failure needs them; they are not a planned phase after the MVP.
