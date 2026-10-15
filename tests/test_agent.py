@@ -19,6 +19,7 @@ from out_of_frame import (
     plans,
     prompt_injection,
     report,
+    transit,
 )
 from out_of_frame.agent import UnansweredQuestionError
 from out_of_frame.config import BPLAN_WFS_URL, NOMINATIM_URL, OVERPASS_URL
@@ -30,6 +31,7 @@ from out_of_frame.state import (
     Coordinates,
     Destination,
     Finding,
+    Journey,
     MapObject,
     Message,
     RunState,
@@ -61,12 +63,23 @@ def read_fixture(path: str):
     return json.loads((FIXTURES / path).read_text(encoding="utf-8"))
 
 
-def stub_the_sources(monkeypatch, nominatim=None, overpass=None, wfs=None):
+def stub_the_sources(monkeypatch, nominatim=None, overpass=None, wfs=None, transitous=()):
     """Nominatim answers from a recorded response for each address it knows, by default only
     Freiheit 22, and with no match for any other. Overpass answers in turn: by default, the
     map objects around Freiheit 22, then the addresses inside the five industrial ones; an
     answer that is an exception is raised. The B-Plan WFS answers each layer from wfs, by
-    default with no plan, or raises wfs if it is an exception."""
+    default with no plan, or raises wfs if it is an exception. Transitous answers each journey
+    in turn with the connections in transitous, or raises an answer that is an exception; by
+    default it has no answer, as the user travels nowhere."""
+    journeys = list(transitous)
+
+    def call_transitous(start, end, leave):
+        answer = journeys.pop(0)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    monkeypatch.setattr(transit, "call_transitous", call_transitous)
 
     def call_wfs(layer, bbox):
         if isinstance(wfs, Exception):
@@ -94,16 +107,21 @@ def stub_the_sources(monkeypatch, nominatim=None, overpass=None, wfs=None):
     monkeypatch.setattr(map_objects, "call_overpass", call_overpass)
 
 
-def stub_the_conversation(monkeypatch, addresses: dict[str, str | None] | None = None) -> list:
+def stub_the_conversation(
+    monkeypatch,
+    addresses: dict[str, str | None] | None = None,
+    destinations: list[ExtractedDestination] | None = None,
+) -> list:
     """The extract call takes the user's whole last message for the property's address, or
-    finds the address that addresses gives for it, None for none, and the user travels nowhere;
-    the questions are Question 1, Question 2 and so on. Returns what code found missing for each
-    question."""
+    finds the address that addresses gives for it, None for none, and the user travels to the
+    destinations, by default nowhere; the questions are Question 1, Question 2 and so on.
+    Returns what code found missing for each question."""
     asked = []
 
     def extract(state):
         last = state.messages[-1].text
-        return Change(property_address=(addresses or {}).get(last, last), destinations=[])
+        address = (addresses or {}).get(last, last)
+        return Change(property_address=address, destinations=destinations or [])
 
     def ask(state, missing):
         asked.append(missing)
@@ -301,8 +319,13 @@ POTSDAM = "Am Kanal 47, 14467 Potsdam"
 
 def test_the_agent_asks_where_the_user_travels_and_when_then_goes_on(monkeypatch):
     stub_the_models(monkeypatch)
+    # The journeys are on Wednesday, 14 October: there at 08:00 and back at 16:30, Berlin's
+    # summer time. Transitous fails for the way back.
+    there = [transit.Connection(dt.datetime(2026, 10, 14, 6, 5, tzinfo=dt.UTC), 50 * 60)]
     stub_the_sources(
-        monkeypatch, {FREIHEIT_22: "freiheit-22.json", POTSDAM: "am-kanal-47-potsdam.json"}
+        monkeypatch,
+        {FREIHEIT_22: "freiheit-22.json", POTSDAM: "am-kanal-47-potsdam.json"},
+        transitous=[there, transit.TransitError("busy")],
     )
     asked = stub_the_conversation(monkeypatch)
     work = ExtractedDestination(
@@ -347,7 +370,16 @@ def test_the_agent_asks_where_the_user_travels_and_when_then_goes_on(monkeypatch
             leave_place=dt.time(16, 30),
         )
     ]
-    assert state.report is not None
+    assert state.journeys == [
+        Journey(
+            destination_id="destination-1",
+            direction="there",
+            outcome="found",
+            mean_duration=dt.timedelta(minutes=50),
+        ),
+        Journey(destination_id="destination-1", direction="back", outcome="unavailable"),
+    ]
+    assert state.failures == ["transit"] and state.report is not None
 
 
 def test_a_question_after_the_replies_have_run_out_fails_the_run(monkeypatch):

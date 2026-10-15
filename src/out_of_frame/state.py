@@ -1,7 +1,4 @@
-"""The run state as a logical data model, see docs/architecture.md#the-state.
-
-TODO: Journey, and the run state's field for it, with the step that plans the journeys (step 9).
-"""
+"""The run state as a logical data model, see docs/architecture.md#the-state."""
 
 import datetime as dt
 import operator
@@ -174,7 +171,17 @@ class InvestigationState(Record):
         )
 
 
-type Service = Literal["map", "plans", "web search"]  # TODO: transit, with its step (step 9)
+class Journey(Record):
+    """A journey by public transport between the property and a destination, on a normal
+    weekday: there when the user leaves home, back when they leave the destination."""
+
+    destination_id: str  # the ID of the Destination
+    direction: Literal["there", "back"]
+    outcome: Literal["found", "no route", "unavailable"]  # unavailable: Transitous failed
+    mean_duration: dt.timedelta | None = None  # only if found: the mean of the first connections
+
+
+type Service = Literal["map", "plans", "transit", "web search"]
 
 
 def add_new(old: list, new: list) -> list:
@@ -196,9 +203,9 @@ def replace_by_id(old: list, new: list) -> list:
 
 class RunState(Record):
     """The state of one run, see docs/architecture.md#the-state. LangGraph appends a node's
-    messages, sources, map objects and findings to the lists, a map object in place of the one
-    with its ID, adds each new failure, and replaces the property, the destinations and the
-    report."""
+    messages, sources, map objects, findings and journeys to the lists, a map object in place of
+    the one with its ID, adds each new failure, and replaces the property, the destinations and
+    the report."""
 
     messages: Annotated[list[Message], operator.add] = []  # the conversation in the input phase
     property: Address | None = None  # null until the user gives its address
@@ -207,6 +214,7 @@ class RunState(Record):
     sources: Annotated[list[Source], operator.add] = []
     map_objects: Annotated[list[MapObject], replace_by_id] = []
     findings: Annotated[list[Finding], operator.add] = []
+    journeys: Annotated[list[Journey], operator.add] = []  # two per destination, there and back
     failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
     report: str | None = None  # the model's draft, then the report with its references filled in
 

@@ -1,7 +1,7 @@
 """One run of the agent, from the user's first message to the report: the LangGraph graph of
 docs/architecture.md#one-run.
 
-TODO: journeys (step 9).
+TODO: the journeys in the report (step 9).
 """
 
 import datetime as dt
@@ -25,6 +25,7 @@ from out_of_frame import (
     map_objects,
     plans,
     report,
+    transit,
     triage,
 )
 from out_of_frame.config import INVESTIGATIONS_AT_ONCE
@@ -45,7 +46,7 @@ class ObjectToInvestigate(Record):
 
 
 # The steps that research starts with, in parallel, once the input is complete.
-RESEARCH_STARTS = ["get_map_objects", "get_plans"]
+RESEARCH_STARTS = ["get_map_objects", "get_plans", "plan_journeys"]
 
 
 class UnansweredQuestionError(Exception):
@@ -106,6 +107,7 @@ def build_graph():
     builder.add_node(wait_for_answer)
     builder.add_node(get_map_objects)
     builder.add_node(get_plans)
+    builder.add_node(plan_journeys)
     builder.add_node(triage_objects)
     builder.add_node(get_addresses)
     builder.add_node(investigate_object)
@@ -118,7 +120,7 @@ def build_graph():
     )
     builder.add_edge("ask_for_missing", "wait_for_answer")
     builder.add_edge("wait_for_answer", "extract_input")
-    builder.add_edge(RESEARCH_STARTS, "triage_objects")  # once the map and the plans are in
+    builder.add_edge(RESEARCH_STARTS, "triage_objects")  # once the map, plans and journeys are in
     builder.add_edge("triage_objects", "get_addresses")
     builder.add_conditional_edges(
         "get_addresses", send_each_object_to_investigation, ["investigate_object", "write_report"]
@@ -127,7 +129,7 @@ def build_graph():
     builder.add_edge("write_report", "fill_references")
     builder.add_edge("fill_references", END)
     # The state's own records, which the checkpointer may load back without a warning.
-    records = ["Address", "Destination", "Finding", "MapObject", "Message", "Source"]
+    records = ["Address", "Destination", "Finding", "Journey", "MapObject", "Message", "Source"]
     serde = JsonPlusSerializer(allowed_msgpack_modules=[("out_of_frame.state", r) for r in records])
     graph = builder.compile(checkpointer=InMemorySaver(serde=serde))
     return graph.with_config(max_concurrency=INVESTIGATIONS_AT_ONCE)
@@ -204,6 +206,18 @@ def get_plans(state: RunState) -> dict:
         log.warning("the plans failed: %s", error)
         return {"failures": ["plans"]}
     return {"map_objects": found, "sources": [source]}
+
+
+def plan_journeys(state: RunState, runtime: Runtime[Context]) -> dict:
+    """The journeys there and back for each destination, none if the user travels nowhere. If
+    Transitous fails, the journeys it could not plan are unavailable, and the others stay."""
+    assert state.property is not None and state.property.coordinates is not None  # see check_input
+    if not state.destinations:
+        return {}
+    home, date = state.property.coordinates, runtime.context.date
+    journeys = transit.plan_journeys(home, state.destinations, date)
+    failed = any(journey.outcome == "unavailable" for journey in journeys)
+    return {"journeys": journeys, "failures": ["transit"] if failed else []}
 
 
 def triage_objects(state: RunState) -> dict:

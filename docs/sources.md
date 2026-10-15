@@ -61,6 +61,13 @@ other open feeds, and OpenStreetMap for streets. A call returns journeys between
 at a given time, with their legs and transfers. It covers the whole Berlin network, buses and
 trams included, without an access agreement.
 
+The [`plan`](https://raw.githubusercontent.com/motis-project/motis/refs/tags/v2.10.2/openapi.yaml)
+call takes the time in UTC. Its number of itineraries is a minimum: it often returns more,
+some of them leaving at the same time with other transfers, and it may return one that leaves
+before the time. By default it also plans a walk as a direct route and then drops the
+connections slower than the walk, so code asks for no direct route. No connection gives an
+empty list, not an error.
+
 ## Tavily
 
 A web search API. The model reaches it only through the agent's own two tools, search and

@@ -5,11 +5,13 @@ import sys
 import anthropic
 import pytest
 
-from out_of_frame import cli, finding, report
+from out_of_frame import cli, finding, report, transit
+from out_of_frame.conversation import ExtractedDestination
 from out_of_frame.map_objects import MapError
 from out_of_frame.plans import PlansError
 from tests.test_agent import (
     FREIHEIT_22,
+    POTSDAM,
     stub_the_conversation,
     stub_the_models,
     stub_the_sources,
@@ -41,6 +43,7 @@ def test_the_report_goes_to_stdout_and_the_progress_and_cost_to_stderr(monkeypat
     assert out.startswith(f"# What lies around {FREIHEIT_22}\n")
     assert "Fetched the map." in err and "Investigated an object on the web." in err
     assert "fill_references" not in err  # a step the user is not told about
+    assert cli.PROGRESS["plan_journeys"] not in err  # the user travels nowhere
     assert "Tool calls: 5, cost: $0.0400" in err  # a search in each of five investigations
 
 
@@ -57,9 +60,20 @@ class ReportWriterThatSeesStderr(FakeWriter):
         return super().invoke(request)
 
 
-@pytest.mark.parametrize("service", ["map", "plans", "web search"])
+@pytest.mark.parametrize("service", ["map", "plans", "transit", "web search"])
 def test_a_failed_service_is_told_before_the_report_is_written(monkeypatch, capsys, service):
-    if service == "map":
+    if service == "transit":
+        stub_the_sources(
+            monkeypatch,
+            {FREIHEIT_22: "freiheit-22.json", POTSDAM: "am-kanal-47-potsdam.json"},
+            transitous=[transit.TransitError("busy")] * 2,
+        )
+        stub_the_models(monkeypatch)
+        work = ExtractedDestination(
+            id=None, name="work", address=POTSDAM, leave_home="08:00", leave_place="16:30"
+        )
+        stub_the_conversation(monkeypatch, destinations=[work])
+    elif service == "map":
         stub_the_sources(monkeypatch, overpass=[MapError("busy")])
     elif service == "plans":
         stub_the_sources(monkeypatch, wfs=PlansError("busy"))
@@ -72,8 +86,8 @@ def test_a_failed_service_is_told_before_the_report_is_written(monkeypatch, caps
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
     run_cli(monkeypatch)
     assert cli.FAILURE_NOTICES[service] in writer.stderr_before
-    step = {"map": "get_map_objects", "plans": "get_plans"}.get(service)
-    if step:  # a source that failed is not told as fetched
+    step = {"map": "get_map_objects", "plans": "get_plans", "transit": "plan_journeys"}.get(service)
+    if step:  # a source that failed is not told as done
         assert cli.PROGRESS[step] not in writer.stderr_before
     assert capsys.readouterr().out.startswith("# What lies around")
 

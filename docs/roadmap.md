@@ -124,7 +124,7 @@ calibration.
       and the pipeline tests get a user who travels nowhere. I1 and I3 in the input loop suite,
       whose grader also checks the destinations and their times, and the person reads one
       conversation.
-   2. The journeys: the commute branch, a third research start next to the map and the plans.
+   2. ✅ The journeys: the commute branch, a third research start next to the map and the plans.
       Code plans them on the first Wednesday after the date that is neither a public holiday
       nor 24 or 31 December, at the user's times in Berlin's time zone; Wednesday is never a
       movable holiday. Each journey is the mean of the first three connections that leave at

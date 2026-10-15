@@ -30,6 +30,7 @@ from out_of_frame.web_search import MeteredWebSearch, TavilyWebSearch, WebSearch
 FAILURE_NOTICES = {
     "map": "The map could not be loaded, so the report may be incomplete.",
     "plans": "Development plans could not be loaded, so the report may be incomplete.",
+    "transit": "The journey planner failed, so some journeys are unavailable.",
     "web search": "Web search failed, so an object may stay unidentified.",
 }
 # What each step has done, so that the user sees a run that takes a minute move. Steps that
@@ -37,6 +38,7 @@ FAILURE_NOTICES = {
 PROGRESS = {
     "get_map_objects": "Fetched the map.",
     "get_plans": "Fetched the development plans.",
+    "plan_journeys": "Planned the journeys.",
     "triage_objects": "Checked the objects that the map makes clear.",
     "investigate_object": "Investigated an object on the web.",
     "write_report": "Wrote the report.",
@@ -109,7 +111,7 @@ def tell_progress(node: str, update) -> None:
     """What the step has done and each service it found failed, on stderr."""
     if not isinstance(update, dict):  # the question the run waits on, or no update
         return
-    if node in PROGRESS and set(update) != {"failures"}:  # not "fetched" if it failed
+    if node in PROGRESS and not update.get("failures"):  # not told as done if a service failed
         print(PROGRESS[node], file=sys.stderr)
     for service in update.get("failures", []):
         print(FAILURE_NOTICES[service], file=sys.stderr)

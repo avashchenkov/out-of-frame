@@ -1,6 +1,7 @@
 """Settings of the agent. Each one can be changed with an environment variable, such as in .env."""
 
 import os
+from importlib.metadata import version
 
 # One model for every call in the MVP; the evals show if it is not enough.
 MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
@@ -30,7 +31,8 @@ NOMINATIM_URL = os.environ.get(
     "OUT_OF_FRAME_NOMINATIM_URL", "https://nominatim.openstreetmap.org/search"
 )
 USER_AGENT = os.environ.get(
-    "OUT_OF_FRAME_USER_AGENT", "out-of-frame (github.com/avashchenkov/out-of-frame)"
+    "OUT_OF_FRAME_USER_AGENT",
+    f"out-of-frame/{version('out-of-frame')} (github.com/avashchenkov/out-of-frame)",
 )
 
 # The public Overpass instance, which code asks for the map objects around the property.
@@ -56,8 +58,14 @@ BPLAN_WFS_URL = os.environ.get(
 # plan investigations, see docs/architecture.md#one-run.
 PLANS = int(os.environ.get("OUT_OF_FRAME_PLANS", "5"))
 
-# Tries of one call to Nominatim, Overpass or the B-Plan WFS that fails for a while, such as on
-# a timeout.
+# The public Transitous instance, which code asks for the journeys there and back. Its usage
+# policy asks each app to name itself and its version in the User-Agent.
+TRANSITOUS_URL = os.environ.get(
+    "OUT_OF_FRAME_TRANSITOUS_URL", "https://api.transitous.org/api/v5/plan"
+)
+
+# Tries of one call to Nominatim, Overpass, the B-Plan WFS or Transitous that fails for a while,
+# such as on a timeout.
 SOURCE_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_SOURCE_ATTEMPTS", "3"))
 
 # Drafts of one report that cites an ID it was not given or leaves out an object, before the
