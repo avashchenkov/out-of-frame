@@ -196,8 +196,8 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
      own times, so two people with different schedules are two destinations.
 3. **Report.** Unidentified and not investigated objects are not removed; they are listed at
    the end. Code fills in the references (see [Grounding](#grounding)) and adds the journeys:
-   each with its destination, direction and mean duration, or why it has none. They are plain
-   data, so no model writes them. Code also adds the credits the licences require:
+   each with its destination, direction, the time the user leaves and mean duration, or why
+   it has none. They are plain data, so no model writes them. Code also adds the credits the licences require:
    "© OpenStreetMap contributors" with its link, and a link to the Transitous sources page if
    there are journeys.
 
@@ -352,7 +352,7 @@ message is the input of the run and goes straight into `messages`.
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects`, and the kind of the entry of `sources` that its `source_id` names | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code reads the kind of the `sources` entry that each object's `source_id` names, which marks plans; model reads `map_objects` without the category, `findings`, `failures` other than transit; on a retry, the unknown IDs and the objects left out (code) | `report` |
-| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys`, `destinations[]`: `id`, `name` | `report` |
+| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys`, `destinations[]`: `id`, `name`, `leave_home`, `leave_place` | `report` |
 
 ### The investigation subgraph
 

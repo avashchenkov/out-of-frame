@@ -152,8 +152,10 @@ def test_the_support_judge_gets_the_cited_objects_sources_but_not_the_findings_r
         STATE.findings[0].model_dump() | {"status": "operating", "key_facts": ["only a key fact"]}
     )
     the_map = MAP.model_copy(update={"content": "Andere Straße 9, an object nobody cites"})
+    # Code adds the journeys after the draft, so a transit failure is not the draft's to tell.
+    failures = ["web search", "transit"]
     state = STATE.model_copy(
-        update={"findings": [finding], "sources": [the_map, PAGE], "failures": ["web search"]}
+        update={"findings": [finding], "sources": [the_map, PAGE], "failures": failures}
     )
     prompts = stub_the_judge(monkeypatch, answer(SUPPORTED))
     grade = judge_support(Statement("A workshop [osm-way-1].", ("osm-way-1",)), state, DATE)
@@ -227,7 +229,8 @@ def test_a_statement_without_a_citation_gets_only_the_facts_about_the_run(monkey
 
 def test_the_interpretation_judge_gets_every_object_and_the_failures_but_no_pages(monkeypatch):
     prompts = stub_the_judge(monkeypatch, answer(INTERPRETED))
-    state = STATE.model_copy(update={"failures": ["web search"]})
+    # Code adds the journeys after the draft, so a transit failure is not the draft's to tell.
+    state = STATE.model_copy(update={"failures": ["web search", "transit"]})
     grade = judge_interpretation("A workshop [osm-way-1].", state)
     assert grade.verdict == "pass"
     [prompt] = prompts

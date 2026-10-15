@@ -8,16 +8,19 @@ from functools import cache
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from out_of_frame import research_scope
+from out_of_frame import research_scope, transit
 from out_of_frame.config import MAP_OBJECTS_PER_CATEGORY, MODEL, PLANS, REPORT_ATTEMPTS
 from out_of_frame.finding import render
-from out_of_frame.state import RunState, Source
+from out_of_frame.state import Journey, RunState, Service, Source
 
 CITATION = re.compile(r"\[([^\[\]\s]+)\]")  # [osm-way-1]
 CITATIONS = re.compile(r"\[[^\[\]\s]+\](?:[ \t]*\[[^\[\]\s]+\])*")  # [osm-way-1][osm-way-2]
 BRACKETS = re.compile(r"\[([^\[\]]*)\]")  # any [...]
 LINK = re.compile(r"\]\(|\]:|(?:https?://|www\.)\S*")  # a Markdown link, or a URL of any form
 OSM_CREDIT = "Map data © OpenStreetMap contributors: https://www.openstreetmap.org/copyright"
+TRANSITOUS_CREDIT = (
+    "Journeys planned with Transitous and its sources: https://transitous.org/sources/"
+)
 
 
 class ReportError(Exception):
@@ -43,7 +46,7 @@ def write_report(state: RunState, date: dt.date) -> str:
             "report_task.md.j2",
             map_objects=state.map_objects,
             findings=findings,
-            failures=state.failures,
+            failures=find_reported_failures(state),
             plans=plans,
             wrong_citations=wrong,
             missing_objects=missing,
@@ -57,6 +60,12 @@ def write_report(state: RunState, date: dt.date) -> str:
         f"{REPORT_ATTEMPTS} drafts had wrong citations or left out objects, last: "
         + ", ".join(wrong + missing)
     )
+
+
+def find_reported_failures(state: RunState) -> list[Service]:
+    """The failed services whose part of the report the model writes. Code writes the journeys,
+    so the model has nothing to say about a transit failure."""
+    return [service for service in state.failures if service != "transit"]
 
 
 def find_wrong_citations(draft: str, known: set[str]) -> list[str]:
@@ -78,15 +87,17 @@ def find_wrong_citations(draft: str, known: set[str]) -> list[str]:
 
 @cache
 def build_report_model():
-    return ChatAnthropic(model=MODEL)
+    """The model with room for its thinking and the report: at the default 4096 output tokens,
+    the thinking about some 15 objects used them all and left no report."""
+    return ChatAnthropic(model=MODEL, max_tokens_to_sample=16_000)
 
 
 def fill_references(draft: str, state: RunState) -> str:
     """The report a person reads: a title, the draft with each citation replaced by the
-    numbers of its sources, then the sources and the map credit. Citations in a row, such as
-    [osm-way-1][osm-way-2], become one. A web page is given by its URL, map data by its name.
-    An object cites the page of its finding and its own map data, since the report also gives
-    facts from the map, such as its name."""
+    numbers of its sources, the journeys, then the sources and the credits. Citations in a
+    row, such as [osm-way-1][osm-way-2], become one. A web page is given by its URL, map data by
+    its name. An object cites the page of its finding and its own map data, since the report
+    also gives facts from the map, such as its name."""
     objects = {map_object.id: map_object for map_object in state.map_objects}
     evidence = {finding.map_object_id: finding.evidence_id for finding in state.findings}
     sources = {source.id: source for source in state.sources}
@@ -103,10 +114,48 @@ def fill_references(draft: str, state: RunState) -> str:
 
     text = CITATIONS.sub(cite, draft).strip()
     assert state.property is not None  # research starts only once the property is resolved
-    lines = [f"# What lies around {state.property.text}", "", text, "", describe_scope(), ""]
+    lines = [f"# What lies around {state.property.text}", "", text, ""]
+    lines += [*describe_journeys(state), describe_scope(), ""]
     if numbers:
         lines += ["Sources:", *(f"{n}. {name}" for name, n in numbers.items()), ""]
-    return "\n".join([*lines, OSM_CREDIT])
+    credits = [OSM_CREDIT, TRANSITOUS_CREDIT] if state.journeys else [OSM_CREDIT]
+    return "\n".join([*lines, *credits])
+
+
+def describe_journeys(state: RunState) -> list[str]:
+    """The journeys as lines of the report, one line per destination with both directions, or
+    none if the user travels nowhere. They are plain data, so code writes them, not the model."""
+    if not state.journeys:
+        return []
+    lines = [
+        "Journeys by public transport on a normal weekday. Each time is the mean travel time of "
+        f"up to {transit.CONNECTIONS} connections that leave at the given time or later, "
+        "without the wait for them:",
+        "",
+    ]
+    for destination in state.destinations or []:
+        journeys = {j.direction: j for j in state.journeys if j.destination_id == destination.id}
+        leave_home, leave_place = destination.leave_home, destination.leave_place
+        assert leave_home is not None and leave_place is not None  # see conversation.find_missing
+        there = describe_journey(journeys["there"])
+        back = describe_journey(journeys["back"])
+        lines.append(
+            f"- {destination.name}: there, leaving home at {leave_home:%H:%M} or later, {there}; "
+            f"back home, leaving it at {leave_place:%H:%M} or later, {back}."
+        )
+    return [*lines, ""]
+
+
+def describe_journey(journey: Journey) -> str:
+    """How long the journey takes, in whole minutes, or why that is not known."""
+    match journey.outcome:
+        case "found":
+            assert journey.mean_duration is not None  # a found journey has one, see transit.py
+            return f"{round(journey.mean_duration.total_seconds() / 60)} min"
+        case "no route":
+            return "no connection found"
+        case "unavailable":
+            return "not known, as the journey planner failed"
 
 
 def describe_scope() -> str:

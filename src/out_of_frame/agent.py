@@ -1,8 +1,5 @@
 """One run of the agent, from the user's first message to the report: the LangGraph graph of
-docs/architecture.md#one-run.
-
-TODO: the journeys in the report (step 9).
-"""
+docs/architecture.md#one-run."""
 
 import datetime as dt
 import itertools

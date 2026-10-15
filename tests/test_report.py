@@ -9,7 +9,16 @@ from langchain_core.messages import AIMessage
 from out_of_frame import report
 from out_of_frame.config import REPORT_ATTEMPTS
 from out_of_frame.report import ReportError, fill_references, write_report
-from out_of_frame.state import Address, Coordinates, Finding, MapObject, RunState, Source
+from out_of_frame.state import (
+    Address,
+    Coordinates,
+    Destination,
+    Finding,
+    Journey,
+    MapObject,
+    RunState,
+    Source,
+)
 
 DATE = dt.date(2026, 10, 10)
 SITE = MapObject(
@@ -169,6 +178,54 @@ def test_with_no_objects_the_report_has_no_sources(monkeypatch):
     text, writer = write(monkeypatch, state)
     assert "No object of the checked kinds was found" in writer.requests[0][-1].content
     assert "Sources:" not in text and text.endswith(report.OSM_CREDIT)
+
+
+def journey(id: str, direction, outcome, minutes: float | None = None) -> Journey:
+    duration = None if minutes is None else dt.timedelta(minutes=minutes)
+    return Journey(destination_id=id, direction=direction, outcome=outcome, mean_duration=duration)
+
+
+def test_code_adds_each_journey_with_its_destination_direction_and_duration(monkeypatch):
+    def destination(id: str, name: str, leave_home: dt.time, leave_place: dt.time) -> Destination:
+        address = Address(text=f"{name} 1", coordinates=Coordinates(lat=52.5, lon=13.4))
+        return Destination(
+            id=id, name=name, address=address, leave_home=leave_home, leave_place=leave_place
+        )
+
+    state = STATE.model_copy(
+        update={
+            "destinations": [
+                destination("destination-1", "work", dt.time(7, 40), dt.time(18, 10)),
+                destination("destination-2", "the gym", dt.time(19), dt.time(21, 5)),
+            ],
+            "journeys": [
+                journey("destination-2", "back", "unavailable"),
+                journey("destination-1", "there", "found", 50.4),
+                journey("destination-2", "there", "no route"),
+                journey("destination-1", "back", "found", 47.5),
+            ],
+            "failures": ["transit"],
+        }
+    )
+    text, writer = write(monkeypatch, state)
+    assert "transit" not in writer.requests[0][-1].content  # the model does not write them
+    assert (
+        "Journeys by public transport on a normal weekday. Each time is the mean travel time of "
+        "up to 3 connections that leave at the given time or later, without the wait for them:"
+        "\n\n"
+        "- work: there, leaving home at 07:40 or later, 50 min; back home, leaving it at 18:10 "
+        "or later, 48 min.\n"
+        "- the gym: there, leaving home at 19:00 or later, no connection found; back home, "
+        "leaving it at 21:05 or later, not known, as the journey planner failed.\n\n"
+        "The report covers"
+    ) in text
+    assert text.endswith(f"{report.OSM_CREDIT}\n{report.TRANSITOUS_CREDIT}")
+
+
+def test_without_journeys_the_report_has_no_journeys_and_no_transit_credit(monkeypatch):
+    text, _ = write(monkeypatch, STATE.model_copy(update={"destinations": []}))
+    assert "Journeys" not in text and "transitous" not in text
+    assert text.endswith(report.OSM_CREDIT)
 
 
 @pytest.mark.parametrize("service", ["map", "plans"])

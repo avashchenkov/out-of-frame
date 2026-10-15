@@ -109,7 +109,7 @@ calibration.
    2. ✅ The investigation of a plan: what the plan allows, and whether building has started.
    3. ✅ The report: a plan's legal status apart from whether building has started. A live run
       at an E4 candidate address, and the person reads one report.
-9. **Commute.** Add Transitous journeys there and back. Test duration calculation, no route
+9. ✅ **Commute.** Add Transitous journeys there and back. Test duration calculation, no route
    and unavailable outcomes; run the end-to-end cases with one and two destinations. The
    report must give the right destination, direction and duration, or the missing-route reason.
    From step 7: the input conversation asks where the user travels and when, a destination
@@ -133,7 +133,7 @@ calibration.
       request makes its journey unavailable and adds transit to `failures`, which the CLI
       tells. The User-Agent names the version, as Transitous asks. Code tests on recorded
       Transitous responses: the mean, no route and unavailable.
-   3. The report: code adds the journeys after the model's text, each with its destination,
+   3. ✅ The report: code adds the journeys after the model's text, each with its destination,
       direction and duration, or why it has none, and the link to the Transitous sources if
       there are journeys; the model no longer reads transit in `failures`. Code tests; live
       runs with one and two destinations, and the person reads one report.

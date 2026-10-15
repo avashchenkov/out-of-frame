@@ -380,6 +380,10 @@ def test_the_agent_asks_where_the_user_travels_and_when_then_goes_on(monkeypatch
         Journey(destination_id="destination-1", direction="back", outcome="unavailable"),
     ]
     assert state.failures == ["transit"] and state.report is not None
+    assert (
+        "- work: there, leaving home at 08:00 or later, 50 min; back home, leaving it at 16:30 or "
+        "later, not known, as the journey planner failed.\n"
+    ) in state.report
 
 
 def test_a_question_after_the_replies_have_run_out_fails_the_run(monkeypatch):
