@@ -231,7 +231,9 @@ calibration.
     7. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
     8. The results in docs/results.md: each suite's scores, its failures, the known
-       limitations above, and the cost of the one-page rule in the end-to-end scores. The
+       limitations above, the labels left out because of the search limits that the
+       [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found, and the cost
+       of the one-page rule in the end-to-end scores. The
        README says what the agent does, how to run the CLI and the evals, and links the results.
 
 The MVP is the intended stopping point. Other tasks designed in the eval architecture are

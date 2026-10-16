@@ -181,7 +181,11 @@ labels.
 - Every label must be reachable: a Tavily search built from what the agent sees of the object
   finds the label's page, or the page's link is in the object's own data, such as a plan's
   PDF, which the agent can read directly. If not, a component task is broken, not hard; in an
-  end-to-end task, the object is marked as left out and is not scored.
+  end-to-end task, the object is marked as left out and is not scored. Reachable means within
+  the agent's own search, 5 results at Tavily's basic depth: some pages show up only with more
+  results or a deeper search, and some not from the address at all, as the
+  [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found. Such a left-out
+  label measures the project's cost limits, not the agent.
 - `null` is a real value. Where the evidence cannot settle a type or a status, the label
   says `null` for that field, and an agent that leaves it `null` there is right. Reporting
   the object as unidentified is right only if its type is `null`. The WFS fields of a
