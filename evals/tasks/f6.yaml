@@ -1,0 +1,23 @@
+# F6, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F6
+suite: finding
+covers: >-
+  A site of the same name elsewhere. The object is the Retentionsbodenfilteranlage of the
+  Berliner Wasserbetriebe in Adlershof, which the map tags as a wastewater plant. The only page
+  is the operator's press release of 2007 about its Retentionsbodenfilter in Blankenburg, in
+  Pankow: a filter that cleans rainwater, which it put into operation, and which the subheading
+  calls a Kläranlage. On the page as edited, nothing is a fact about this object, so neither
+  the type nor the status comes from it: the finding rests on the map data alone. In reality the Adlershof filter treats rainwater too, as E5 checks; this task
+  checks only that the page about the other site is not used.
+date: 2026-10-16  # fixed data: the date the page was retrieved
+
+input:
+  state: f6-same-name-elsewhere.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: wastewater plant  # man_made=wastewater_plant, the map data alone
+  status: null  # the map data does not say whether it is in use
+  evidence_id: overpass-1  # the map data, never the page about Blankenburg

@@ -1,0 +1,47 @@
+# An investigation state with one search whose page describes a site of the same kind and name
+# elsewhere. The object, OSM way 118132969 in the E5 fixtures, is the Retentionsbodenfilteranlage
+# 276 m from Am Bruchland 22, 12524 Berlin, the E5 address, in Adlershof; its map data has no
+# address. The page is real, was retrieved on 2026-10-16 and is kept locally in
+# evals/results/pages-10-2/ (not in git); it is rewritten in new words, with names, places,
+# dates and figures kept as found. It is a press release of the Berliner Wasserbetriebe, the
+# object's operator, about their Retentionsbodenfilter in Blankenburg, in Pankow, far from
+# Adlershof. Its closing sentence, which lists the filters already in Berlin, among them one at
+# the Teltowkanal in Adlershof, is left out, and so is the page about the Adlershof filter that
+# the same search finds, so that no page is about this object.
+map_object:
+  id: osm-way-118132969
+  name: Retentionsbodenfilteranlage
+  details:
+    man_made: wastewater_plant
+    name: Retentionsbodenfilteranlage
+    operator: Berliner Wasserbetriebe
+    operator:short: BWB
+    operator:wikidata: Q821856
+    category: wastewater
+  addresses: []
+  coordinates: {lat: 52.4274493, lon: 13.5246212}  # the centre of the way's bounds
+  distance_from_property_m: 276
+  source_id: overpass-1  # the map response the object came from; see evals/fixtures/overpass/
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: Retentionsbodenfilteranlage Berliner Wasserbetriebe}
+  - {role: tool, pages: [web-1]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Retentionsbodenfilteranlage Berliner Wasserbetriebe
+    url: https://www.bwb.de/de/pressemitteilungen-2000-2004_318.php
+    content: >-
+      08.05.2007. Retentionsbodenfilter in Blankenburg fertiggestellt, with the subheading that
+      a Kläranlage on the upper course of the Panke works as far as the Havel. In Blankenburg, a
+      part of Pankow, the Berliner Wasserbetriebe put into operation a retention soil filter
+      that cleans the rainwater dirtied on the main roads nearby. About 560,000 m² of roads at
+      Karower Damm and Blankenburger Pflasterweg drain into the filter at the Fließgraben,
+      which flows into the Panke. The water first passes a Regenklärbecken, where the dirt
+      settles, and then seeps through a soil filter of 900 m² planted with reeds. A rainwater
+      retention basin of 3,300 m³ next to it holds back heavy rain. The building cost about
+      4.4 million euros.
+
+finding: null

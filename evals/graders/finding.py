@@ -13,6 +13,7 @@ class Expected:
     outcome: str
     identified_type: str | None
     status: str | None
+    evidence_id: str | None = None  # the source it must cite, where a task names one
 
 
 @dataclass(frozen=True)
@@ -23,16 +24,18 @@ class Grade:
 
 
 def grade_result(finding: Finding, map_object: MapObject, expected: Expected) -> Grade:
-    """The finding is about the map object, with the expected outcome, type and status."""
+    """The finding is about the map object, with the expected outcome, type and status, and
+    cites the expected source if the task names one."""
+    fields = [
+        ("map object", finding.map_object_id, map_object.id),
+        ("outcome", finding.outcome, expected.outcome),
+        ("identified_type", finding.identified_type, expected.identified_type),
+        ("status", finding.status, expected.status),
+    ]
+    if expected.evidence_id is not None:
+        fields.append(("evidence_id", finding.evidence_id, expected.evidence_id))
     reasons = tuple(
-        f"{field}: {got!r}, expected {want!r}"
-        for field, got, want in [
-            ("map object", finding.map_object_id, map_object.id),
-            ("outcome", finding.outcome, expected.outcome),
-            ("identified_type", finding.identified_type, expected.identified_type),
-            ("status", finding.status, expected.status),
-        ]
-        if got != want
+        f"{field}: {got!r}, expected {want!r}" for field, got, want in fields if got != want
     )
     return Grade("result", not reasons, reasons)
 

@@ -76,6 +76,7 @@ class TaskExpected(Record):
     outcome: Literal["identified", "unidentified"] | None = None
     identified_type: str | None = None
     status: str | None = None
+    evidence_id: str | None = None  # the source a finding from a written state must cite
     flagged: bool | None = None
     property: Coordinates | None = None
     destinations: list[ExpectedDestination] | None = None  # empty if the user travels nowhere
@@ -97,6 +98,8 @@ class TaskExpected(Record):
             )
         if written and len(written) < 3:
             raise ValueError("give outcome, identified_type and status together")
+        if self.evidence_id is not None and not written:
+            raise ValueError("give evidence_id only with outcome, identified_type and status")
         if (self.property is None) != (self.destinations is None):
             raise ValueError("give property and destinations together")
         if self.labels is not None and self.property is None:
@@ -121,7 +124,7 @@ class TaskExpected(Record):
         if self.label:
             outcome = "unidentified" if self.label.identified_type is None else "identified"
             return Expected(outcome, self.label.identified_type, self.label.status)
-        return Expected(self.outcome, self.identified_type, self.status)
+        return Expected(self.outcome, self.identified_type, self.status, self.evidence_id)
 
 
 class TaskInput(Record):
@@ -195,6 +198,9 @@ def load(path: Path) -> Task:
             inputs = map_object
         case "finding", None, InvestigationState(), None:
             check_state(state, fail)
+            sources = [page.id for page in state.pages] + [state.map_object.source_id]
+            if task.expected and task.expected.evidence_id not in [None, *sources]:
+                fail(f"unknown evidence_id {task.expected.evidence_id!r}")
             inputs = state
         case "report", None, RunState(), None:
             check_run_state(state, fail)
@@ -225,6 +231,8 @@ def load(path: Path) -> Task:
         fail("an end-to-end task, and only it, expects labels")
     if isinstance(expected, ExpectedInput) != (task.suite == "input loop"):
         fail("an input loop task, and only it, expects the property and the destinations alone")
+    if isinstance(expected, Expected) and expected.evidence_id and task.suite != "finding":
+        fail("only a finding task names the source its finding must cite")
     if isinstance(expected, Expected):
         check_expected(expected, fail)
     if isinstance(expected, ExpectedInput | ExpectedRun):

@@ -1,0 +1,22 @@
+# F2, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F2
+suite: finding
+covers: >-
+  A stale fact against a newer source. Philip Morris International's undated list of affiliates
+  still gives its manufacturing company at Neuköllnische Allee 80, as the map still shows the
+  works; a news page reports the plan to end production there in the first half of 2025; and a
+  directory entry at that address, updated in August 2025, says that it has been closed for good
+  since 30 June 2025. The pages disagree, and the newest, by the date it gives, settles the
+  status.
+date: 2026-10-16  # fixed data: the date the real pages were retrieved
+
+input:
+  state: f2-old-and-newer-source.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: production  # a works that processed tobacco, as its entry says
+  status: closed  # the newest page, the directory entry of 2025, says so
+  evidence_id: web-3  # the newest page; the plan on web-2 does not say it closed

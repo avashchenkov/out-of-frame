@@ -66,6 +66,13 @@ def test_result_fails_on_a_finding_about_another_map_object():
     assert not grade.passed
 
 
+def test_result_checks_the_cited_source_only_where_the_task_names_one():
+    on_the_map = Expected("identified", "production", "operating", evidence_id="map-1")
+    assert grade_result(finding(evidence_id="map-1"), MAP_OBJECT, on_the_map).passed
+    assert not grade_result(finding(), MAP_OBJECT, on_the_map).passed
+    assert grade_result(finding(evidence_id="map-1"), MAP_OBJECT, EXPECTED).passed
+
+
 def test_grounding_passes_with_facts_from_the_cited_page_and_the_map():
     grade = grade_grounding(
         finding(key_facts=["Test GmbH runs a bakery", "landuse=industrial"]), MAP_OBJECT, [PAGE]

@@ -1,0 +1,81 @@
+# An investigation state with two searches: an undated list still gives a manufacturing company
+# at the site, a news page reports a plan to end production there, and a newer, dated directory
+# entry at the site's address says that it closed. The object, OSM way 32195750 in the E2
+# fixtures, is the former Philip Morris factory 74 m from Neuköllnische Allee 52, 12057 Berlin,
+# the E2 address; its addresses are those of the agent's address query on 2026-10-16. The pages
+# web-1 and web-2 are real, were retrieved on 2026-10-16 and are kept locally in
+# evals/results/pages-10-2/ (not in git); each is rewritten in new words, with names, addresses
+# and the facts the finding needs kept as found. The page web-3 is written for this task: no
+# real page found gives the closure with the site's address. Its date comes from Tobacco
+# Journal of 25 July 2025, kept there too, where a company spokesperson says that the last
+# production day at the Berlin plant was 30 June 2025; PMI's annual report for 2025 records the
+# closure. The same report of Tobacco Journal says that tax stamps are still printed at the
+# Berlin site; it is left out, so that closed stands for the tobacco works. The history is
+# written for this task: the pages about the campus that the site is now, NLND, are left out
+# too, so that the object is the factory as the map shows it.
+map_object:
+  id: osm-way-32195750
+  name: Philip Morris GmbH
+  details:
+    barrier: fence
+    landuse: industrial
+    man_made: works
+    name: Philip Morris GmbH
+    operator: Philip Morris International
+    website: http://www.philipmorrisinternational.com/DE/pages/deu/Default.asp
+    category: industry
+  addresses:
+    - Haberstraße 10, 12057 Berlin
+    - Haberstraße 2, 12057 Berlin
+    - Haberstraße 4, 12057 Berlin
+    - Neuköllnische Allee 80, 12057 Berlin
+    - Willstätterstraße 11, 12057 Berlin
+    - Willstätterstraße 12, 12057 Berlin
+    - Willstätterstraße 15, 12057 Berlin
+    - Willstätterstraße 9, 12057 Berlin
+  coordinates: {lat: 52.4647832, lon: 13.4622129}  # the centre of the way's bounds
+  distance_from_property_m: 74
+  source_id: overpass-1  # the map response the object came from; see evals/fixtures/overpass/
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: Philip Morris GmbH Neuköllnische Allee 80 Berlin}
+  - {role: tool, pages: [web-1, web-2]}
+  - {role: model, tool: search, query: Philip Morris Manufacturing GmbH Neuköllnische Allee 80}
+  - {role: tool, pages: [web-3]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Philip Morris GmbH Neuköllnische Allee 80 Berlin
+    url: https://www.pmiprivacy.com/global/en/corporate-website/affiliates
+    content: >-
+      Philip Morris International lists its affiliates country by country, each with its
+      address and a contact for questions about personal data. The page gives no date. For
+      Germany it lists Philip Morris GmbH, Am Haag 14, 82166 Gräfelfing, and Philip Morris
+      Manufacturing GmbH, Neuköllnische Allee 80, 12057 Berlin.
+  - id: web-2
+    kind: web search
+    request: Philip Morris GmbH Neuköllnische Allee 80 Berlin
+    url: https://deutsche-wirtschafts-nachrichten.de/712219/es-hat-sich-ausgequalmt-philip-morris-will-produktion-in-deutschland-beenden
+    content: >-
+      Deutsche Wirtschafts Nachrichten reports that Philip Morris wants to end its production in
+      Germany. At Philip Morris Manufacturing GmbH in Berlin, production is to stop in the first
+      half of 2025, and the factory in Dresden is to follow in the middle of the coming year.
+      The plant in Berlin-Neukölln has been part of PMI's production network since 1972 and now
+      makes ET, which is needed to make cigarettes.
+  - id: web-3
+    kind: web search
+    request: Philip Morris Manufacturing GmbH Neuköllnische Allee 80
+    url: https://www.example-branchenbuch.de/berlin/neukoellnische-allee-80
+    content: |-
+      Firmen an dieser Adresse
+
+      Philip Morris Manufacturing GmbH
+      Neuköllnische Allee 80
+      12057 Berlin
+      Tabakverarbeitung
+      Dauerhaft geschlossen seit 30.06.2025
+      Eintrag aktualisiert: 2025-08
+
+finding: null

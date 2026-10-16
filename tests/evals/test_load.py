@@ -99,6 +99,17 @@ BROKEN = [
         lambda task, state: state["findings"][0].update(evidence_id="web-9"),
         "unknown evidence",
     ),
+    ("f2.yaml", lambda task, state: task["expected"].update(evidence_id="web-9"), "evidence_id"),
+    (
+        "l1.yaml",
+        lambda task, state: task["expected"].update(evidence_id="web-1"),
+        "evidence_id only with",
+    ),
+    (
+        "t2.yaml",
+        lambda task, state: task["expected"].update(evidence_id="overpass-1"),
+        "only a finding task names",
+    ),
     ("t2.yaml", lambda task, state: task.pop("expected"), "only it, has no"),
     ("i2.yaml", lambda task, state: task["input"].pop("messages"), "gives the user's messages"),
     ("t1.yaml", lambda task, state: task["input"].update(messages=["Hi"]), "user's messages"),

@@ -208,12 +208,16 @@ calibration.
        - Code grades the input, the findings against the labels and the journeys, as the eval
          architecture says. Grader tests; in CI, the task format, and every category has a
          scored label at one address at least.
-    3. F2 and F6 in the finding suite, from the pages kept in 10.2, rewritten in new words. The
-       pages are kept in local results, evals/results/pages-10-2, read on 2026-10-16. F2, at the
-       former Philip Morris factory: PMI's list of affiliates still gives Philip Morris
-       Manufacturing GmbH at Neuköllnische Allee 80, and a news page of 2024 says production
-       there ends in the first half of 2025. F6, at the stormwater filter of E5: a page of the
-       Berliner Wasserbetriebe about the Retentionsbodenfilter in Blankenburg, elsewhere.
+    3. ✅ F2 and F6 in the finding suite, from the pages kept in 10.2, rewritten in new words.
+       The pages are kept in local results, evals/results/pages-10-2, read on 2026-10-16. F2,
+       at the former Philip Morris factory: PMI's undated list of affiliates still gives Philip
+       Morris Manufacturing GmbH at Neuköllnische Allee 80, a news page says production there
+       is to end in the first half of 2025, and a directory entry at the address, written for
+       the task after a report of the last production day, says it closed on 30 June 2025: no
+       real page gives the closure with the address, and the report that names the Berlin plant
+       also says that tax stamps are still printed there. F6,
+       at the stormwater filter of E5: only a page of the Berliner Wasserbetriebe about the
+       Retentionsbodenfilter in Blankenburg, elsewhere, so the finding rests on the map data.
     4. The end-to-end suite in evals/run.py: the whole agent on live sources from the task's
        messages, each run saved as evals/judge.py saves it and graded by code at once; no judge
        grades it before calibration. The fixed component suites report pass@k and pass^k
