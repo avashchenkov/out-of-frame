@@ -12,7 +12,7 @@ from evals.graders.finding import Grade
 from evals.graders.input_loop import ExpectedDestination
 from out_of_frame.map_objects import project
 from out_of_frame.record import Record
-from out_of_frame.state import Coordinates, Finding, RunState
+from out_of_frame.state import Coordinates, Finding, RunState, Service
 
 
 class AddressLabel(Record):
@@ -71,24 +71,6 @@ class FindingsGrade:
     results: dict[str, LabelResult]  # by the label's id
     false_alarms: tuple[str, ...]  # the map object IDs of findings that match no label
     reasons: tuple[str, ...]  # why each error, for a person who looks into a failure
-
-    @property
-    def correct(self) -> int:
-        return sum(result == "correct" for result in self.results.values())
-
-    @property
-    def precision(self) -> float | None:
-        """Correct findings among the scored ones and the false alarms; None if there are none."""
-        scored = sum(r in ("correct", "error") for r in self.results.values())
-        scored += len(self.false_alarms)
-        return self.correct / scored if scored else None
-
-    @property
-    def recall(self) -> float | None:
-        """Correct findings among the scored labels of the objects the trial fetched; None if
-        there are none."""
-        scored = sum(r in ("correct", "error", "miss") for r in self.results.values())
-        return self.correct / scored if scored else None
 
 
 def match_labels(state: RunState, labels: list[AddressLabel]) -> dict[str, str]:
@@ -191,3 +173,23 @@ def grade_journeys(state: RunState, expected: list[ExpectedDestination]) -> Grad
                 f"{journey.destination_id} {journey.direction}: {journey.outcome}, expected {want}"
             )
     return Grade("journeys", not reasons, tuple(reasons))
+
+
+type BranchResult = Literal["ok", "empty", "failed"]
+
+
+def mark_branches(state: RunState) -> dict[Service, BranchResult]:
+    """Each research branch, and the web search of the investigations: failed if its service
+    failed, empty if it gave nothing, and ok otherwise. Transit fails when it could not plan a
+    journey, and web search when an investigation could not search, even if the others could;
+    web search gives nothing if no finding cites a page."""
+    gave: dict[Service, bool] = {
+        "map": any(state.find_source_kind(o) == "map" for o in state.map_objects),
+        "plans": any(state.find_source_kind(o) == "plans" for o in state.map_objects),
+        "transit": bool(state.journeys),
+        "web search": any(source.kind == "web search" for source in state.sources),
+    }
+    return {
+        service: "failed" if service in state.failures else "ok" if given else "empty"
+        for service, given in gave.items()
+    }

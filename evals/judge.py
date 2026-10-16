@@ -7,7 +7,7 @@ running the agent. Run with the keys in .env:
 uv run --env-file .env python -m evals.judge "Freiheit 22, 13597 Berlin. I travel nowhere."
 uv run --env-file .env python -m evals.judge evals/results/<run>.json
 
-TODO: in step 10, the end-to-end suite of evals/run.py runs the agent on labelled tasks.
+The end-to-end suite of evals/run.py saves its runs the same way, so that they can be judged too.
 """
 
 import argparse
@@ -46,15 +46,19 @@ RUBRICS = ["support.md.j2", "interpretation.md.j2", "no_verdict.md.j2"]
 RESEARCH_SCOPE = files("out_of_frame").joinpath("data/research_scope.yaml")
 
 
-def run_agent(message: str, date: dt.date, web_search: MeteredWebSearch) -> dict:
+def run_agent(
+    message: str, date: dt.date, web_search: MeteredWebSearch
+) -> tuple[dict, BaseException | None]:
     """One run of the agent, as it is saved: the draft that the judges grade, the final state,
     each step's update, the investigations' steps among them, and the cost. A run that stops,
     even when web search refuses the key or the run is cancelled, is saved too, with its error
-    and its last state: it has paid for its calls."""
+    and its last state: it has paid for its calls. The error is also returned, for a caller
+    that must stop on it."""
     saved = {"message": message, "date": date.isoformat(), "model": MODEL, "draft": None}
     saved |= {"transcript": [], "error": None}
     start, config = agent.start(message), agent.start_thread()
     end: dict | RunState = start
+    stopped = None
     with get_usage_metadata_callback() as usage:
         try:
             steps = agent.build_graph().stream(
@@ -80,13 +84,14 @@ def run_agent(message: str, date: dt.date, web_search: MeteredWebSearch) -> dict
             question = agent.find_question(agent.build_graph(), config)
             if question is not None:  # the judges need a run that the first message completes
                 raise agent.UnansweredQuestionError(question)
-        except Exception, KeyboardInterrupt:
+        except (Exception, KeyboardInterrupt) as error:
             saved["error"] = traceback.format_exc()
+            stopped = error
     saved["state"] = RunState.model_validate(end)
     saved["tool_calls"] = web_search.tool_calls
     saved["cost_usd"] = compute_run_cost(usage.usage_metadata, web_search.credits)
     saved["prices_as_of"] = prices.load().as_of.isoformat()  # so that stale prices show
-    return to_jsonable_python(saved)
+    return to_jsonable_python(saved), stopped
 
 
 def judge_run(saved: dict, run_file: Path) -> tuple[dict, Path]:
@@ -184,7 +189,7 @@ def main() -> None:
             web_search = MeteredWebSearch(TavilyWebSearch())
         except WebSearchAccessError as error:
             parser.exit(1, f"Set TAVILY_API_KEY, for example in .env: {error}\n")
-        saved = run_agent(args.target, dt.date.today(), web_search)
+        saved, _ = run_agent(args.target, dt.date.today(), web_search)
         run_file = save(saved, "run")
         cost = f"tool calls: {saved['tool_calls']}, cost: ${saved['cost_usd']:.4f}"
         print(f"Run: {run_file}, {cost}", file=sys.stderr)

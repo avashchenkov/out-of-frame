@@ -231,7 +231,6 @@ def test_findings_match_a_label_by_object_id():
     findings = [site_finding(), site_finding(map_object_id="osm-way-2")]
     graded = grade_findings(run_state([far, at_label], findings), [label()])
     assert graded.results == {"test-bakery": "correct"} and graded.false_alarms == ("osm-way-2",)
-    assert graded.precision == 0.5 and graded.recall == 1
 
 
 def test_findings_match_a_label_by_coordinates_when_the_map_changed_the_id():
@@ -260,12 +259,11 @@ def test_a_finding_that_matches_no_label_is_a_false_alarm(update):
     assert graded.false_alarms == ("osm-way-2",) and graded.results == {
         "test-bakery": "not fetched"
     }
-    assert graded.precision == 0 and graded.recall is None
 
 
 def test_a_matched_finding_with_a_wrong_type_or_status_is_an_error():
     graded = grade_findings(run_state([SITE], [site_finding(status="closed")]), [label()])
-    assert graded.results == {"test-bakery": "error"} and graded.precision == graded.recall == 0
+    assert graded.results == {"test-bakery": "error"}
     assert graded.reasons == ("test-bakery: status 'closed', expected 'operating'",)
 
 
@@ -279,20 +277,17 @@ def test_an_unidentified_finding_is_right_only_where_the_label_has_no_type():
 
 def test_a_fetched_object_without_a_finding_is_a_miss():
     graded = grade_findings(run_state([SITE], []), [label()])
-    assert graded.results == {"test-bakery": "miss"} and graded.recall == 0
-    assert graded.precision is None
+    assert graded.results == {"test-bakery": "miss"} and not graded.false_alarms
 
 
 def test_a_label_left_out_is_not_scored_and_its_finding_is_no_false_alarm():
     graded = grade_findings(run_state([SITE], [site_finding()]), [left_out()])
     assert graded.results == {"test-bakery": "left out"} and not graded.false_alarms
-    assert graded.precision is None and graded.recall is None
 
 
 def test_a_second_finding_for_the_same_object_is_a_false_alarm():
     graded = grade_findings(run_state([SITE], [site_finding(), site_finding()]), [label()])
     assert graded.results == {"test-bakery": "correct"} and graded.false_alarms == ("osm-way-1",)
-    assert graded.precision == 0.5
 
 
 def test_a_label_whose_link_is_in_the_object_data_needs_no_search():

@@ -149,7 +149,7 @@ reason, in place of its type, status, page and search.
 Labels are not drawn from the map by hand. For each end-to-end address, a script queries the
 map and plan sources and writes the objects the agent can see there into the labels: the
 nearest N of each category and the nearest N plans. Further objects need no label, since
-recall leaves them out. The script groups the elements into objects and computes their IDs
+the agent never sees them. The script groups the elements into objects and computes their IDs
 and coordinates with the agent's own code, so a label has what the agent gets for the same
 object. It also records the responses as fixtures. Triage and investigation tasks reuse these
 labels.
@@ -209,9 +209,9 @@ finding is compared with that object's label directly.
   finding is one. A label matches one finding at most, so a second finding for the same object
   is a false alarm too.
 
-Only a matched finding with the right type and status counts as correct, in precision and in
-recall, so they cover every finding, not a chosen few. Recall leaves out the labels of objects
-that the trial did not fetch, and those of a branch whose source failed.
+Only a matched finding with the right type and status counts as correct. The count covers every
+scored label, not a chosen few, and leaves out the labels of objects that the trial did not
+fetch, and those of a branch whose source failed.
 
 The other code-based graders are in the [step table](#llm-steps). The output is shaped for
 them: types and statuses come from fixed lists, and the model cites each finding by its object
@@ -262,12 +262,11 @@ own criterion. For each task, the evaluation harness records whether at least on
 trials passed and whether all passed; averaged over the suite, these estimate pass@k and pass^k.
 A report task passes only if the judges that passed calibration find nothing wrong either.
 
-An end-to-end task reports partial credit per labelled object over the k trials: precision and
-recall of the findings; the share of statements the support judge finds unsupported or
-contradicted; the number of tool calls and the cost. These scores are also shown per
-identified type, with the number of labelled objects next to each: a type may have only one.
-Each research branch is marked as ok, empty or failed. Each suite is reported on its own, never
-pooled.
+An end-to-end task reports partial credit per labelled object over the k trials: how many scored
+labels are correct, each error with its reason, and the false alarms, as counts, since five
+addresses give too few labels for a rate to mean much; the share of statements the support
+judge finds unsupported or contradicted; the number of tool calls and the cost. Each research
+branch is marked as ok, empty or failed. Each suite is reported on its own, never pooled.
 
 A live investigation task reports, per object over the k trials, the share of findings with the
 right type and status, the share of statements the support judge finds unsupported or
@@ -487,7 +486,7 @@ flowchart TD
         CG["Other code graders<br/>IDs, key facts, distances<br/>flagged or not, input state"]:::code
         JG["LLM judges<br/>support, interpretation,<br/>no verdict"]:::model
         CAL[("Calibration sets<br/>graded once by a person")]:::data
-        MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: precision and recall per type<br/>end-to-end: unsupported share, cost")]:::data
+        MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: correct labels, errors, false alarms<br/>end-to-end: unsupported share, cost")]:::data
         PUB(["Results published<br/>with the failures"]):::human
         STOP(("●")):::stop
         GS --> MATCH

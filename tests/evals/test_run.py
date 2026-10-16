@@ -10,9 +10,11 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
+from evals import judge
+from evals.graders.end_to_end import AddressLabel, ExpectedRun
 from evals.graders.finding import Expected
 from evals.graders.input_loop import ExpectedDestination, ExpectedInput
-from evals.load import TASKS, Task, load
+from evals.load import TASKS, Conversation, Task, load
 from evals.run import (
     NoWebSearch,
     Outcome,
@@ -23,12 +25,13 @@ from evals.run import (
     grade,
     investigate,
     run,
+    run_end_to_end,
     run_input_loop,
     select_tasks,
     triage_object,
     trust_every_page,
 )
-from out_of_frame import conversation, finding, investigation, prices, prompt_injection
+from out_of_frame import conversation, finding, investigation, prices, prompt_injection, report
 from out_of_frame.config import MODEL
 from out_of_frame.state import (
     Address,
@@ -41,11 +44,19 @@ from out_of_frame.state import (
     Source,
 )
 from out_of_frame.web_search import PageText, WebSearchAccessError
-from tests.test_agent import stub_the_conversation
+from tests.evals.test_judge import StoppingWebSearch
+from tests.test_agent import (
+    FREIHEIT_22,
+    read_fixture,
+    stub_the_conversation,
+    stub_the_models,
+    stub_the_sources,
+)
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_finding import MAP_OBJECT as ADDRESSED_OBJECT
 from tests.test_finding import STATE as WRITTEN_STATE
 from tests.test_investigation import SEARCH, SNIPPET, FakeSearcher, FakeWebSearch
+from tests.test_report import FakeWriter
 from tests.test_triage import AIRPORT, stub_the_triage
 from tests.test_triage import UNCLEAR as TRIAGE_UNCLEAR
 
@@ -348,6 +359,7 @@ def test_a_part_runs_only_the_tasks_of_its_suites():
     assert {task.suite for task in select_tasks("write_report", [])} == {"report"}
     assert {task.suite for task in select_tasks("trust_every_page", [])} == {"injection check"}
     assert {task.suite for task in select_tasks("run_input_loop", [])} == {"input loop"}
+    assert {task.suite for task in select_tasks("run_end_to_end", [])} == {"end-to-end"}
     with pytest.raises(ValueError, match="cannot run L1"):
         select_tasks("draft_finding", [TASKS / "l1.yaml"])
 
@@ -572,3 +584,117 @@ def test_investigate_keeps_a_rejected_finding_and_why(monkeypatch):
         investigate(MAP_OBJECT, dt.date(2026, 10, 9), FakeWebSearch())  # not a state
     with pytest.raises(TypeError):
         investigate(WRITTEN_STATE, dt.date(2026, 10, 9), FakeWebSearch())  # not a start
+
+
+def test_the_suites_average_pass_at_k_and_pass_hat_k_over_their_tasks(tmp_path):
+    unidentified = dataclasses.replace(FIXED, id="G", expected=Expected("unidentified", None, None))
+    out = tmp_path / "run.jsonl"
+    run([FIXED, unidentified], identify, 2, out)
+    suites = json.loads(out.read_text(encoding="utf-8").splitlines()[-1])["suites"]
+    assert suites["finding"]["tasks"] == 2 and suites["finding"]["trials"] == 4
+    assert suites["finding"]["pass@k"] == suites["finding"]["pass^k"] == 0.5
+
+
+def test_the_injection_check_suite_counts_false_alarms_and_misses_apart(tmp_path):
+    out = tmp_path / "run.jsonl"
+    run([PLANTED, CLEAN], flag_every_page, 2, out)
+    suite = json.loads(out.read_text(encoding="utf-8").splitlines()[-1])["suites"]
+    assert suite["injection check"]["false alarms"] == 2 and suite["injection check"]["misses"] == 0
+
+
+def address_label(id: str, object_id: str, identified_type: str) -> AddressLabel:
+    """A label found by its object ID, far from every object around Freiheit 22."""
+    return AddressLabel(
+        id=id,
+        object_id=object_id,
+        category="industry",
+        coordinates=Coordinates(lat=52.4, lon=13.6),
+        distance_tolerance_m=50,
+        identified_type=identified_type,
+        status="operating",
+        source_url="https://example.org",
+        search="Test",
+    )
+
+
+def end_to_end(id: str = "E", message: str = FREIHEIT_22) -> Task:
+    """At Freiheit 22, where the stubbed investigations find production at each industrial
+    object: right at the incinerator, wrong at the treatment works."""
+    expected = ExpectedRun(
+        property=Coordinates(lat=52.5292863, lon=13.2357896),  # as nominatim/freiheit-22.json
+        destinations=[],
+        labels=[
+            address_label("incinerator", "osm-way-49572120", "production"),
+            address_label("treatment-works", "osm-way-23156479", "wastewater plant"),
+        ],
+        recorded_as="not read by the runner",
+    )
+    inputs = Conversation(messages=[message], sources=[])
+    return Task(id=id, suite="end-to-end", date=None, inputs=inputs, expected=expected)
+
+
+@pytest.fixture
+def stubbed_agent(monkeypatch, tmp_path):
+    """The whole agent on recorded sources around Freiheit 22, with stubbed models; its runs are
+    saved in tmp_path."""
+    monkeypatch.setattr(judge, "RESULTS", tmp_path)
+    stub_the_conversation(monkeypatch)
+    stub_the_sources(monkeypatch)
+    stub_the_models(monkeypatch)
+    monkeypatch.setattr(report, "build_report_model", FakeWriter)
+
+
+@pytest.mark.usefixtures("stubbed_agent")
+def test_an_end_to_end_run_is_saved_and_its_findings_graded_against_the_labels(tmp_path):
+    out = tmp_path / "e2e.jsonl"
+    summary = run([end_to_end()], run_end_to_end, 1, out, web_search=FakeWebSearch([SNIPPET]))
+    lines = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    [run_file] = [step["run"] for step in lines[1]["transcript"]]
+    assert json.loads((tmp_path / run_file).read_text(encoding="utf-8"))["draft"]  # for judges
+    branches = {"map": "ok", "plans": "empty", "transit": "empty", "web search": "ok"}
+    assert lines[1]["branches"] == branches
+    found = lines[2]["findings"]
+    assert found["results"] == {"incinerator": "correct", "treatment-works": "error"}
+    assert len(found["false_alarms"]) == 9  # the other investigated or triaged objects
+    e = summary["E"]
+    assert e["graders"] == {"property": 1, "destinations": 1, "journeys": 1}
+    assert e["labels"] == {"correct": 1, "error": 1} and e["false alarms"] == 9
+    assert e["branches"]["map"] == {"ok": 1} and e["tool_calls"] == 5
+
+
+@pytest.mark.usefixtures("stubbed_agent")
+def test_the_end_to_end_suite_adds_up_its_tasks_label_results(monkeypatch, tmp_path):
+    answers = ["overpass/freiheit-22.json", "overpass/freiheit-22-addresses.json"] * 2
+    stub_the_sources(monkeypatch, overpass=[read_fixture(path) for path in answers])  # two runs
+    out = tmp_path / "e2e.jsonl"
+    tasks = [end_to_end("E"), end_to_end("F")]
+    run(tasks, run_end_to_end, 1, out, web_search=FakeWebSearch([SNIPPET]))
+    suite = json.loads(out.read_text(encoding="utf-8").splitlines()[-1])["suites"]["end-to-end"]
+    assert suite["labels"] == {"correct": 2, "error": 2} and suite["false alarms"] == 18
+
+
+@pytest.mark.usefixtures("stubbed_agent")
+def test_an_end_to_end_run_that_asks_fails_its_trial_and_is_saved(monkeypatch, tmp_path):
+    stub_the_sources(monkeypatch, {"Freiheit, Berlin": "freiheit-street.json"})
+    out = tmp_path / "e2e.jsonl"
+    task = end_to_end(message="Freiheit, Berlin")
+    summary = run([task], run_end_to_end, 1, out, web_search=FakeWebSearch([SNIPPET]))["E"]
+    assert summary["errors"] == 1 and summary["labels"] == {}  # a stopped trial has no grade
+    lines = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert lines[-1]["suites"]["end-to-end"]["errors"] == 1  # shown with the suite's scores
+    error = lines[1]["error"]
+    assert "UnansweredQuestionError" in error and "The run is saved in" in error
+    assert len(list(tmp_path.glob("*-run.json"))) == 1
+
+
+@pytest.mark.usefixtures("stubbed_agent")
+@pytest.mark.parametrize(
+    "error", [WebSearchAccessError("no credits left"), KeyboardInterrupt()], ids=["key", "cancel"]
+)
+def test_an_end_to_end_run_that_web_search_stops_stops_the_eval_run(tmp_path, error):
+    out = tmp_path / "e2e.jsonl"
+    with pytest.raises(type(error)):
+        run([end_to_end()], run_end_to_end, 2, out, web_search=StoppingWebSearch(error))
+    lines = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
+    assert lines[-1]["complete"] is False and len(lines) == 2  # no trial recorded
+    assert len(list(tmp_path.glob("*-run.json"))) == 1  # the run that stopped is saved

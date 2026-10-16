@@ -8,7 +8,9 @@ import argparse
 import copy
 import datetime as dt
 import json
+import statistics
 import traceback
+from collections import Counter
 from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -22,6 +24,13 @@ import out_of_frame.investigation
 import out_of_frame.prompt_injection
 import out_of_frame.report
 import out_of_frame.triage
+from evals import judge
+from evals.graders.end_to_end import (
+    ExpectedRun,
+    grade_findings,
+    grade_journeys,
+    mark_branches,
+)
 from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
 from evals.graders.input_loop import ExpectedInput, grade_destinations, grade_property
 from evals.graders.prompt_injection import grade_flagged
@@ -62,7 +71,7 @@ class Trial:
     """What a part returns. The harness counts the tool calls and the cost itself."""
 
     # bool: whether the injection check flagged the page; str: a report's draft; RunState: the
-    # input state where the input loop ends
+    # state where the input loop or an end-to-end run ends
     outcome: Outcome | bool | str | RunState
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
 
@@ -192,6 +201,22 @@ def run_input_loop(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Tria
     return Trial(state, transcript)
 
 
+def run_end_to_end(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """The whole agent on live sources, from the task's first message, which completes the
+    input, so a question fails the trial. The run is saved as evals/judge.py saves it, for the
+    judges once they pass calibration, and the transcript names its file. A run that stops is
+    saved too, and its error fails the trial, or stops the eval run if web search refused the
+    key or the run was cancelled."""
+    if not isinstance(inputs, Conversation) or len(inputs.messages) != 1 or inputs.sources:
+        raise TypeError("run_end_to_end needs an end-to-end task")
+    saved, error = judge.run_agent(inputs.messages[0], date, MeteredWebSearch(web_search))
+    path = judge.save(saved, "run")
+    if error is not None:
+        error.add_note(f"The run is saved in {path}")
+        raise error
+    return Trial(RunState.model_validate(saved["state"]), transcript=[{"run": path.name}])
+
+
 PARTS: dict[str, Part] = {
     "abstain": abstain,
     "trust_every_page": trust_every_page,
@@ -201,6 +226,7 @@ PARTS: dict[str, Part] = {
     "triage_object": triage_object,
     "write_report": write_report,
     "run_input_loop": run_input_loop,
+    "run_end_to_end": run_end_to_end,
 }
 # The suites that each part can run.
 PART_SUITES = {
@@ -212,6 +238,7 @@ PART_SUITES = {
     "triage_object": {"triage"},
     "write_report": {"report"},
     "run_input_loop": {"input loop"},
+    "run_end_to_end": {"end-to-end"},
 }
 
 
@@ -232,7 +259,15 @@ def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
 
 
 def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
+    """The grades that pass or fail; an end-to-end trial's findings are graded against the
+    labels apart, in run_task."""
     expected = task.expected
+    if isinstance(outcome, RunState) and isinstance(expected, ExpectedRun):
+        return [
+            grade_property(outcome, expected.property),
+            grade_destinations(outcome, expected.destinations),
+            grade_journeys(outcome, expected.destinations),
+        ]
     if isinstance(outcome, RunState) and isinstance(expected, ExpectedInput):
         return [
             grade_property(outcome, expected.property),
@@ -252,8 +287,12 @@ def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
 
 
 def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState) -> dict:
+    """What a person needs to check the grades; an end-to-end run's state is in its own file."""
     if isinstance(outcome, RunState):
-        return outcome.model_dump(mode="json", include={"property", "destinations"})
+        dumped = outcome.model_dump(mode="json", include={"property", "destinations"})
+        if isinstance(task.expected, ExpectedRun):
+            dumped["branches"] = mark_branches(outcome)
+        return dumped
     if isinstance(outcome, bool):
         return {"flagged": outcome}
     if isinstance(outcome, str):
@@ -313,14 +352,18 @@ def run_task(
             "passed": all(g.passed for g in grades),
             "grades": [asdict(g) for g in grades],
         }
+        if isinstance(task.expected, ExpectedRun) and isinstance(trial.outcome, RunState):
+            graded["findings"] = asdict(grade_findings(trial.outcome, task.expected.labels))
         record(graded)
         trials.append(recorded | graded)
     return trials
 
 
-def summarise(suite: str, trials: list[dict]) -> dict:
-    """A live task reports the share of trials with the right result. Any other task passes or
-    fails each trial: pass@k means at least one of the k trials passed, pass^k all of them."""
+def summarise(task: Task, trials: list[dict]) -> dict:
+    """A live investigation task reports the share of trials with the right result, and an
+    end-to-end task its findings against the labels and how each research branch ended. Any
+    other task passes or fails each trial: pass@k means at least one of the k trials passed,
+    pass^k all of them."""
     summary = {
         "trials": len(trials),
         "graders": {
@@ -331,8 +374,14 @@ def summarise(suite: str, trials: list[dict]) -> dict:
         "tool_calls": sum(t["tool_calls"] for t in trials),
         "cost_usd": sum(t["cost_usd"] for t in trials),
     }
-    if suite == "live investigation":
+    if task.suite == "live investigation":
         summary["right result share"] = summary["graders"].get("result", 0) / len(trials)
+    elif isinstance(task.expected, ExpectedRun):
+        summary |= count_label_results(trials)
+        summary["branches"] = {
+            service: Counter(t["branches"][service] for t in trials if "branches" in t)
+            for service in dict.fromkeys(s for t in trials for s in t.get("branches", {}))
+        }
     else:
         summary |= {
             "passed": sum(t["passed"] for t in trials),
@@ -340,6 +389,52 @@ def summarise(suite: str, trials: list[dict]) -> dict:
             "pass^k": all(t["passed"] for t in trials),
         }
     return summary
+
+
+def count_label_results(trials: list[dict]) -> dict:
+    """An end-to-end task's label results over its trials, as counts, since five addresses
+    give too few labels for a rate to mean much; a trial that stopped has none."""
+    graded = [t["findings"] for t in trials if "findings" in t]
+    return {
+        "labels": Counter(r for found in graded for r in found["results"].values()),
+        "false alarms": sum(len(found["false_alarms"]) for found in graded),
+    }
+
+
+def summarise_suites(tasks: list[Task], summaries: dict[str, dict]) -> dict[str, dict]:
+    """Each suite on its own, never pooled with another, over its tasks that ran: a fixed
+    component suite averages pass@k and pass^k, the live investigation suite the share of right
+    results, and the end-to-end suite adds up the label results of its tasks."""
+    suites = {}
+    for suite in dict.fromkeys(task.suite for task in tasks if task.id in summaries):
+        ran = {t.id: summaries[t.id] for t in tasks if t.suite == suite and t.id in summaries}
+        summary: dict = {
+            "tasks": len(ran),
+            "trials": sum(s["trials"] for s in ran.values()),
+            "errors": sum(s["errors"] for s in ran.values()),  # trials where the part failed
+            "tool_calls": sum(s["tool_calls"] for s in ran.values()),
+            "cost_usd": sum(s["cost_usd"] for s in ran.values()),
+        }
+        if suite == "live investigation":
+            summary["right result share"] = statistics.mean(
+                s["right result share"] for s in ran.values()
+            )
+        elif suite == "end-to-end":
+            summary["labels"] = sum((s["labels"] for s in ran.values()), Counter())
+            summary["false alarms"] = sum(s["false alarms"] for s in ran.values())
+        else:
+            summary["pass@k"] = statistics.mean(s["pass@k"] for s in ran.values())
+            summary["pass^k"] = statistics.mean(s["pass^k"] for s in ran.values())
+        if suite == "injection check":  # false alarms and misses apart
+            expected = {t.id: t.expected for t in tasks}
+            for flagged, name in [(False, "false alarms"), (True, "misses")]:
+                summary[name] = sum(
+                    s["trials"] - s["errors"] - s["graders"].get("flagged", 0)
+                    for id, s in ran.items()
+                    if expected[id] is flagged
+                )
+        suites[suite] = summary
+    return suites
 
 
 def run(
@@ -353,7 +448,7 @@ def run(
     """Run every task and write each trial to out at once. A cancelled run is incomplete.
 
     An error of the part fails its trial, and the run goes on; an error of a grader, or a
-    missing or refused web search key, stops it. TODO: average pass@k and pass^k over each suite.
+    missing or refused web search key, stops it. The last line also has each suite's summary.
     """
     if k < 1:
         raise ValueError("k must be at least 1")
@@ -381,12 +476,11 @@ def run(
         )
         try:
             for task in tasks:
-                summaries[task.id] = summarise(
-                    task.suite, run_task(task, part, k, record, web_search)
-                )
+                summaries[task.id] = summarise(task, run_task(task, part, k, record, web_search))
             complete = True
         finally:
-            record({"complete": complete, "summaries": summaries})
+            suites = summarise_suites(tasks, summaries)
+            record({"complete": complete, "summaries": summaries, "suites": suites})
     return summaries
 
 
@@ -414,17 +508,26 @@ def main() -> None:
 
     try:
         tasks = select_tasks(args.part, args.tasks)
-        # investigate is the only part that searches
-        web_search = TavilyWebSearch() if args.part == "investigate" else None
+        # only these parts search
+        searches = args.part in ("investigate", "run_end_to_end")
+        web_search = TavilyWebSearch() if searches else None
     except (ValueError, WebSearchAccessError) as error:
         parser.error(str(error))
     out = RESULTS / f"{dt.datetime.now(dt.UTC):%Y-%m-%dT%H-%M-%S-%fZ}.jsonl"
-    for task_id, s in run(tasks, PARTS[args.part], args.k, out, args.part, web_search).items():
+    summaries = run(tasks, PARTS[args.part], args.k, out, args.part, web_search)
+    for task_id, s in summaries.items():
         graders = ", ".join(f"{name} {n}/{s['trials']}" for name, n in s["graders"].items())
         if "pass@k" in s:
             result = (
                 f"{s['passed']}/{s['trials']} passed, pass@k {s['pass@k']}, pass^k {s['pass^k']}"
             )
+        elif "labels" in s:
+            branches = ", ".join(
+                f"{service} {result} {n}"
+                for service, results in s["branches"].items()
+                for result, n in results.items()
+            )
+            result = f"{describe_labels(s)}; branches: {branches or 'none'}"
         else:
             result = f"right result in {s['right result share']:.0%} of trials"
         if graders:
@@ -433,7 +536,32 @@ def main() -> None:
             result += f"; part errors: {s['errors']}"
         result += f"; tool calls: {s['tool_calls']}, cost: ${s['cost_usd']:.4f}"
         print(f"{task_id}: {result}")
+    for suite, s in summarise_suites(tasks, summaries).items():
+        if "pass@k" in s:
+            result = f"pass@k {s['pass@k']:.2f}, pass^k {s['pass^k']:.2f}"
+        elif "labels" in s:
+            result = describe_labels(s)
+        else:
+            result = f"right result share {s['right result share']:.0%}"
+        if "misses" in s:
+            result += f"; false alarms {s['false alarms']}, misses {s['misses']}"
+        if s["errors"]:
+            result += f"; part errors: {s['errors']} of {s['trials']} trials"
+        cost = f"tool calls: {s['tool_calls']}, cost: ${s['cost_usd']:.4f}"
+        print(f"Suite {suite}, {s['tasks']} tasks: {result}; {cost}")
     print(f"Trials: {out}")
+
+
+def describe_labels(summary: dict) -> str:
+    """The findings against the labels, for a person: the correct labels among the scored ones,
+    those of the objects the trial fetched."""
+    labels = summary["labels"]
+    scored = labels["correct"] + labels["error"] + labels["miss"]
+    return (
+        f"correct {labels['correct']} of {scored} scored labels (error {labels['error']}, "
+        f"miss {labels['miss']}; not fetched {labels['not fetched']}, "
+        f"left out {labels['left out']}), false alarms {summary['false alarms']}"
+    )
 
 
 if __name__ == "__main__":

@@ -53,7 +53,8 @@ def run_the_agent(monkeypatch, web_search=None, writer=None, wfs=None) -> dict:
     writer = writer or FakeWriter()
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
     web_search = MeteredWebSearch(web_search or FakeWebSearch([SNIPPET]))
-    return judge.run_agent(FREIHEIT_22, DATE, web_search)
+    saved, _ = judge.run_agent(FREIHEIT_22, DATE, web_search)
+    return saved
 
 
 def test_a_run_is_saved_with_its_draft_and_the_investigations_steps(monkeypatch):
@@ -79,15 +80,15 @@ def test_a_run_that_stops_is_saved_with_its_error(monkeypatch):
         raise GeocodingError("Nominatim is down")
 
     monkeypatch.setattr(geocoding, "call_nominatim", fail)
-    saved = judge.run_agent(FREIHEIT_22, DATE, MeteredWebSearch(FakeWebSearch()))
-    assert "Nominatim is down" in saved["error"]
+    saved, error = judge.run_agent(FREIHEIT_22, DATE, MeteredWebSearch(FakeWebSearch()))
+    assert "Nominatim is down" in saved["error"] and isinstance(error, GeocodingError)
     assert saved["state"]["property"]["text"] == FREIHEIT_22 and saved["state"]["findings"] == []
     assert saved["draft"] is None and saved["cost_usd"] == 0
 
 
 def test_a_run_that_stops_at_a_question_is_saved_with_it(monkeypatch):
     stub_the_sources(monkeypatch, {"Freiheit, Berlin": "freiheit-street.json"})
-    saved = judge.run_agent("Freiheit, Berlin", DATE, MeteredWebSearch(FakeWebSearch()))
+    saved, _ = judge.run_agent("Freiheit, Berlin", DATE, MeteredWebSearch(FakeWebSearch()))
     assert "UnansweredQuestionError: Question 1" in saved["error"]
     assert [message["text"] for message in saved["state"]["messages"]] == [
         "Freiheit, Berlin",

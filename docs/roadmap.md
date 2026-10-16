@@ -218,7 +218,7 @@ calibration.
        also says that tax stamps are still printed there. F6,
        at the stormwater filter of E5: only a page of the Berliner Wasserbetriebe about the
        Retentionsbodenfilter in Blankenburg, elsewhere, so the finding rests on the map data.
-    4. The end-to-end suite in evals/run.py: the whole agent on live sources from the task's
+    4. ✅ The end-to-end suite in evals/run.py: the whole agent on live sources from the task's
        messages, each run saved as evals/judge.py saves it and graded by code at once; no judge
        grades it before calibration. The fixed component suites report pass@k and pass^k
        averaged over their tasks; the live investigation and end-to-end suites report their own
