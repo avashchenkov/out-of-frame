@@ -6,6 +6,7 @@ grade fails it.
 
 import datetime as dt
 from collections import Counter
+from typing import Literal
 
 from evals.graders.finding import Grade
 from out_of_frame.record import Record
@@ -14,11 +15,17 @@ from out_of_frame.state import Coordinates, RunState
 
 class ExpectedDestination(Record):
     """A place that the user travels to, as the input should end: its building and both of its
-    clock times. Its name is free."""
+    clock times. Its name is free. An end-to-end task also gives the outcome of each journey."""
 
     coordinates: Coordinates
     leave_home: dt.time
     leave_place: dt.time
+    there: Literal["found", "no route"] | None = None
+    back: Literal["found", "no route"] | None = None
+
+    def key(self) -> tuple:
+        """The place as the input gives it, without its journeys."""
+        return self.coordinates, self.leave_home, self.leave_place
 
 
 class ExpectedInput(Record):
@@ -49,6 +56,6 @@ def grade_destinations(state: RunState, expected: list[ExpectedDestination]) -> 
         and destination.leave_place is not None
     ]
     complete = state.destinations is not None and len(found) == len(state.destinations)
-    passed = complete and Counter(found) == Counter(expected)
+    passed = complete and Counter(d.key() for d in found) == Counter(d.key() for d in expected)
     reasons = () if passed else (f"the destinations are {state.destinations!r}",)
     return Grade("destinations", passed, reasons)

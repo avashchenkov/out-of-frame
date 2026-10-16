@@ -4,7 +4,8 @@ for their format only."""
 import pytest
 import yaml
 
-from evals.load import STATES, TASKS, TaskFormatError, load
+from evals.graders.end_to_end import ExpectedRun
+from evals.load import STATES, TASKS, Conversation, TaskFormatError, load
 from out_of_frame.state import InvestigationState
 
 
@@ -74,7 +75,7 @@ BROKEN = [
         "none.json",
     ),
     ("f1.yaml", lambda task, state: task["expected"].update(outcome="identified"), "exactly when"),
-    ("f1.yaml", lambda task, state: task.update(date="today"), "only a live task"),
+    ("f1.yaml", lambda task, state: task.update(date="today"), "a live task, and only it"),
     ("f1.yaml", add_page, "must be shown"),
     ("f1.yaml", repeat_last_call, "above the cap"),
     ("f1.yaml", rename_page_to_map_source, "same ID"),
@@ -133,3 +134,95 @@ def test_a_yaml_error_is_a_format_error(tmp_path):
     path.write_text("id: [", encoding="utf-8")
     with pytest.raises(TaskFormatError, match="broken.yaml"):
         load(path)
+
+
+def end_to_end_task() -> dict:
+    """A small end-to-end task: one destination and one label of each kind."""
+    label = {
+        "id": "test-bakery",
+        "object_id": "osm-way-1",
+        "category": "industry",
+        "coordinates": {"lat": 52.5, "lon": 13.4},
+        "distance_tolerance_m": 100,
+        "identified_type": "production",
+        "status": "operating",
+        "source_url": "https://example.org",
+        "search": "Teststraße 1 Berlin",
+    }
+    skipped = {
+        key: value
+        for key, value in label.items()
+        if key not in ("identified_type", "status", "source_url", "search")
+    } | {"id": "test-yard", "object_id": "osm-way-2", "left_out": "no page a search finds"}
+    return {
+        "id": "E0",
+        "suite": "end-to-end",
+        "covers": "A test.",
+        "date": "today",
+        "input": {"messages": ["Teststraße 1, 10115 Berlin; I work at Work 1 from 8 to 17."]},
+        "expected": {
+            "property": {"lat": 52.5, "lon": 13.4},
+            "destinations": [
+                {
+                    "coordinates": {"lat": 52.52, "lon": 13.41},
+                    "leave_home": "08:00",
+                    "leave_place": "17:00",
+                    "there": "found",
+                    "back": "found",
+                }
+            ],
+            "labels": [label, skipped],
+            "recorded_as": "e4-teutonenstrasse-10",
+        },
+    }
+
+
+def test_an_end_to_end_task_gives_one_message_and_expects_its_labels(tmp_path):
+    task = load(write(tmp_path / "e0.yaml", end_to_end_task()))
+    assert isinstance(task.inputs, Conversation) and not task.inputs.sources
+    assert isinstance(task.expected, ExpectedRun) and task.date is None
+    assert [label.left_out for label in task.expected.labels] == [None, "no page a search finds"]
+
+
+def set_first_label(field, value):
+    return lambda task: task["expected"]["labels"][0].__setitem__(field, value)
+
+
+BROKEN_END_TO_END = [
+    (lambda task: task["input"]["messages"].append("Yes."), "one first message"),
+    (
+        lambda task: task["input"].update(sources=read(TASKS / "i3.yaml")["input"]["sources"]),
+        "live sources",
+    ),
+    (lambda task: task["expected"]["destinations"][0].pop("back"), "there and back"),
+    (set_first_label("category", "no such category"), "unknown category"),
+    (set_first_label("status", "no such status"), "unknown status"),
+    (set_first_label("object_id", "osm-way-2"), "same object_id"),
+    (
+        lambda task: [task["expected"].pop(key) for key in ("labels", "recorded_as")],
+        "only it, expects labels",
+    ),
+    (lambda task: task.update(date="2026-10-16"), "a live task, and only it"),
+    (lambda task: task["expected"].update(labels=task["expected"]["labels"][1:]), "scored label"),
+    (lambda task: task["expected"].pop("recorded_as"), "the name they were recorded under"),
+    (lambda task: task["expected"].update(recorded_as="nowhere"), "no recording"),
+    (set_first_label("source_url", "TODO"), "address of its page"),
+    (set_first_label("search", "TODO"), "fill in every TODO"),
+]
+
+
+@pytest.mark.parametrize(
+    "change, error", BROKEN_END_TO_END, ids=[error for _, error in BROKEN_END_TO_END]
+)
+def test_a_broken_end_to_end_task_is_rejected(tmp_path, change, error):
+    task = end_to_end_task()
+    change(task)
+    with pytest.raises(TaskFormatError, match=error):
+        load(write(tmp_path / "broken.yaml", task))
+
+
+def test_an_input_loop_task_gives_no_journeys(tmp_path):
+    task = read(TASKS / "i1.yaml")
+    task["expected"]["destinations"][0]["there"] = "found"
+    with pytest.raises(TaskFormatError, match="there and back"):
+        load(write(tmp_path / "broken.yaml", task))

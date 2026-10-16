@@ -11,6 +11,7 @@ from typing import Literal, NoReturn, Self
 import yaml
 from pydantic import ValidationError, model_validator
 
+from evals.graders.end_to_end import AddressLabel, ExpectedRun
 from evals.graders.finding import Expected
 from evals.graders.input_loop import ExpectedDestination, ExpectedInput
 from out_of_frame import research_scope
@@ -23,6 +24,8 @@ EVALS = Path(__file__).parent
 TASKS = EVALS / "tasks"
 STATES = EVALS / "states"
 FIXTURES = EVALS / "fixtures"
+# The responses that evals/label.py records at an end-to-end address, by their fixture folder.
+RECORDINGS = ("nominatim", "overpass", "bplan")
 
 type Inputs = MapObject | InvestigationState | RunState | PageText | Conversation
 
@@ -42,8 +45,9 @@ class RecordedSource(Record):
 
 
 class Conversation(Record):
-    """What an input loop task gives the agent: the user's messages, the first one and a reply
-    to each expected question, and the recorded Nominatim responses it geocodes from."""
+    """What an input loop or end-to-end task gives the agent: the user's messages, the first one
+    and a reply to each expected question, and the recorded Nominatim responses it geocodes
+    from, none in an end-to-end task, which runs on live sources."""
 
     messages: list[str]
     sources: list[RecordedSource]
@@ -66,7 +70,7 @@ class Label(Record):
 class TaskExpected(Record):
     """The label of a real object, the result that follows a written state, whether the
     injection check should flag a page, or how the input loop should end: the property and
-    the places the user travels to."""
+    the places the user travels to; an end-to-end task adds the labels of the objects there."""
 
     label: Label | None = None
     outcome: Literal["identified", "unidentified"] | None = None
@@ -75,6 +79,8 @@ class TaskExpected(Record):
     flagged: bool | None = None
     property: Coordinates | None = None
     destinations: list[ExpectedDestination] | None = None  # empty if the user travels nowhere
+    labels: list[AddressLabel] | None = None
+    recorded_as: str | None = None  # the fixtures' name, such as e4-teutonenstrasse-10
 
     @model_validator(mode="after")
     def check_one_kind(self) -> Self:
@@ -93,9 +99,21 @@ class TaskExpected(Record):
             raise ValueError("give outcome, identified_type and status together")
         if (self.property is None) != (self.destinations is None):
             raise ValueError("give property and destinations together")
+        if self.labels is not None and self.property is None:
+            raise ValueError("give the labels with property and destinations")
+        if (self.labels is None) != (self.recorded_as is None):
+            raise ValueError("give the labels with the name they were recorded under")
         return self
 
-    def result(self) -> Expected | bool | ExpectedInput:
+    def result(self) -> Expected | bool | ExpectedInput | ExpectedRun:
+        if self.property is not None and self.destinations is not None and self.labels is not None:
+            assert self.recorded_as is not None  # see check_one_kind
+            return ExpectedRun(
+                property=self.property,
+                destinations=self.destinations,
+                labels=self.labels,
+                recorded_as=self.recorded_as,
+            )
         if self.property is not None and self.destinations is not None:
             return ExpectedInput(property=self.property, destinations=self.destinations)
         if self.flagged is not None:
@@ -117,7 +135,13 @@ class TaskInput(Record):
 class TaskFile(Record):
     id: str
     suite: Literal[
-        "finding", "live investigation", "injection check", "triage", "report", "input loop"
+        "finding",
+        "live investigation",
+        "injection check",
+        "triage",
+        "report",
+        "input loop",
+        "end-to-end",
     ]
     covers: str
     date: dt.date | Literal["today"]
@@ -132,8 +156,9 @@ class Task:
     date: dt.date | None  # None: the date of the trial
     inputs: Inputs
     # bool: whether the injection check should flag the page; ExpectedInput: how the input
-    # loop should end; None for a report task, whose graders read only its state
-    expected: Expected | bool | ExpectedInput | None
+    # loop should end; ExpectedRun: how an end-to-end run should end; None for a report task,
+    # whose graders read only its state
+    expected: Expected | bool | ExpectedInput | ExpectedRun | None
 
 
 def load_all() -> list[Task]:
@@ -157,8 +182,8 @@ def load(path: Path) -> Task:
     except (ValidationError, OSError, yaml.YAMLError) as e:
         fail(str(e))
 
-    if bool(task.input.messages) != (task.suite == "input loop"):
-        fail("an input loop task, and only it, gives the user's messages")
+    if bool(task.input.messages) != (task.suite in ("input loop", "end-to-end")):
+        fail("an input loop or end-to-end task, and only it, gives the user's messages")
     match task.suite, task.input.map_object, state, task.input.page:
         case "live investigation", MapObject() as map_object, None, None:
             match [s.kind for s in task.input.sources if s.id == map_object.source_id]:
@@ -180,10 +205,15 @@ def load(path: Path) -> Task:
             if any(source.kind != "geocoding" for source in task.input.sources):
                 fail("an input loop task replays only geocoding responses")
             inputs = Conversation(messages=task.input.messages, sources=task.input.sources)
+        case "end-to-end", None, None, None:
+            if len(task.input.messages) != 1 or task.input.sources:
+                fail("an end-to-end task gives one first message and runs on live sources")
+            inputs = Conversation(messages=task.input.messages, sources=[])
         case _:
             fail(
                 "a live investigation or triage task gives a map object, a finding or report "
-                "task a state, an injection check task a page, an input loop task messages"
+                "task a state, an injection check task a page, an input loop or end-to-end "
+                "task messages"
             )
 
     if (task.expected is None) != (task.suite == "report"):
@@ -191,12 +221,20 @@ def load(path: Path) -> Task:
     expected = task.expected.result() if task.expected else None
     if isinstance(expected, bool) != (task.suite == "injection check"):
         fail("an injection check task, and only it, expects flagged")
+    if isinstance(expected, ExpectedRun) != (task.suite == "end-to-end"):
+        fail("an end-to-end task, and only it, expects labels")
     if isinstance(expected, ExpectedInput) != (task.suite == "input loop"):
-        fail("an input loop task, and only it, expects the property and the destinations")
+        fail("an input loop task, and only it, expects the property and the destinations alone")
     if isinstance(expected, Expected):
         check_expected(expected, fail)
-    if task.date == "today" and task.suite != "live investigation":
-        fail("only a live task runs with the date of the trial")
+    if isinstance(expected, ExpectedInput | ExpectedRun):
+        check_journeys(expected.destinations, task.suite == "end-to-end", fail)
+    if isinstance(expected, ExpectedRun):
+        check_labels(expected.labels, fail)
+        if missing := [str(p) for p in find_recordings(expected.recorded_as) if not p.exists()]:
+            fail(f"no recording: {', '.join(missing)}")
+    if (task.date == "today") != (task.suite in ("live investigation", "end-to-end")):
+        fail("a live task, and only it, runs with the date of the trial")
     return Task(task.id, task.suite, None if task.date == "today" else task.date, inputs, expected)
 
 
@@ -208,6 +246,39 @@ def check_expected(expected: Expected, fail) -> None:
         fail(f"unknown status {expected.status!r}")
     if (expected.outcome == "unidentified") != (expected.identified_type is None):
         fail("an object is unidentified exactly when it has no type")
+
+
+def check_journeys(destinations: list[ExpectedDestination], end_to_end: bool, fail) -> None:
+    """An end-to-end task gives the outcome of each journey there and back; the input loop plans
+    none."""
+    for destination in destinations:
+        given = [destination.there is not None, destination.back is not None]
+        if given != [end_to_end] * 2:
+            fail("an end-to-end task, and only it, gives each destination there and back")
+
+
+def find_recordings(name: str) -> list[Path]:
+    """The fixtures that evals/label.py records at an end-to-end address under the name."""
+    return [FIXTURES / folder / f"{name}.json" for folder in RECORDINGS]
+
+
+def check_labels(labels: list[AddressLabel], fail) -> None:
+    """Each label names an object once, in a category of the research scope, with a type and a
+    status from its lists."""
+    scope = research_scope.load()
+    for field in ("id", "object_id"):
+        values = [getattr(label, field) for label in labels]
+        if duplicates := sorted({value for value in values if values.count(value) > 1}):
+            fail(f"labels with the same {field}: {', '.join(duplicates)}")
+    if all(label.left_out is not None for label in labels):
+        fail("an end-to-end task needs a scored label")
+    categories = {category.id for category in scope.categories}
+    for label in labels:
+        if label.category not in categories:
+            fail(f"{label.id}: unknown category {label.category!r}")
+        if label.left_out is None:
+            outcome = "unidentified" if label.identified_type is None else "identified"
+            check_expected(Expected(outcome, label.identified_type, label.status), fail)
 
 
 def check_run_state(state: RunState, fail) -> None:

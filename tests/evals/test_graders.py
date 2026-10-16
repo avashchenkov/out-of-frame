@@ -1,10 +1,23 @@
 """Each code-based grader on a hand-written outcome it must pass and one it must fail."""
 
+import datetime as dt
+
 import pytest
 
+from evals.graders.end_to_end import AddressLabel, grade_findings, grade_journeys
 from evals.graders.finding import Expected, grade_grounding, grade_result
+from evals.graders.input_loop import ExpectedDestination, grade_destinations
 from evals.graders.prompt_injection import grade_flagged
-from out_of_frame.state import Coordinates, Finding, MapObject, Source
+from out_of_frame.state import (
+    Address,
+    Coordinates,
+    Destination,
+    Finding,
+    Journey,
+    MapObject,
+    RunState,
+    Source,
+)
 
 MAP_OBJECT = MapObject(
     id="obj-1",
@@ -167,3 +180,259 @@ def test_flagged_fails_on_a_miss_and_on_a_false_alarm():
     miss, false_alarm = grade_flagged(False, expected=True), grade_flagged(True, expected=False)
     assert not miss.passed and miss.reasons[0].startswith("miss")
     assert not false_alarm.passed and false_alarm.reasons[0].startswith("false alarm")
+
+
+# The end-to-end graders: findings against the labels of an address, and the journeys.
+SITE = MAP_OBJECT.model_copy(
+    update={"id": "osm-way-1", "details": {"category": "industry", "landuse": "industrial"}}
+)
+
+
+def label(**changes) -> AddressLabel:
+    fields = dict(
+        id="test-bakery",
+        object_id="osm-way-1",
+        category="industry",
+        coordinates={"lat": 52.5, "lon": 13.4},
+        distance_tolerance_m=100,
+        identified_type="production",
+        status="operating",
+        source_url="https://example.org",
+        search="Teststraße 1 Berlin",
+    )
+    return AddressLabel.model_validate(fields | changes)
+
+
+def left_out(**changes) -> AddressLabel:
+    fields = label().model_dump(exclude={"identified_type", "status", "source_url", "search"})
+    return AddressLabel.model_validate(fields | {"left_out": "no page a search finds"} | changes)
+
+
+def run_state(objects: list[MapObject], findings: list[Finding]) -> RunState:
+    return RunState(map_objects=objects, findings=findings)
+
+
+def site_finding(**changes) -> Finding:
+    return finding(**({"map_object_id": "osm-way-1"} | changes))
+
+
+def test_findings_match_a_label_by_object_id():
+    # The labelled object is beyond the tolerance, and another object with a finding lies right
+    # at the label: the object ID still decides.
+    far = SITE.model_copy(update={"coordinates": Coordinates(lat=52.502, lon=13.4)})
+    at_label = SITE.model_copy(update={"id": "osm-way-2"})
+    findings = [site_finding(), site_finding(map_object_id="osm-way-2")]
+    graded = grade_findings(run_state([far, at_label], findings), [label()])
+    assert graded.results == {"test-bakery": "correct"} and graded.false_alarms == ("osm-way-2",)
+    assert graded.precision == 0.5 and graded.recall == 1
+
+
+def test_findings_match_a_label_by_coordinates_when_the_map_changed_the_id():
+    moved = SITE.model_copy(
+        update={"id": "osm-way-2", "coordinates": Coordinates(lat=52.5005, lon=13.4)}
+    )
+    graded = grade_findings(
+        run_state([moved], [site_finding(map_object_id="osm-way-2")]), [label()]
+    )
+    assert graded.results == {"test-bakery": "correct"}
+
+
+@pytest.mark.parametrize(
+    "update",
+    [
+        {"coordinates": Coordinates(lat=52.502, lon=13.4)},  # about 220 m away
+        {"details": {"category": "airport", "aeroway": "aerodrome"}},
+    ],
+    ids=["beyond the tolerance", "another category"],
+)
+def test_a_finding_that_matches_no_label_is_a_false_alarm(update):
+    other = SITE.model_copy(update={"id": "osm-way-2"} | update)
+    graded = grade_findings(
+        run_state([other], [site_finding(map_object_id="osm-way-2")]), [label()]
+    )
+    assert graded.false_alarms == ("osm-way-2",) and graded.results == {
+        "test-bakery": "not fetched"
+    }
+    assert graded.precision == 0 and graded.recall is None
+
+
+def test_a_matched_finding_with_a_wrong_type_or_status_is_an_error():
+    graded = grade_findings(run_state([SITE], [site_finding(status="closed")]), [label()])
+    assert graded.results == {"test-bakery": "error"} and graded.precision == graded.recall == 0
+    assert graded.reasons == ("test-bakery: status 'closed', expected 'operating'",)
+
+
+def test_an_unidentified_finding_is_right_only_where_the_label_has_no_type():
+    unidentified = Finding.unidentified("osm-way-1")
+    state = run_state([SITE], [unidentified])
+    assert grade_findings(state, [label()]).results == {"test-bakery": "error"}
+    unknown = label(identified_type=None, status=None)
+    assert grade_findings(state, [unknown]).results == {"test-bakery": "correct"}
+
+
+def test_a_fetched_object_without_a_finding_is_a_miss():
+    graded = grade_findings(run_state([SITE], []), [label()])
+    assert graded.results == {"test-bakery": "miss"} and graded.recall == 0
+    assert graded.precision is None
+
+
+def test_a_label_left_out_is_not_scored_and_its_finding_is_no_false_alarm():
+    graded = grade_findings(run_state([SITE], [site_finding()]), [left_out()])
+    assert graded.results == {"test-bakery": "left out"} and not graded.false_alarms
+    assert graded.precision is None and graded.recall is None
+
+
+def test_a_second_finding_for_the_same_object_is_a_false_alarm():
+    graded = grade_findings(run_state([SITE], [site_finding(), site_finding()]), [label()])
+    assert graded.results == {"test-bakery": "correct"} and graded.false_alarms == ("osm-way-1",)
+    assert graded.precision == 0.5
+
+
+def test_a_label_whose_link_is_in_the_object_data_needs_no_search():
+    assert label(search=None).search is None
+
+
+def test_an_unidentified_finding_with_a_type_and_status_is_an_error():
+    unidentified = site_finding(outcome="unidentified")
+    graded = grade_findings(run_state([SITE], [unidentified]), [label()])
+    assert graded.results == {"test-bakery": "error"}
+    assert graded.reasons == ("test-bakery: outcome 'unidentified', expected 'identified'",)
+
+
+def test_two_moved_objects_take_the_labels_closest_to_them():
+    # Both labels' objects changed ID. The depot's new object, nearer the property, is a little
+    # nearer the bakery's label than its own; the bakery's new object is right at its label.
+    labels = [
+        label(object_id="osm-way-8", distance_tolerance_m=300),
+        label(
+            id="test-depot",
+            object_id="osm-way-9",
+            coordinates={"lat": 52.502, "lon": 13.4},
+            distance_tolerance_m=300,
+            identified_type="logistics",
+        ),
+    ]
+    near_depot = SITE.model_copy(
+        update={"id": "osm-way-2", "coordinates": Coordinates(lat=52.5009, lon=13.4)}
+    )
+    near_bakery = SITE.model_copy(
+        update={
+            "id": "osm-way-3",
+            "coordinates": Coordinates(lat=52.4999, lon=13.4),
+            "distance_from_property_m": 300,
+        }
+    )
+    findings = [
+        site_finding(map_object_id="osm-way-2", identified_type="logistics"),
+        site_finding(map_object_id="osm-way-3"),
+    ]
+    graded = grade_findings(run_state([near_depot, near_bakery], findings), labels)
+    assert graded.results == {"test-bakery": "correct", "test-depot": "correct"}
+
+
+def test_an_object_with_a_finding_takes_its_label_before_a_nearer_one_without():
+    # The map changed the labelled object's ID; an unlabelled object nearer the label, also
+    # within the tolerance, has no finding.
+    nearer = SITE.model_copy(
+        update={"id": "osm-way-2", "coordinates": Coordinates(lat=52.5002, lon=13.4)}
+    )
+    moved = SITE.model_copy(
+        update={
+            "id": "osm-way-3",
+            "coordinates": Coordinates(lat=52.5015, lon=13.4),
+            "distance_from_property_m": 200,
+        }
+    )
+    state = run_state([nearer, moved], [site_finding(map_object_id="osm-way-3")])
+    graded = grade_findings(state, [label(distance_tolerance_m=300)])
+    assert graded.results == {"test-bakery": "correct"} and not graded.false_alarms
+
+
+def test_each_label_matches_one_object_at_most():
+    near = SITE.model_copy(update={"id": "osm-way-2"})
+    findings = [site_finding(), site_finding(map_object_id="osm-way-2")]
+    graded = grade_findings(run_state([SITE, near], findings), [label()])
+    assert graded.false_alarms == ("osm-way-2",)
+
+
+@pytest.mark.parametrize(
+    "changes, error",
+    [
+        ({"left_out": "no page"}, "has no identified_type"),
+        ({"source_url": None}, "address of its page"),
+        ({"distance_tolerance_m": 0}, "greater than 0"),
+        ({"distance_tolerance_m": float("inf")}, "finite"),
+    ],
+    ids=["left out with a type", "scored without a page", "no tolerance", "endless tolerance"],
+)
+def test_a_label_is_scored_or_left_out(changes, error):
+    with pytest.raises(ValueError, match=error):
+        label(**changes)
+    with pytest.raises(ValueError, match="or left_out"):
+        AddressLabel.model_validate(left_out().model_dump(exclude_unset=True, exclude={"left_out"}))
+
+
+HOME = Address(text="Teststraße 1, 10115 Berlin", coordinates=Coordinates(lat=52.5, lon=13.4))
+WORK_PLACE = ExpectedDestination(
+    coordinates=Coordinates(lat=52.52, lon=13.41),
+    leave_home=dt.time(8),
+    leave_place=dt.time(17),
+    there="found",
+    back="found",
+)
+WORK = Destination(
+    id="destination-1",
+    name="work",
+    address=Address(text="Work 1", coordinates=WORK_PLACE.coordinates),
+    leave_home=dt.time(8),
+    leave_place=dt.time(17),
+)
+
+
+def journeys(*outcomes: str) -> RunState:
+    trips = [
+        Journey.model_validate(
+            {"destination_id": "destination-1", "direction": direction, "outcome": outcome}
+        )
+        for direction, outcome in zip(["there", "back"], outcomes, strict=False)
+    ]
+    return RunState(property=HOME, destinations=[WORK], journeys=trips)
+
+
+def test_journeys_pass_there_and_back_with_the_expected_outcome():
+    assert grade_journeys(journeys("found", "found"), [WORK_PLACE]).passed
+
+
+def test_a_journey_that_transitous_could_not_plan_is_not_graded_on_its_outcome():
+    assert grade_journeys(journeys("found", "unavailable"), [WORK_PLACE]).passed
+
+
+@pytest.mark.parametrize(
+    "state, expected",
+    [
+        (journeys("found"), [WORK_PLACE]),
+        (journeys("found", "no route"), [WORK_PLACE]),
+        (journeys("found", "found"), []),
+    ],
+    ids=["no journey back", "another outcome", "a journey without a destination"],
+)
+def test_journeys_fail_when_one_is_missing_wrong_or_not_asked_for(state, expected):
+    graded = grade_journeys(state, expected)
+    assert not graded.passed and graded.reasons
+
+
+@pytest.mark.parametrize("time", ["leave_home", "leave_place"])
+def test_two_places_in_one_building_keep_their_own_journeys(time):
+    gym = WORK.model_copy(update={"id": "destination-2", "name": "gym", time: dt.time(21)})
+    gym_place = WORK_PLACE.model_copy(update={time: dt.time(21)})
+    trips = [
+        Journey(destination_id=place, direction=direction, outcome="found")
+        for place in ("destination-1", "destination-2")
+        for direction in ("there", "back")
+    ]
+    state = RunState(property=HOME, destinations=[WORK, gym], journeys=trips)
+    assert grade_journeys(state, [WORK_PLACE, gym_place]).passed
+
+
+def test_the_input_is_graded_without_the_journeys():
+    assert grade_destinations(journeys("found", "found"), [WORK_PLACE]).passed

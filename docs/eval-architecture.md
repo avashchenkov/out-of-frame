@@ -142,7 +142,9 @@ grade them by code, the true values are recorded apart from the agent, as labels
 records the true type and status of one object, in the project's own format.
 `identified_type` and `status` come from the same lists in `research_scope.yaml` that the agent
 uses. `object_id`, `category`, `coordinates` and `distance_tolerance_m` let code match a
-finding to the label. `source_url` is the address of one page that shows why the label is true.
+finding to the label. `source_url` is the address of one page that shows why the label is true,
+and `search` the Tavily search that finds it. A label that is not scored has `left_out`, the
+reason, in place of its type, status, page and search.
 
 Labels are not drawn from the map by hand. For each end-to-end address, a script queries the
 map and plan sources and writes the objects the agent can see there into the labels: the
@@ -161,6 +163,7 @@ labels.
   identified_type: commercial      # from a fixed list
   status: operating
   source_url: https://www.pmi.com/markets/germany/de/presse/nlnd-berlin
+  search: Philip Morris Berlin Neuköllnische Allee
 ```
 
 - Type and status come from real-world evidence: registers, operator announcements, plans.
@@ -176,8 +179,9 @@ labels.
   truth. The person sets these rules, reads every label with its checks and settles each
   disputed one.
 - Every label must be reachable: a Tavily search built from what the agent sees of the object
-  finds the label's page. If not, a component task is broken, not hard; in an end-to-end task,
-  the object is marked as left out and is not scored.
+  finds the label's page, or the page's link is in the object's own data, such as a plan's
+  PDF, which the agent can read directly. If not, a component task is broken, not hard; in an
+  end-to-end task, the object is marked as left out and is not scored.
 - `null` is a real value. Where the evidence cannot settle a type or a status, the label
   says `null` for that field, and an agent that leaves it `null` there is right. Reporting
   the object as unidentified is right only if its type is `null`. The WFS fields of a

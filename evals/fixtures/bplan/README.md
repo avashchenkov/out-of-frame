@@ -8,4 +8,8 @@ returned:
   Berlin, 2026-10-14: roughly those whose bounds overlap the square. The WFS also returns
   plans a few metres beyond it, such as VIII-B4.
 
+Recorded on 2026-10-16 by `evals/label.py`: the plans that the WFS returns around each
+end-to-end address, from which its labels were written. Named as the Overpass fixtures, such
+as `e4-teutonenstrasse-10.json` for E4.
+
 Data: Geoportal Berlin, B-Plan WFS, licence dl-de/zero-2.0.
