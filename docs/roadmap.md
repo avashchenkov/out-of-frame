@@ -185,7 +185,7 @@ calibration.
        - The report prompt says what a plan in procedure is meant to allow, not what it allows,
          and never that the type of an object of type other shows no effect.
        - The person checks the grades of evals/calibration/ against the changed rubrics.
-    2. The end-to-end tasks, E1–E5, with their labels.
+    2. ✅ The end-to-end tasks, E1–E5, with their labels.
        - First the task format: an end-to-end suite with its messages, the expected input as in
          the input loop, the expected outcome of each journey, and a list of labels, each with
          its object ID and category, or marked as left out with the reason.
@@ -202,13 +202,18 @@ calibration.
        - Labels as the [eval architecture](eval-architecture.md#ground-truth-labels) says:
          Claude proposes each type, status and page, with the Tavily search that finds it; a
          new Claude session, Codex and Grok each check them without seeing the others' checks;
-         the person reads every label with its checks and settles each disputed one. E4's label
-         in the note above is a proposal like any other. While labelling E2, Claude also keeps
-         the pages that F2 and F6 need.
+         the person settles each point the checkers disagree on. E4's label in the note above
+         is a proposal like any other. While labelling E2, Claude also keeps the pages that F2
+         and F6 need.
        - Code grades the input, the findings against the labels and the journeys, as the eval
          architecture says. Grader tests; in CI, the task format, and every category has a
          scored label at one address at least.
-    3. F2 and F6 in the finding suite, from the pages kept in 10.2, rewritten in new words.
+    3. F2 and F6 in the finding suite, from the pages kept in 10.2, rewritten in new words. The
+       pages are kept in local results, evals/results/pages-10-2, read on 2026-10-16. F2, at the
+       former Philip Morris factory: PMI's list of affiliates still gives Philip Morris
+       Manufacturing GmbH at Neuköllnische Allee 80, and a news page of 2024 says production
+       there ends in the first half of 2025. F6, at the stormwater filter of E5: a page of the
+       Berliner Wasserbetriebe about the Retentionsbodenfilter in Blankenburg, elsewhere.
     4. The end-to-end suite in evals/run.py: the whole agent on live sources from the task's
        messages, each run saved as evals/judge.py saves it and graded by code at once; no judge
        grades it before calibration. The fixed component suites report pass@k and pass^k

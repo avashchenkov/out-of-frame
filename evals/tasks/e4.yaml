@@ -1,0 +1,161 @@
+# E4, end-to-end: the whole agent on live sources, from a first message that completes the input.
+# See docs/eval-architecture.md#end-to-end.
+id: E4
+suite: end-to-end
+covers: >-
+  An active B-Plan, planned, with no construction yet: XV-25-1 is in procedure and is meant to
+  allow housing on an unused plot. The user travels to two places, one outside Berlin.
+date: today  # a live task runs with the date of the trial
+
+# What the agent gets: the first message alone; any question fails the trial.
+input:
+  messages:
+    - >-
+      Please check Teutonenstraße 10, 12524 Berlin. I work at Karl-Marx-Allee 3, 10178 Berlin:
+      I leave home at 7:50 and leave work at 17:20. I also go to the library at Am Kanal 47, 14467
+      Potsdam: I leave home at 9:10 and leave the library at 14:35.
+
+# Read only by the graders. The labels were written on 2026-10-16 from the responses that
+# evals/label.py recorded under recorded_as; each label's comment gives what the agent sees of
+# the object and why the label is true. The pages were read on 2026-10-16.
+expected:
+  property: {lat: 52.4184654, lon: 13.5426182}
+  destinations:
+    - coordinates: {lat: 52.5222886, lon: 13.4189853}  # as nominatim/karl-marx-allee-3.json
+      leave_home: "07:50"
+      leave_place: "17:20"
+      there: found
+      back: found
+    - coordinates: {lat: 52.3971923, lon: 13.0592866}  # as nominatim/am-kanal-47-potsdam.json
+      leave_home: "09:10"
+      leave_place: "14:35"
+      there: found
+      back: found
+  recorded_as: e4-teutonenstrasse-10
+  labels:
+    # 166 m: landuse=industrial; Besenbinderstraße 26, 26-28 and 28, 12524 Berlin. The page:
+    # "Schrott und Altmetall", Altmetalle Hans Wasdrack, Besenbinderstrasse 26-28, with opening
+    # hours. A scrap metal yard recycles waste.
+    - id: wasdrack-scrap-yard
+      object_id: osm-way-1197467986
+      category: industry
+      coordinates: {lat: 52.42027915, lon: 13.54195645}
+      distance_tolerance_m: 60
+      identified_type: plant
+      status: operating
+      source_url: https://www.wasdrack.de
+      search: Besenbinderstraße 26-28 12524 Berlin
+    # 254 m: landuse=industrial; Besenbinderstraße 23 and 29, 12524 Berlin. At 23, AMR
+    # Dachbaustoffe sells roofing materials and makes profiles ("Herstellung von Profilen", on
+    # amr-shop.de); at 29 is the allotment garden Bachespe. The making is the use that affects
+    # people nearby the most, but only the firm's own site shows it, and a search by the address
+    # finds directories only; with 20 results it finds the site too (spikes/search-depth).
+    - id: amr-dachbaustoffe
+      object_id: osm-way-1197467979
+      category: industry
+      coordinates: {lat: 52.42113005, lon: 13.54227905}
+      distance_tolerance_m: 60
+      left_out: >-
+        The page that shows its making, amr-shop.de, is not within 5 results at basic depth by
+        its address, which finds only directories.
+    # 818 m: W. & L. Jordan GmbH NL Berlin-Adlershof, man_made=works, Ernst-Ruska-Ufer 2. The
+    # page: a 285 m² showroom of floors, doors and wallpaper, "Verkauf nur an gewerbliche
+    # Kunden", with opening hours; it names no making at this branch.
+    - id: jordan-adlershof
+      object_id: osm-way-334170247
+      category: industry
+      coordinates: {lat: 52.42626785, lon: 13.54449675}
+      distance_tolerance_m: 80
+      identified_type: commercial
+      status: operating
+      source_url: https://www.jordanshop.de/de-DE/stores/7
+      search: W. & L. Jordan GmbH NL Berlin-Adlershof Ernst-Ruska-Ufer 2
+    # 878 m: landuse=industrial; Wegedornstraße 273, 12524 Berlin. No search by the address
+    # finds a page about it.
+    - id: wegedornstrasse-273
+      object_id: osm-way-1241619192
+      category: industry
+      coordinates: {lat: 52.4106215, lon: 13.5447684}
+      distance_tolerance_m: 50
+      left_out: No search by its address finds a page about it.
+    # 934 m: landuse=industrial; Am Studio 16 and Köpenicker Straße 1, 12489 Berlin. The page:
+    # CURVE-Campus, "Fertigung: 11.055 m²" next to offices; the former production hall is now
+    # used by a maker of medical devices ("Medizintechnikhersteller") and a TV studio.
+    - id: curve-campus
+      object_id: osm-way-118132465
+      category: industry
+      coordinates: {lat: 52.428236549999994, lon: 13.54711195}
+      distance_tolerance_m: 270
+      identified_type: production
+      status: operating
+      source_url: https://www.beos.net/objekte/curve-campus
+      search: Am Studio 16 12489 Berlin
+    # 3380 m: Flughafen Berlin Brandenburg, aeroway=aerodrome. The page: the airport opened in
+    # October 2020, with its terminals and transport links.
+    - id: ber-airport
+      object_id: osm-way-859790021
+      category: airport
+      coordinates: {lat: 52.36576545, lon: 13.49691}
+      distance_tolerance_m: 3980
+      identified_type: airport
+      status: operating
+      source_url: https://www.berlin.de/en/airport-ber
+      search: Flughafen Berlin Brandenburg
+    # 0 m: Bebauungsplan XV-25-1, Im Verfahren, for Teutonenstraße 3/9 and 8/14 and
+    # Germanenstraße 2/6. The page: the plan is meant to develop an unused plot at
+    # Germanenstraße 2/6 for housing ("bislang ungenutzten Fläche ... für Wohnungsbau"). Housing
+    # has no listed type, so other; the plot is unused, so building has not started.
+    - id: plan-xv-25-1
+      object_id: bplan-0915025-1
+      category: planned_objects
+      coordinates: {lat: 52.418202820000005, lon: 13.542651995}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: planned
+      source_url: https://www.berlin.de/ba-treptow-koepenick/aktuelles/pressemitteilungen/2026/pressemitteilung.1700019.php
+      search: Bebauungsplan XV-25-1 Teutonenstraße Germanenstraße
+    # 0 m: Bebauungsplan XV-25, In Kraft getreten in 2006; inhalt: allgemeines Wohngebiet,
+    # Mischgebiet, Gemeinbedarf (school and sports hall), park, roads. Housing and a mixed area
+    # with housing have no listed type, so other. Its reasons of 2006 do not show what is built
+    # now, so the status is null. The page is linked in its WFS fields (grund_www).
+    - id: plan-xv-25
+      object_id: bplan-0915025
+      category: planned_objects
+      coordinates: {lat: 52.418665005, lon: 13.542487585}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://tk.gis-broker.de/metadata/bplan/begruendung/XV-25.pdf
+      search: null
+    # 94 m: Bebauungsplan XV-23, In Kraft getreten in 2006; inhalt: allgemeines Wohngebiet,
+    # Mischgebiet, Gemeinbedarf (social and cultural), allotment gardens, paths, roads. Other,
+    # and status null, as for XV-25. The page is linked in its WFS fields (grund_www).
+    - id: plan-xv-23
+      object_id: bplan-0915023
+      category: planned_objects
+      coordinates: {lat: 52.42033097, lon: 13.54376113}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://tk.gis-broker.de/metadata/bplan/begruendung/XV-23.pdf
+      search: null
+    # 190 m: Bebauungsplan XV-F, a simple plan in procedure since 1993 for 20 parts; its fields
+    # say nothing of what it allows and link no page, and no search finds one.
+    - id: plan-xv-f
+      object_id: bplan-0915000F
+      category: planned_objects
+      coordinates: {lat: 52.438849015, lon: 13.509909239999999}
+      distance_tolerance_m: 50
+      left_out: Its fields link no page, and no search by its number finds one.
+    # 323 m: Bebauungsplan XV-14, In Kraft getreten in 1997; inhalt: a public park and roads.
+    # Neither has a listed type, so other; status null, as for XV-25. The page is linked in its
+    # WFS fields (grund_www).
+    - id: plan-xv-14
+      object_id: bplan-0915014
+      category: planned_objects
+      coordinates: {lat: 52.414703425, lon: 13.541669129999999}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://tk.gis-broker.de/metadata/bplan/begruendung/XV-14.pdf
+      search: null

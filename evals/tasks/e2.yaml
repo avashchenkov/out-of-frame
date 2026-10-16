@@ -1,0 +1,207 @@
+# E2, end-to-end: the whole agent on live sources, from a first message that completes the input.
+# See docs/eval-architecture.md#end-to-end.
+id: E2
+suite: end-to-end
+covers: >-
+  A stale fact: the map still shows the Philip Morris factory, but Philip Morris production
+  there has ended, and the site is now the NLND Berlin campus. The A100 opened its 16th
+  section in 2025 in the radius, and railway lines run there too.
+date: today  # a live task runs with the date of the trial
+
+# What the agent gets: the first message alone; any question fails the trial.
+input:
+  messages:
+    - Please check Neuköllnische Allee 52, 12057 Berlin. I travel nowhere regularly.
+
+# Read only by the graders. The labels were written on 2026-10-16 from the responses that
+# evals/label.py recorded under recorded_as; each label's comment gives what the agent sees of
+# the object and why the label is true. The pages were read on 2026-10-16.
+expected:
+  property: {lat: 52.467015, lon: 13.4619393}
+  destinations: []
+  recorded_as: e2-neukoellnische-allee-52
+  labels:
+    # 0 m: landuse=industrial; Grenzallee 9-11 and Neuköllnische Allee 52-58, 12057 Berlin.
+    # McBillard, a pool equipment store with a cue repair workshop, and artists' studios share
+    # the site. The page: Leisten-Beyer at Neuköllnische Allee 52, a maker of wooden mouldings
+    # with 10 to 19 staff, "sowohl in der Produktion als auch in der Distribution tätig", in the
+    # present tense. Making things is production, and it is in use.
+    - id: grenzallee-9-11
+      object_id: osm-way-260062333
+      category: industry
+      coordinates: {lat: 52.466767649999994, lon: 13.46119475}
+      distance_tolerance_m: 170
+      identified_type: production
+      status: operating
+      source_url: https://www.wlw.de/de/firma/leisten-beyer-gmbh-311335
+      search: Neuköllnische Allee 52 12057 Berlin
+    # 74 m: Philip Morris GmbH, landuse=industrial, man_made=works; Neuköllnische Allee 80 and
+    # Haberstraße, Willstätterstraße. Philip Morris ended production there in 2025 (the press of
+    # 2024 and 2025). The page: NLND Berlin at Neuköllnische Allee 80, now a campus with a
+    # conference centre, offices, a hub for start-ups, "Innovative Production", a prototyping
+    # hall and a "Hydrogen & Electric Charging Station"; it hosts events now, so operating. No
+    # page shows which of these run and which affects people nearby the most: a hydrogen
+    # station would make it a plant, but no page shows one in use. So the type is null, and a
+    # stale "cigarette factory", production, is wrong. LOXXESS also lists a logistics site at
+    # Neuköllnische Allee 80, undated; no search from the address finds that page, even with 20
+    # results or at advanced depth (spikes/search-depth).
+    - id: nlnd-campus
+      object_id: osm-way-32195750
+      category: industry
+      coordinates: {lat: 52.4647832, lon: 13.4622129}
+      distance_tolerance_m: 310
+      identified_type: null
+      status: operating
+      source_url: https://www.nlnd.com
+      search: Neuköllnische Allee 80 12057 Berlin
+    # 289 m: landuse=industrial; Bergiusstraße 21, 12057 Berlin. The page: Allinone Trade, a
+    # wholesaler of sweets and drinks with goods in stock, at Bergiusstraße 21, with opening
+    # hours. Storing and moving goods is logistics.
+    - id: bergiusstrasse-21
+      object_id: osm-way-1429114463
+      category: industry
+      coordinates: {lat: 52.46404715, lon: 13.459513399999999}
+      distance_tolerance_m: 130
+      identified_type: logistics
+      status: operating
+      source_url: https://allinonetrade.de
+      search: Bergiusstraße 21 12057 Berlin
+    # 358 m: landuse=industrial; Haberstraße 1, Neuköllnische Allee 98-134 and Schmalenbachstraße
+    # 3-17, 12057 Berlin. Several firms share the site: a food wholesaler at Haberstraße 1, a
+    # metal spinning and stamping shop at Neuköllnische Allee 108-110, a maker of analysers at
+    # Neuköllnische Allee 134. No page settles which of them affects people nearby the most, so
+    # the type is null. The page: the imprint of Process Insights at Neuköllnische Allee 134,
+    # the maker of analysers, so the site is in use.
+    - id: haberstrasse-1
+      object_id: osm-way-1185963533
+      category: industry
+      coordinates: {lat: 52.463566650000004, lon: 13.467398750000001}
+      distance_tolerance_m: 200
+      identified_type: null
+      status: operating
+      source_url: https://www.process-insights.com/imprint-process-insights-gmbh
+      search: Neuköllnische Allee 134 12057 Berlin
+    # 372 m: landuse=industrial; Neuköllnische Allee 2 and 4, 12057 Berlin. The page: the
+    # register entry of MOLL Marzipan GmbH at Neuköllnische Allee 4, whose purpose is making
+    # sweets, marzipan above all. Making things is production. A news page of 10 July 2025 says
+    # Moll bought the factory there and plans to make marzipan from July 2026; no source says
+    # whether its production has started, so the status is null.
+    - id: neukoellnische-allee-2-4
+      object_id: osm-way-404960674
+      category: industry
+      coordinates: {lat: 52.4674813, lon: 13.4553575}
+      distance_tolerance_m: 210
+      identified_type: production
+      status: null
+      source_url: https://www.northdata.de/MOLL%20Marzipan%20GmbH,%20Berlin/Amtsgericht%20Charlottenburg%20(Berlin)%20HRB%20112117%20B
+      search: Neuköllnische Allee 4 12057 Berlin
+    # 193 m: Tunnel Grenzallee, highway=motorway, ref=A 100, opening_date=2025-08-27. The page:
+    # the motorway operator's project page of the 16th section, from Neukölln to Am Treptower
+    # Park with the Grenzallee tunnel, marked "Abgeschlossen", with a film of what its opening
+    # to traffic ("Verkehrsfreigabe") means for the districts.
+    - id: a100-tunnel-grenzallee
+      object_id: osm-way-46670760
+      category: road_rail
+      coordinates: {lat: 52.46761305, lon: 13.45915055}
+      distance_tolerance_m: 130
+      identified_type: major road
+      status: operating
+      source_url: https://www.autobahn.de/planen-bauen/projekt/a100-verlaengerung-anschlussstelle-neukoelln-bis-am-treptower-park-berlin
+      search: Tunnel Grenzallee A 100 2025-08-27
+    # 225 m: Verbindungsbahn Baumschulenweg–Neukölln, railway=rail, ref=6045. The page: the
+    # line from Neukölln to Baumschulenweg, with its freight tracks, number 6045, where freight
+    # trains run "sofern überhaupt", if at all. So the status is null.
+    - id: line-6045
+      object_id: osm-way-24258845
+      category: road_rail
+      coordinates: {lat: 52.469028800000004, lon: 13.46232445}
+      distance_tolerance_m: 50
+      identified_type: railway
+      status: null
+      source_url: https://de.wikipedia.org/wiki/Bahnstrecke_Berlin-Neuk%C3%B6lln%E2%80%93Berlin-Baumschulenweg
+      search: Verbindungsbahn Baumschulenweg–Neukölln 6045
+    # 232 m: railway=light_rail, ref=6021, "Bln-Neukölln - Baumschulenweg". The page: the same
+    # line, whose S-Bahn tracks have the number 6021.
+    - id: line-6021
+      object_id: osm-way-29652979
+      category: road_rail
+      coordinates: {lat: 52.469093, lon: 13.462426650000001}
+      distance_tolerance_m: 50
+      identified_type: railway
+      status: operating
+      source_url: https://de.wikipedia.org/wiki/Bahnstrecke_Berlin-Neuk%C3%B6lln%E2%80%93Berlin-Baumschulenweg
+      search: Bahnstrecke 6021 Neukölln Baumschulenweg S-Bahn
+    # 243 m: highway=motorway, ref=A 100, destination=Friedrichshain;Am Treptower Park,
+    # opening_date=2025-08-27, another part of the 16th section, without a name. The page: the
+    # builder's news that the 16th section of the A100 opened to traffic on 27 August 2025.
+    - id: a100-section-16
+      object_id: osm-way-1425801228
+      category: road_rail
+      coordinates: {lat: 52.4688125, lon: 13.45969325}
+      distance_tolerance_m: 50
+      identified_type: major road
+      status: operating
+      source_url: https://www.porr.de/ro/gs/echipa-noastra/detail/berliner-stadtring-waechst-weiter-verkehrsfreigabe-der-a100
+      search: A 100 Am Treptower Park 2025-08-27
+    # 0 m: Bebauungsplan 8-81B, a simple plan Im Verfahren, for the area around the former
+    # factory; its fields say nothing of what it allows and link no page, and no Tavily search
+    # by its number finds one.
+    - id: plan-8-81b
+      object_id: bplan-0800081B
+      category: planned_objects
+      coordinates: {lat: 52.4635296, lon: 13.463907095}
+      distance_tolerance_m: 50
+      left_out: Its fields link no page, and no Tavily search by its number finds one.
+    # 0 m: Bebauungsplan XIV-3, Teilweise untergegangen; inhalt: Gewerbegebiet, Industriegebiet,
+    # Gemeinbedarf (a depot of the city cleaning service), roads, green. The Gewerbegebiet and
+    # Industriegebiet allow production, storage, offices and plants alike, and no use is named,
+    # so the type is null. Its old reasons do not show what is built now, so the status is null.
+    # The page is linked in its WFS fields (grund_www).
+    - id: plan-xiv-3
+      object_id: bplan-0814003
+      category: planned_objects
+      coordinates: {lat: 52.46370348, lon: 13.466302339999999}
+      distance_tolerance_m: 50
+      identified_type: null
+      status: null
+      source_url: https://www.berlin.de/ba-neukoelln/_assets/dokumente/bebauungsplaene/bebauungsplan-festgesetzt/begruendung/begruendung_xiv-3.pdf
+      search: null
+    # 30 m: Bebauungsplan XIV-39, In Kraft getreten in 1956; inhalt: allgemeines Wohngebiet,
+    # green, roads. Housing has no listed type, so other. Status null, as for XIV-3. The page is
+    # linked in its WFS fields (grund_www).
+    - id: plan-xiv-39
+      object_id: bplan-0814039
+      category: planned_objects
+      coordinates: {lat: 52.467036605000004, lon: 13.463481564999999}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://www.berlin.de/ba-neukoelln/_assets/dokumente/bebauungsplaene/bebauungsplan-festgesetzt/begruendung/begruendung_xiv-39.pdf
+      search: null
+    # 217 m: Bebauungsplan 8-4, In Kraft getreten in 2006; inhalt: Gewerbegebiet, Gemeinbedarf
+    # (a training centre), roads. Type null, as for XIV-3, and status null. The page is linked
+    # in its WFS fields (grund_www).
+    - id: plan-8-4
+      object_id: bplan-0800004
+      category: planned_objects
+      coordinates: {lat: 52.467848215000004, lon: 13.458151359999999}
+      distance_tolerance_m: 50
+      identified_type: null
+      status: null
+      source_url: https://www.berlin.de/ba-neukoelln/_assets/dokumente/bebauungsplaene/bebauungsplan-festgesetzt/begruendung/begruendung_8-4.pdf
+      search: null
+    # 252 m: Bebauungsplan XIV-182, In Kraft getreten; inhalt: Gewerbegebiet, a special area for
+    # a local shopping centre, roads. Its reasons name the uses: offices, businesses, the
+    # shopping centre and a petrol station, which the Gewerbegebiet GE1 allows on one part
+    # ("Im GE1 werden Tankstellen nur auf einer Teilfläche zugelassen"). Storing fuel is a plant,
+    # and a site that fits plant and another type is a plant. Status null, as for XIV-3. The
+    # page is linked in its WFS fields (grund_www).
+    - id: plan-xiv-182
+      object_id: bplan-0814182
+      category: planned_objects
+      coordinates: {lat: 52.47034653, lon: 13.46247952}
+      distance_tolerance_m: 50
+      identified_type: plant
+      status: null
+      source_url: https://www.berlin.de/ba-neukoelln/_assets/dokumente/bebauungsplaene/bebauungsplan-festgesetzt/begruendung/begruendung_xiv-182.pdf
+      search: null

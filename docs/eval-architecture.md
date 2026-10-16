@@ -171,13 +171,14 @@ labels.
   OpenStreetMap, not truth.
 - A label gives the truth, not what the agent's rules let it say. A site that several
   businesses share is labelled by the use that can affect people nearby the most.
-- Models search and a person decides, since searching every object by hand would cost the
-  project too much. Claude, in Claude Code, proposes each label with its page, never from an
-  agent's run. A new Claude session, OpenAI's Codex CLI and xAI's Grok Build, each with web
-  search, check every label without seeing the others' checks: the agent is a Claude model
-  too, and checkers from other vendors keep a blind spot of Claude models from passing as
-  truth. The person sets these rules, reads every label with its checks and settles each
-  disputed one.
+- Models search and check, and a person decides only where they disagree, since searching or
+  reading every object by hand would cost the project too much. Claude, in Claude Code,
+  proposes each label with its page, never from an agent's run. A new Claude session, OpenAI's
+  Codex CLI and xAI's Grok Build, each with web search, check every label without seeing the
+  others' checks: the agent is a Claude model too, and checkers from other vendors keep a
+  blind spot of Claude models from passing as truth. The person sets these rules and settles
+  each point the checkers disagree on, without reading every label. Tasks and cases are
+  written and checked the same way; the person judges the results they give.
 - Every label must be reachable: a Tavily search built from what the agent sees of the object
   finds the label's page, or the page's link is in the object's own data, such as a plan's
   PDF, which the agent can read directly. If not, a component task is broken, not hard; in an

@@ -1,0 +1,191 @@
+# E3, end-to-end: the whole agent on live sources, from a first message that completes the input.
+# See docs/eval-architecture.md#end-to-end.
+id: E3
+suite: end-to-end
+covers: >-
+  Planned, not built: the 17th section of the A100 motorway, in planning, runs 145 m away; the
+  Ringbahn and an S-Bahn line are in the radius too.
+date: today  # a live task runs with the date of the trial
+
+# What the agent gets: the first message alone; any question fails the trial.
+input:
+  messages:
+    - Please check Corinthstraße 60, 10245 Berlin. I travel nowhere regularly.
+
+# Read only by the graders. The labels were written on 2026-10-16 from the responses that
+# evals/label.py recorded under recorded_as; each label's comment gives what the agent sees of
+# the object and why the label is true. The pages were read on 2026-10-16.
+expected:
+  property: {lat: 52.4988474, lon: 13.4644721}
+  destinations: []
+  recorded_as: e3-corinthstrasse-60
+  labels:
+    # 795 m: Heizwerk Treptow, power=plant, gas, operator BEW, Eichenstraße 7. The page: the
+    # operator's list of its plants, with Heizwerk Treptow, 38.5 MW, natural gas.
+    - id: heizwerk-treptow
+      object_id: osm-way-150809997
+      category: industry
+      coordinates: {lat: 52.495836100000005, lon: 13.4533968}
+      distance_tolerance_m: 50
+      identified_type: plant
+      status: operating
+      source_url: https://www.bew.berlin/fernwaermesystem/erzeugungsanlagen
+      search: Heizwerk Treptow
+    # 814 m: Cemex Deutschland, man_made=works, product=concrete, Schleusenufer 5. The page: the
+    # operator's page of its ready-mixed concrete plant, Transportbeton Berlin-Kreuzberg, at
+    # Schleusenufer 4-5, with a form to ask for a quote ("Angebot anfordern"). It makes
+    # concrete, so production. Its opening hours all read "false" and then "Geschlossen", an
+    # empty field; the operator still lists the plant and takes orders, the standard used for
+    # Heizwerk Treptow too, so operating.
+    - id: cemex-kreuzberg
+      object_id: osm-way-359610265
+      category: industry
+      coordinates: {lat: 52.4983735, lon: 13.451641899999998}
+      distance_tolerance_m: 90
+      identified_type: production
+      status: operating
+      source_url: https://www.cemex.de/w/transportbeton-berlin-kreuzberg
+      search: Cemex Deutschland Schleusenufer 5 Berlin
+    # 871 m: Talgo Deutschland, man_made=works, Revaler Straße 99, website talgo.de. The page:
+    # Talgo maintains and repairs rail vehicles at its Berlin works ("Werk Berlin"). The page is
+    # linked in its map data (website).
+    - id: talgo-works
+      object_id: osm-way-32514434
+      category: industry
+      coordinates: {lat: 52.50614765, lon: 13.4553315}
+      distance_tolerance_m: 200
+      identified_type: production
+      status: operating
+      source_url: https://www.talgo.de/
+      search: null
+    # 971 m: Pumpwerk Stralau, man_made=pumping_station, substance=sewage, operator Berliner
+    # Wasserbetriebe. A search finds only copies of the map, no page about it.
+    - id: pumpwerk-stralau
+      object_id: osm-way-825029881
+      category: industry
+      coordinates: {lat: 52.493087349999996, lon: 13.4754961}
+      distance_tolerance_m: 50
+      left_out: A search finds only copies of the map data, no page about it.
+    # 1032 m: landuse=industrial, a relation without a name or addresses.
+    - id: unnamed-relation
+      object_id: osm-relation-4807959
+      category: industry
+      coordinates: {lat: 52.50837955, lon: 13.475433500000001}
+      distance_tolerance_m: 270
+      left_out: It has no name or addresses, so no search finds a page about it.
+    # 145 m: highway=proposed, proposed=motorway, ref=A 100, note "BAB 100 Abschnitt 17
+    # Planung". The page: the motorway operator's project page, "In Planung", for the new 17th
+    # section between Am Treptower Park and Storkower Straße.
+    - id: a100-section-17
+      object_id: osm-way-231134026
+      category: road_rail
+      coordinates: {lat: 52.499682050000004, lon: 13.466259399999998}
+      distance_tolerance_m: 270
+      identified_type: major road
+      status: planned
+      source_url: https://www.autobahn.de/planen-bauen/projekt/neubau-bab-100-17-bauabschnitt
+      search: BAB 100 Abschnitt 17 Planung
+    # 187 m: railway=light_rail, ref=6020, operator DB InfraGO AG. The page: the Ringbahn,
+    # whose S-Bahn line has the number 6020.
+    - id: line-6020
+      object_id: osm-way-4686020
+      category: road_rail
+      coordinates: {lat: 52.498649, lon: 13.467147449999999}
+      distance_tolerance_m: 120
+      identified_type: railway
+      status: operating
+      source_url: https://de.wikipedia.org/wiki/Berliner_Ringbahn
+      search: Bahnstrecke Streckennummer 6020 Berlin S-Bahn
+    # 189 m: railway=light_rail, service=crossover, without a name or a ref.
+    - id: crossover
+      object_id: osm-way-200143181
+      category: road_rail
+      coordinates: {lat: 52.497399900000005, lon: 13.4661974}
+      distance_tolerance_m: 50
+      left_out: The track has no name or ref, so no search finds a page about it.
+    # 192 m: railway=light_rail, ref=6007, "Warschauer Str - Königs Wuster". The page: the line
+    # from Berlin Warschauer Straße to Königs Wusterhausen, number 6007.
+    - id: line-6007
+      object_id: osm-way-200247643
+      category: road_rail
+      coordinates: {lat: 52.4982793, lon: 13.4668283}
+      distance_tolerance_m: 150
+      identified_type: railway
+      status: operating
+      source_url: https://de.wikipedia.org/wiki/Bahnstrecke_Berlin_Warschauer_Stra%C3%9Fe%E2%80%93K%C3%B6nigs_Wusterhausen
+      search: S-Bahn Strecke 6007 Warschauer Straße Königs Wusterhausen
+    # 207 m: railway=rail, ref=6170, operator DB InfraGO AG. The page: the Ringbahn, whose
+    # tracks for long-distance and freight trains have the number 6170.
+    - id: line-6170
+      object_id: osm-way-200143176
+      category: road_rail
+      coordinates: {lat: 52.49859425, lon: 13.467176649999999}
+      distance_tolerance_m: 200
+      identified_type: railway
+      status: operating
+      source_url: https://de.wikipedia.org/wiki/Berliner_Ringbahn
+      search: DB Strecke 6170 Berlin
+    # 58 m: Bebauungsplan V-31, Im Verfahren since 1992, for Alt-Stralau, Markgrafendamm and
+    # Hauptstraße; its fields say nothing of what it allows and link no page. An old page of
+    # the parliament says it will not be set any more, while its fields still say Im Verfahren.
+    - id: plan-v-31
+      object_id: bplan-0205031
+      category: planned_objects
+      coordinates: {lat: 52.49962051999999, lon: 13.46610849}
+      distance_tolerance_m: 50
+      left_out: >-
+        Its fields link no page, and no page that a search by its number finds says what it is
+        meant to allow now.
+    # 136 m: Bebauungsplan 2-10, Im Verfahren since 2003, for the Osthafen on Stralauer Allee.
+    # Its fields say nothing of what it allows; the pages a search finds are about a high-rise
+    # dropped years ago and do not say what the plan is meant to allow now.
+    - id: plan-2-10
+      object_id: bplan-0200010
+      category: planned_objects
+      coordinates: {lat: 52.499110055, lon: 13.457073695}
+      distance_tolerance_m: 50
+      left_out: No page that a search finds says what the plan is meant to allow now.
+    # 189 m: Bebauungsplan 2-56E, Im Verfahren, for Modersohnstraße 33-47, Markgrafendamm 24-25
+    # and nearby plots. The page: the new plan is meant to secure the business areas there
+    # ("die gewerblichen Flächen sichern"), which hold workshops, offices and places for culture
+    # now ("Werkstätten, Büros"). As uses the plan is meant to allow, it names only business
+    # areas, which allow production, storage, offices and plants alike, so the type is null. It
+    # secures what is there; no source says whether anything new will be built, so null.
+    - id: plan-2-56e
+      object_id: bplan-0200056E
+      category: planned_objects
+      coordinates: {lat: 52.502604704999996, lon: 13.46193669}
+      distance_tolerance_m: 50
+      identified_type: null
+      status: null
+      source_url: https://meinbezirk.app/berlin/friedrichshain-kreuzberg/karte/ds-1981-vi
+      search: Bebauungsplan 2-56E Modersohnstraße Markgrafendamm
+    # 217 m: Bebauungsplan V-13, In Kraft getreten in 2006; inhalt: Mischgebiet, Kerngebiet,
+    # Gemeinbedarf (youth centre), a park, roads. A mixed area allows housing, which has no
+    # listed type, and nothing named affects people nearby more, so other. Its reasons of 2006
+    # do not show what is built now, so the status is null. The page is linked in its WFS
+    # fields (grund_www).
+    - id: plan-v-13
+      object_id: bplan-0205013
+      category: planned_objects
+      coordinates: {lat: 52.49784925, lon: 13.467849775000001}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/aemter/stadtentwicklungsamt/vermessung/begruendungen/0205013.pdf
+      search: null
+    # 246 m: Bebauungsplan V-18, In Kraft getreten in 2007; inhalt: allgemeines Wohngebiet,
+    # Mischgebiet, a park and a playground, Bahnanlage, water, roads. The plan does not allow the
+    # railway: its reasons say the railway embankment is only copied in from railway law
+    # ("nachrichtlich als Bahnanlage in den Bebauungsplan übernommen"). What it allows is housing,
+    # a mixed area, a park and roads, which have no listed type, so other. Status null, as for
+    # V-13. The page is linked in its WFS fields (grund_www).
+    - id: plan-v-18
+      object_id: bplan-0205018
+      category: planned_objects
+      coordinates: {lat: 52.49497633, lon: 13.468116765000001}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/aemter/stadtentwicklungsamt/vermessung/begruendungen/0205018.pdf
+      search: null

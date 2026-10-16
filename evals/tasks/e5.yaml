@@ -1,0 +1,171 @@
+# E5, end-to-end: the whole agent on live sources, from a first message that completes the input.
+# See docs/eval-architecture.md#end-to-end.
+id: E5
+suite: end-to-end
+covers: >-
+  A harmless lookalike, the control: a stormwater filter that the map tags as a wastewater plant
+  must not get the type wastewater plant. A heat and power plant is nearby too.
+date: today  # a live task runs with the date of the trial
+
+# What the agent gets: the first message alone; any question fails the trial.
+input:
+  messages:
+    - Please check Am Bruchland 22, 12524 Berlin. I work from home and travel nowhere regularly.
+
+# Read only by the graders. The labels were written on 2026-10-16 from the responses that
+# evals/label.py recorded under recorded_as; each label's comment gives what the agent sees of
+# the object and why the label is true. The pages were read on 2026-10-16.
+expected:
+  property: {lat: 52.4253791, lon: 13.529467}
+  destinations: []
+  recorded_as: e5-am-bruchland-22
+  labels:
+    # 141 m: Heizkraftwerk Adlershof, power=plant, gas, BTB. The page: four combined heat and
+    # power units, four hot water boilers and a gas turbine.
+    - id: heizkraftwerk-adlershof
+      object_id: osm-way-361138484
+      category: industry
+      coordinates: {lat: 52.42708075, lon: 13.527856}
+      distance_tolerance_m: 90
+      identified_type: plant
+      status: operating
+      source_url: https://www.berlin-spart-energie.de/projekt/heizkraftwerk-adlershof-280.html
+      search: Heizkraftwerk Adlershof
+    # 602 m: man_made=works; Friedrich-Wöhler-Straße 2, 12489 Berlin. The page: FMB Feinwerk-
+    # und Meßtechnik GmbH, a precision engineering firm, in the Adlershof business directory.
+    - id: fmb-feinwerktechnik
+      object_id: osm-way-778281678
+      category: industry
+      coordinates: {lat: 52.4296609, lon: 13.522808900000001}
+      distance_tolerance_m: 60
+      identified_type: production
+      status: operating
+      source_url: https://www.adlershof.de/en/companies-institutes/directory/firma/detail/fmb-feinwerk-und-messtechnik-gmbh
+      search: Friedrich-Wöhler-Straße 2, 12489 Berlin
+    # 613 m: Jenoptik, description=Diode Lab, product=electronics; Max-Planck-Straße 2. The
+    # page: JENOPTIK Optical Systems GmbH, Max-Planck-Str. 2, in a directory of makers of
+    # electrical goods, "Fertigung von Halbleitermaterial für Hochleistungsdiodenlaser", with
+    # its phone and e-mail. Making things is production.
+    - id: jenoptik-diode-lab
+      object_id: osm-way-32340235
+      category: industry
+      coordinates: {lat: 52.429506599999996, lon: 13.536142900000002}
+      distance_tolerance_m: 50
+      identified_type: production
+      status: operating
+      source_url: https://www.elektro-einkaufsfuehrer.de/firma/jenoptik%20diode%20lab%20gmbh%20jenoptik%20diode%20lab%20gmbh/4043851/5446
+      search: Jenoptik Max-Planck-Straße 2 Berlin
+    # 671 m: man_made=works; Schwarzschildstraße 6, 12489 Berlin: the Zentrum für Photonik und
+    # Optik 4, a lab and office building with several tenants. The page: emp BIOTECH's site at
+    # Schwarzschildstraße 6, "Oligonucleotide synthesis reagents: large-scale production".
+    # Making chemicals is a plant, and a site that fits plant and another type is a plant.
+    - id: zpo-4
+      object_id: osm-way-778281679
+      category: industry
+      coordinates: {lat: 52.4302437, lon: 13.5226763}
+      distance_tolerance_m: 50
+      identified_type: plant
+      status: operating
+      source_url: https://www.empbiotech.com/en/This-is-emp
+      search: Schwarzschildstraße 6 12489 Berlin
+    # 716 m: Sentech, operator Sentech Instruments GmbH, product=machinery; Schwarzschildstraße 2.
+    # The page: "Entwicklung, Produktion und weltweiter Vertrieb von Dünnschicht-Messsystemen",
+    # in the Adlershof directory.
+    - id: sentech
+      object_id: osm-way-377345893
+      category: industry
+      coordinates: {lat: 52.430863200000005, lon: 13.523129650000001}
+      distance_tolerance_m: 50
+      identified_type: production
+      status: operating
+      source_url: https://www.adlershof.de/firmensuche-institute/adressverzeichnis/firma/detail/sentech-instruments-gmbh
+      search: Sentech Schwarzschildstraße 2 Berlin
+    # 276 m: Retentionsbodenfilteranlage, man_made=wastewater_plant, operator Berliner
+    # Wasserbetriebe. The page: Adlershof's filter for rainwater ("behandlungsbedürftiges
+    # Regenwasser") from about 50 hectares before it flows into the Teltowkanal; it went into
+    # operation on 21 July 2005. It treats rainwater, not sewage, so other, not wastewater plant.
+    # The page is of 2005, and no source shows whether it runs now, so the status is null.
+    - id: adlershof-stormwater-filter
+      object_id: osm-way-118132969
+      category: wastewater
+      coordinates: {lat: 52.4274493, lon: 13.5246212}
+      distance_tolerance_m: 140
+      identified_type: other
+      status: null
+      source_url: https://www.wista.de/aktuelles/news/retentionsbodenfilteranlage-adlershof-geht-in-betrieb
+      search: Retentionsbodenfilteranlage Berliner Wasserbetriebe
+    # 3899 m: Flughafen Berlin Brandenburg, aeroway=aerodrome. The page: the airport opened in
+    # October 2020, with its terminals and transport links.
+    - id: ber-airport
+      object_id: osm-way-859790021
+      category: airport
+      coordinates: {lat: 52.36576545, lon: 13.49691}
+      distance_tolerance_m: 3980
+      identified_type: airport
+      status: operating
+      source_url: https://www.berlin.de/en/airport-ber
+      search: Flughafen Berlin Brandenburg
+    # 20 m: Bebauungsplan XV-18, In Kraft getreten; inhalt: allgemeines Wohngebiet, Mischgebiet,
+    # a public playground, roads. Housing and a mixed area with housing have no listed type, so
+    # other. Its reasons do not show what is built now, so the status is null. The page is
+    # linked in its WFS fields (grund_www).
+    - id: plan-xv-18
+      object_id: bplan-0915018
+      category: planned_objects
+      coordinates: {lat: 52.42380678, lon: 13.5321243}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://tk.gis-broker.de/metadata/bplan/begruendung/XV-18.pdf
+      search: null
+    # 82 m: Bebauungsplan XV-51k, In Kraft getreten in 1999; inhalt: a public park and roads.
+    # Other, and status null, as for XV-18. The page is linked in its WFS fields (grund_www).
+    - id: plan-xv-51k
+      object_id: bplan-0915051k
+      category: planned_objects
+      coordinates: {lat: 52.426041595, lon: 13.53703868}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://fbinter.stadt-berlin.de//ScansBPlan/Begruendungen/0915051k_XV-51k.pdf
+      search: null
+    # 130 m: Bebauungsplan XV-51j, Teilweise außer Kraft, in force since 2005, replaced in part
+    # by XV-51j-1 (ersetztdurchteil); inhalt: Gewerbegebiet, a special area for research, roads.
+    # The page: XV-51j-1 covers all of XV-51j except its public roads ("mit Ausnahme der
+    # öffentlichen Straßenverkehrsflächen"), and XV-51j no longer applies there. What it still
+    # sets is roads that are not a motorway or a trunk road, which have no listed type, so
+    # other. Status null, as for XV-18.
+    - id: plan-xv-51j
+      object_id: bplan-0915051j
+      category: planned_objects
+      coordinates: {lat: 52.427582595000004, lon: 13.532454874999999}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://www.parlament-berlin.de/ados/19/IIIPlen/vorgang/d19-1929.pdf
+      search: Bebauungsplan XV-51j-1 XV-51j
+    # 130 m: Bebauungsplan XV-51j-1 ("Bessy II"), In Kraft getreten in 2025, with no inhalt.
+    # The page: two special areas for research, so that the Helmholtz-Zentrum Berlin can extend
+    # its buildings; research has no listed type, so other. No source says whether building the
+    # extension has started, so the status is null.
+    - id: plan-xv-51j-1
+      object_id: bplan-0915051j-1
+      category: planned_objects
+      coordinates: {lat: 52.42744315, lon: 13.53258508}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://www.berlin.de/sen/stadtentwicklung/planung/bebauungsplanverfahren/bebauungsplan.1391225.php
+      search: Bebauungsplan XV-51j-1 Adlershof Ernst-Ruska-Ufer Albert-Einstein-Straße Magnusstraße
+    # 138 m: Bebauungsplan XV-19, In Kraft getreten in 2004; inhalt: allgemeines Wohngebiet,
+    # Mischgebiet, roads. Other, and status null, as for XV-18. The page is linked in its WFS
+    # fields (grund_www).
+    - id: plan-xv-19
+      object_id: bplan-0915019
+      category: planned_objects
+      coordinates: {lat: 52.42311928, lon: 13.52966745}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://tk.gis-broker.de/metadata/bplan/begruendung/XV-19.pdf
+      search: null

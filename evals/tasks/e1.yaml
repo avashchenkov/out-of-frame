@@ -1,0 +1,214 @@
+# E1, end-to-end: the whole agent on live sources, from a first message that completes the input.
+# See docs/eval-architecture.md#end-to-end.
+id: E1
+suite: end-to-end
+covers: >-
+  A wastewater treatment plant in the radius, Klärwerk Ruhleben, next to a waste incinerator and
+  main railway lines. The user travels to one place.
+date: today  # a live task runs with the date of the trial
+
+# What the agent gets: the first message alone; any question fails the trial.
+input:
+  messages:
+    - >-
+      Please check Freiheit 22, 13597 Berlin. I work at Karl-Marx-Allee 3, 10178 Berlin: I leave
+      home at 8:05 and leave work at 16:50.
+
+# Read only by the graders. The labels were written on 2026-10-16 from the responses that
+# evals/label.py recorded under recorded_as; each label's comment gives what the agent sees of
+# the object and why the label is true. The pages were read on 2026-10-16.
+expected:
+  property: {lat: 52.5292863, lon: 13.2357896}
+  destinations:
+    - coordinates: {lat: 52.5222886, lon: 13.4189853}  # as nominatim/karl-marx-allee-3.json
+      leave_home: "08:05"
+      leave_place: "16:50"
+      there: found
+      back: found
+  recorded_as: e1-freiheit-22
+  labels:
+    # 95 m: Müllverbrennungsanlage Ruhleben, power=plant, plant:source=waste, operator BSR. The
+    # page: the operator's own page on its Müllheizkraftwerk, which burns waste for energy.
+    - id: muellheizkraftwerk-ruhleben
+      object_id: osm-way-49572120
+      category: industry
+      coordinates: {lat: 52.53070595, lon: 13.238667750000001}
+      distance_tolerance_m: 310
+      identified_type: plant
+      status: operating
+      source_url: https://www.bsr.de/energie-versorgung-muellheizkraftwerk
+      search: Müllverbrennungsanlage Ruhleben
+    # 118 m: landuse=industrial; Klärwerkstraße 1 and 1A, 13597 Berlin. Several firms share the
+    # site: Jobcenter projects, a pick-up store, and the metalwork shop Ed. Sprenger Metall- und
+    # Apparatebau, which affects people nearby the most. A Tavily search by the address finds
+    # the others, not the metalwork shop: the known limitation of step 6 for a shared site. A
+    # deeper search finds it (spikes/search-depth).
+    - id: klaerwerkstrasse-1
+      object_id: osm-way-23156479
+      category: industry
+      coordinates: {lat: 52.5280109, lon: 13.23527815}
+      distance_tolerance_m: 180
+      left_out: >-
+        The page of the use that affects people nearby the most, a metalwork shop, is not within
+        5 results at basic depth by the address, which finds the other firms on the site.
+    # 217 m: landuse=industrial; Klärwerkstraße 3 and 7, 13597 Berlin, the object of L1. The
+    # page: a car repair workshop ("Autoreparaturen") at Klärwerkstraße 3, with reviews from
+    # 2024. Repairing things is production.
+    - id: klaerwerkstrasse-3
+      object_id: osm-way-985575964
+      category: industry
+      coordinates: {lat: 52.528403749999995, lon: 13.2320206}
+      distance_tolerance_m: 60
+      identified_type: production
+      status: operating
+      source_url: https://www.gelbeseiten.de/gsbiz/e3d0ea74-a77c-42f4-9f93-0fd870d0e4dc
+      search: Klärwerkstraße 3 13597 Berlin
+    # 314 m: landuse=industrial; Wiesendamm 15 to 39, 13597 Berlin. The page: a car scrap
+    # dealer, "An- und Verkauf von KFZ Schrotthandel", at Wiesendamm 15, with opening hours. A
+    # scrap yard recycles waste.
+    - id: wiesendamm-15
+      object_id: osm-way-813407382
+      category: industry
+      coordinates: {lat: 52.52742575, lon: 13.24349015}
+      distance_tolerance_m: 260
+      identified_type: plant
+      status: operating
+      source_url: https://www.dasoertliche.de/Themen/An-und-Verkauf-von-KFZ-Schrotthandel-Berlin-Spandau-Wiesendamm
+      search: Wiesendamm 15 13597 Berlin
+    # 343 m: RWG I, landuse=industrial, Wiesendamm 32, website rwg1.de. The page: RWG I
+    # Baustoffrecycling GmbH, Wiesendamm 32, with opening hours. It recycles building waste.
+    - id: rwg-baustoffrecycling
+      object_id: osm-way-185943862
+      category: industry
+      coordinates: {lat: 52.529185749999996, lon: 13.2436577}
+      distance_tolerance_m: 270
+      identified_type: plant
+      status: operating
+      source_url: https://www.dasoertliche.de/Themen/RWG-I-Baustoffrecycling-GmbH-Berlin-Spandau-Wiesendamm
+      search: RWG I Wiesendamm 32 Berlin
+    # 112 m: Klärwerk Ruhleben, man_made=wastewater_plant. The page: one of the six sewage
+    # treatment plants of the Berliner Wasserbetriebe.
+    - id: klaerwerk-ruhleben
+      object_id: osm-way-26131403
+      category: wastewater
+      coordinates: {lat: 52.5316233, lon: 13.23162995}
+      distance_tolerance_m: 440
+      identified_type: wastewater plant
+      status: operating
+      source_url: https://www.berlin-spart-energie.de/projekt/klaerwerk-ruhleben-222.html
+      search: Klärwerk Ruhleben
+    # 67 m: railway=rail, ref=6107, operator DB InfraGO AG, usage=main, a signal near km 8.9.
+    # Line 6107 runs from Berlin to Lehrte, and Wikipedia says it is closed from 2 October 2026.
+    # The transport authority's page says the closures run between Berlin-Spandau and Lehrte,
+    # from 2 October to 12 December 2026, so this object, east of Spandau, is in use. But no
+    # search from what the agent sees finds that page reliably.
+    - id: line-6107
+      object_id: osm-way-295391379
+      category: road_rail
+      coordinates: {lat: 52.527787200000006, lon: 13.2420896}
+      distance_tolerance_m: 630
+      left_out: >-
+        The page found by its number says the whole line is closed; the page that names the
+        closed section, west of this object, is not found reliably by a search from what the
+        agent sees.
+    # 74 m: railway=rail, ref=6109, operator DB InfraGO AG, usage=main. The page: the Berlin
+    # Stadtbahn, whose main line has the number 6109.
+    - id: line-6109
+      object_id: osm-way-4495782
+      category: road_rail
+      coordinates: {lat: 52.527036800000005, lon: 13.2392437}
+      distance_tolerance_m: 480
+      identified_type: railway
+      status: operating
+      source_url: https://de.wikipedia.org/wiki/Berliner_Stadtbahn
+      search: Bahnstrecke Streckennummer 6109 Berlin
+    # 95 m: railway=rail, ref=6179, operator DB InfraGO AG, usage=main. The page: DB's list of
+    # the lines it charges track access for, with 6179 from Charlottenburg to Wustermark. It
+    # does not show trains running now, so the status is null.
+    - id: line-6179
+      object_id: osm-way-23147988
+      category: road_rail
+      coordinates: {lat: 52.52847415, lon: 13.2348708}
+      distance_tolerance_m: 140
+      identified_type: railway
+      status: null
+      source_url: https://stredax.dbnetze.com/Dokumente/ISR/TPS/TPSStrecken.pdf
+      search: DB Strecke 6179
+    # 109 m: railway=rail, service=yard, operator DB Netz AG, without a name or a ref. Nothing
+    # that the agent sees leads a search to a page about this yard.
+    - id: yard-track
+      object_id: osm-way-813431602
+      category: road_rail
+      coordinates: {lat: 52.52851645, lon: 13.23422865}
+      distance_tolerance_m: 100
+      left_out: The track has no name or ref, so no search finds a page about it.
+    # 210 m: railway=rail, ref=6100, operator DB InfraGO AG, usage=main. The page: the Hamburg
+    # to Berlin line is open again after its renovation, with trains running.
+    - id: line-6100
+      object_id: osm-way-290305121
+      category: road_rail
+      coordinates: {lat: 52.5293365, lon: 13.22988815}
+      distance_tolerance_m: 200
+      identified_type: railway
+      status: operating
+      source_url: https://hamburg-berlin.deutschebahn.com
+      search: DB Strecke 6100 Berlin
+    # 217 m: Bebauungsplan VIII-129, In Kraft getreten in 1971, for widening Charlottenburger
+    # Chaussee and Spandauer Damm; inhalt: Straßenverkehrsfläche. A road that is not a motorway
+    # or a trunk road has no listed type, so other. The scanned plan does not show what is built
+    # now, so the status is null. The page is linked in its WFS fields (scan_www).
+    - id: plan-viii-129
+      object_id: bplan-0508129
+      category: planned_objects
+      coordinates: {lat: 52.526590264999996, lon: 13.23511393}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://www.berlin.de/ba-spandau/_assets/politik-und-verwaltung/aemter/stadtentwicklungsamt/dokumente/vermessungsamt/bebauungsplaene/08129.pdf
+      search: null
+    # 228 m: Bebauungsplan VIII-286, Im Verfahren since 1992, for two allotment colonies; its
+    # fields say nothing of what it allows and link no page.
+    - id: plan-viii-286
+      object_id: bplan-0508286
+      category: planned_objects
+      coordinates: {lat: 52.52629989, lon: 13.2380952}
+      distance_tolerance_m: 50
+      left_out: Its fields link no page, and no search by its number finds one.
+    # 264 m: Bebauungsplan 5-1VE, In Kraft getreten in 2006, for Charlottenburger Chaussee 18;
+    # inhalt: sonstiges Sondergebiet (Einzelhandel), so commercial. A Lidl store with opening
+    # hours is at that address now, so the plan is built and in use. The page: Lidl,
+    # Charlottenburger Chaussee 18.
+    - id: plan-5-1ve
+      object_id: bplan-0500001VE
+      category: planned_objects
+      coordinates: {lat: 52.52682032, lon: 13.24051554}
+      distance_tolerance_m: 50
+      identified_type: commercial
+      status: operating
+      source_url: https://www.kaufda.de/Filialen/Berlin/Lidl-Charlottenburger-Chaussee/v-f33122
+      search: Charlottenburger Chaussee 18 13597 Berlin
+    # 315 m: Bebauungsplan VIII-B6, In Kraft getreten in 2006; inhalt: Gewerbegebiet,
+    # Industriegebiet. These allow production, storage, offices and plants alike, and no use is
+    # named, so the type is null. Status null, as for VIII-129. The page is linked in its WFS
+    # fields (scan_www).
+    - id: plan-viii-b6
+      object_id: bplan-0508000B06
+      category: planned_objects
+      coordinates: {lat: 52.530220330000006, lon: 13.225332550000001}
+      distance_tolerance_m: 50
+      identified_type: null
+      status: null
+      source_url: https://www.berlin.de/ba-spandau/_assets/politik-und-verwaltung/aemter/stadtentwicklungsamt/dokumente/vermessungsamt/bebauungsplaene/08__b6.pdf
+      search: null
+    # 343 m: Bebauungsplan VIII-145, In Kraft getreten in 1971; inhalt: Gemeinbedarf (police)
+    # and a cemetery. Neither has a listed type, so other. Status null, as for VIII-129. The page
+    # is linked in its WFS fields (scan_www).
+    - id: plan-viii-145
+      object_id: bplan-0508145
+      category: planned_objects
+      coordinates: {lat: 52.527210655000005, lon: 13.2271422}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://www.berlin.de/ba-spandau/_assets/politik-und-verwaltung/aemter/stadtentwicklungsamt/dokumente/vermessungsamt/bebauungsplaene/08145.pdf
+      search: null
