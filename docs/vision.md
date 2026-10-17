@@ -30,7 +30,7 @@ back at the user's usual times.
 
 It reports facts and gives no advice: it does not say whether to buy or rent the property,
 gives no overall score and does not look at prices or rents. It covers Berlin only. It is not
-a product or a public service.
+a product or a public service: a public demo with a daily limit only shows how it works.
 
 ## Why an agent
 

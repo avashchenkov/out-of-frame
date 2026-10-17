@@ -441,8 +441,9 @@ label; the support judge grades the finding.
 | R6 | A rewrite: the run state and the unknown IDs of the first draft | Only known IDs are cited, and every finding is still in the report |
 
 In every report task, code also checks that each cited ID is known, and that each distance
-equals the value in the run state. Code adds the journeys after the draft, so no report task
-covers them; code tests do.
+equals the value in the run state; for an object at 0 m, the report may say instead that the
+property lies in its area. Code adds the journeys after the draft, so no report task covers
+them; code tests do.
 
 ### Left out
 

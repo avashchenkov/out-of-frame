@@ -1,8 +1,8 @@
 # Roadmap
 
-The intended order to the MVP. Each step names its result and checks. Detail the next step
-before starting it; leave later implementation details open. Change the order when a run
-reveals a reason, and keep the next step clear here.
+The intended order to the MVP, and the demo after it. Each step names its result and checks.
+Detail the next step before starting it; leave later implementation details open. Change the
+order when a run reveals a reason, and keep the next step clear here.
 
 For each new behaviour, prepare its eval cases and success criteria before implementing it.
 For code, write a failing test, implement the behaviour and refactor. Extend the eval harness
@@ -234,17 +234,48 @@ calibration.
        the judge sees it, and the person settles what they disagree on; only then do the judges
        run on them, and a script checks each judge version against the grades. A judge that
        still fails after two changes of its rubric is left out, with its axis.
-    6. The full run: every MVP task, three trials each. evals/run.py runs a judge only if the
+    6. Fix what the person found wrong for the reader, reading the five reports of 10.4 as a
+       user does. "A development plan is 190 m away" reads as a paper at that distance: the
+       report says instead that the land at that distance has a development plan. What such a
+       plan is, the city's rules for what may be built there, code adds once after the draft,
+       as it adds what the report covers, so no judge grades a definition. For any object at
+       0 m, such as a plan or the industrial area around the property, the report says that
+       the property lies in its area, and the distance check accepts that. Code tests; live
+       runs at E2 and E4, where the property lies in a plan's area, with the three judges run
+       on them, and the person reads one report.
+    7. The full run: every MVP task, three trials each. evals/run.py runs a judge only if the
        calibration script has recorded that its version passed: the support judge on the
        end-to-end suite, and the interpretation and no verdict judges on it and on the report
        suite.
-    7. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
+    8. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
-    8. The results in docs/results.md: each suite's scores, its failures, the known
+    9. The results in docs/results.md: each suite's scores, its failures, the known
        limitations above, the labels left out because of the search limits that the
        [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found, and the cost
        of the one-page rule in the end-to-end scores. The
        README says what the agent does, how to run the CLI and the evals, and links the results.
 
-The MVP is the intended stopping point. Other tasks designed in the eval architecture are
-available if an observed failure needs them; they are not a planned phase after the MVP.
+The MVP ends the eval work. Other tasks designed in the eval architecture are available if an
+observed failure needs them; they are not a planned phase after the MVP.
+
+## After the MVP: the demo
+
+A live demo that a reviewer can try without signing up. From the person's reading of the five
+reports of step 10.4.
+
+1. **The report in Markdown, in sections,** such as the identified objects, the objects that
+   could not be identified and the journeys, with the sources and licences at the end. The CLI
+   stays a technical mode and prints the report as it does now.
+2. **Sources as named links, not numbers:** a page by its site's name, a map object by its
+   OpenStreetMap page, a plan by its document where the B-Plan WFS links one.
+3. **The agent as a service on Aegra,** the open-source server for LangGraph agents over the
+   Agent Protocol. It keeps the conversation's state between messages in PostgreSQL, where
+   step 7, the input conversation, keeps it in memory only.
+4. **A web page as a separate service,** on a ready UI framework such as Chainlit, chosen at
+   this step, that talks to the agent over the Agent Protocol: the conversation and the
+   report as Markdown, without signing up, at most 5 runs a day in total.
+5. **Deployment on one VPS:** the two services apart, with only the web page open to the
+   internet and the agent reachable from the web page alone.
+
+A change of the report reaches the judges: their rubrics and calibration sets are checked
+against it before results are quoted again.
