@@ -224,15 +224,16 @@ calibration.
        averaged over their tasks; the live investigation and end-to-end suites report their own
        metrics, as the eval architecture lists. One trial of each task gives the first real
        outputs.
-    5. Calibration, by the rules of the [eval architecture](eval-architecture.md#llm-judges).
+    5. ✅ Calibration, by the rules of the [eval architecture](eval-architecture.md#llm-judges).
        Each judge's set takes examples from these outputs and from the saved runs of the
        earlier steps, plus faulty ones made on purpose, on top of them: at least one for each
        question the judge answers, and the report failures noted above that the trials do not
        show. About fifteen statements for support, with supported, unsupported and contradicted
-       at least once each, and eight reports each for interpretation and no verdict. The person
-       grades them on a form, as in step 5.6; only then do the judges run on them, and a script
-       checks each judge version against the grades. A judge that still fails after a few
-       changes is left out, with its axis.
+       at least once each, and eight reports each for interpretation and no verdict, the same
+       reports for both. A Claude session and Codex grade them apart on a form, each example as
+       the judge sees it, and the person settles what they disagree on; only then do the judges
+       run on them, and a script checks each judge version against the grades. A judge that
+       still fails after two changes of its rubric is left out, with its axis.
     6. The full run: every MVP task, three trials each. evals/run.py runs a judge only if the
        calibration script has recorded that its version passed: the support judge on the
        end-to-end suite, and the interpretation and no verdict judges on it and on the report

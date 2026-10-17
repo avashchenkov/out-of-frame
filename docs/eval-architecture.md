@@ -249,11 +249,13 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
 Each judge has its own calibration set. For the support judge, an example is one statement with
 the source it cites; for the interpretation and no verdict judges, one report. The examples
 come from real runs, stored as they are, plus a few copies made faulty on purpose, such as a
-report with a planted verdict or a statement its source does not support. A person grades the
-set once, by the judge's rubric, frozen first, before seeing any judge's grades. Each judge
-version is checked against these grades, answer by answer: it must catch every faulty example
-and may disagree on at most two of the other answers. Until a judge passes, only the numbers
-from code-based graders are quoted, and its axis is left out.
+report with a planted verdict or a statement its source does not support. Each example is
+graded once, by the judge's rubric, frozen first, before seeing any judge's grades: the first
+few by the person, the rest by two models, a Claude session and Codex, apart, on a form that
+shows each example as the judge sees it, while the person settles what they disagree on. Each
+judge version is checked against these grades, answer by answer: it must catch every faulty
+example and may disagree on at most two of the other answers. Until a judge passes, only the
+numbers from code-based graders are quoted, and its axis is left out.
 
 ### Metrics
 
@@ -485,7 +487,7 @@ flowchart TD
         MATCH["Findings against labels<br/>by object ID, then<br/>by coordinates"]:::code
         CG["Other code graders<br/>IDs, key facts, distances<br/>flagged or not, input state"]:::code
         JG["LLM judges<br/>support, interpretation,<br/>no verdict"]:::model
-        CAL[("Calibration sets<br/>graded once by a person")]:::data
+        CAL[("Calibration sets<br/>graded once by two models,<br/>settled by a person")]:::data
         MET[("Metrics per suite, over k trials<br/>fixed components: pass@k, pass^k<br/>live investigation: correct type and status share<br/>end-to-end: correct labels, errors, false alarms<br/>end-to-end: unsupported share, cost")]:::data
         PUB(["Results published<br/>with the failures"]):::human
         STOP(("●")):::stop

@@ -130,10 +130,14 @@ def states_something(text: str) -> bool:
 
 
 def judge_support(statement: Statement, state: RunState, date: dt.date) -> SupportGrade:
-    """Whether the sources of the objects the statement cites back it, on the date of the run.
-    The judge gets each object's map data, distance and how its investigation ended, and the
-    web page its finding cites, but not the finding's type and status: the agent's own
-    conclusion backs nothing."""
+    """Whether the sources of the objects the statement cites back it, on the date of the run."""
+    return ask(SupportGrade, write_support_prompt(statement, state, date))
+
+
+def write_support_prompt(statement: Statement, state: RunState, date: dt.date) -> str:
+    """The support judge's prompt. The judge gets each object's map data, distance and how its
+    investigation ended, and the web page its finding cites, but not the finding's type and
+    status: the agent's own conclusion backs nothing."""
     objects = {map_object.id: map_object for map_object in state.map_objects}
     findings = {finding.map_object_id: finding for finding in state.findings}
     cited = [objects[id] for id in statement.cited]
@@ -146,7 +150,7 @@ def judge_support(statement: Statement, state: RunState, date: dt.date) -> Suppo
         )
         for map_object in cited
     }
-    prompt = render(
+    return render(
         "support.md.j2",
         date=date.isoformat(),
         statement=statement.text,
@@ -158,15 +162,19 @@ def judge_support(statement: Statement, state: RunState, date: dt.date) -> Suppo
         nothing_found=is_nothing_found(state),
         types=research_scope.load().identified_types,
     )
-    return ask(SupportGrade, prompt)
 
 
 def judge_interpretation(draft: str, state: RunState) -> InterpretationGrade:
-    """Whether the draft explains what its facts mean for a buyer, as the rubric asks. The judge
-    gets every object with its distance and the type and status of its finding, and the failed
-    sources, so that it can see what the draft leaves out; it gets no pages."""
+    """Whether the draft explains what its facts mean for a buyer, as the rubric asks."""
+    return ask(InterpretationGrade, write_interpretation_prompt(draft, state))
+
+
+def write_interpretation_prompt(draft: str, state: RunState) -> str:
+    """The interpretation judge's prompt. The judge gets every object with its distance and the
+    type and status of its finding, and the failed sources, so that it can see what the draft
+    leaves out; it gets no pages."""
     scope = research_scope.load()
-    prompt = render(
+    return render(
         "interpretation.md.j2",
         draft=draft,
         map_objects=state.map_objects,
@@ -177,12 +185,15 @@ def judge_interpretation(draft: str, state: RunState) -> InterpretationGrade:
         types=scope.identified_types,
         statuses=scope.finding_statuses,
     )
-    return ask(InterpretationGrade, prompt)
 
 
 def judge_no_verdict(draft: str) -> NoVerdictGrade:
     """Whether the draft is free of advice, scores and verdicts on buying or renting."""
-    return ask(NoVerdictGrade, render("no_verdict.md.j2", draft=draft))
+    return ask(NoVerdictGrade, write_no_verdict_prompt(draft))
+
+
+def write_no_verdict_prompt(draft: str) -> str:
+    return render("no_verdict.md.j2", draft=draft)
 
 
 def combine(answers: list[Answer]) -> Verdict:

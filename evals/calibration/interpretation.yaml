@@ -1,14 +1,19 @@
 # The calibration set of the interpretation judge, see docs/eval-architecture.md#llm-judges:
-# one report's draft, graded once by a person by the rubric in
-# evals/graders/interpretation.md.j2.
+# one report's draft, graded once by the rubric in evals/graders/interpretation.md.j2.
 # The runs are local files in evals/results/, which are not committed: they hold whole web
 # pages. Without its run file, an example cannot be judged again. run_sha256 shows that a run
-# file is the one that was graded.
+# file is the one that was graded. made_faulty says what was changed on purpose; no grader
+# saw it.
 
-# Rechecked on 2026-10-15 against the rubric of roadmap step 10.1: Codex and Grok checked each
-# grade on its run file without the judges' grades, and the person confirmed them.
-graded: '2026-10-12'
+# The first 3 examples were graded by the person on 2026-10-12 and rechecked on 2026-10-15
+# against the rubric of roadmap step 10.1. The others, from roadmap step 10.5, were graded on
+# 2026-10-16 by a Claude session and Codex apart, each on a form that showed each example as
+# the judge sees it, without the other's grades or any judge's. They agreed on every answer.
+# On 2026-10-17 the same two graders, in the same way, graded 1 more: the report failures
+# that the roadmap notes and the trials did not show. They agreed on every answer.
+graded: '2026-10-17'
 rubric_sha256: dacc2f227f3d3c10cec60db11b6440c64d491d5624ff5fc51f1b06b660f88cbb
+research_scope_sha256: 75270290240f0a573aa6b47465eb651c55a98faf084dd2290c4cf21b212b1a17
 examples:
 - run: 2026-10-12T01-51-48-538796Z-run.json
   run_sha256: 361a29009f2399a159d238e1198e1473176450a72862652e94680f379c64c824
@@ -22,8 +27,8 @@ examples:
   answers:
     explains_meaning:
       answer: 'yes'
-      reason: A commercial site needs no more than one short sentence with what it is and its
-        distance, and the report gives them.
+      reason: A commercial site needs no more than one short sentence with what it is and its distance,
+        and the report gives them.
     lists_unclear_objects:
       answer: 'yes'
       reason: There is no unclear object.
@@ -33,6 +38,7 @@ examples:
     fits_type:
       answer: 'yes'
       reason: No effect on people nearby fits the type commercial.
+  prompt_sha256: d42cdd61365ea7c7a01d449c0e86d54059829471b5a4af74cf4490a8c9f74e0c
 - run: 2026-10-12T01-46-31-102269Z-run.json
   run_sha256: fd9a5e50375505bb531022820ede71593de7b3e15c46717aba1f8ac91b2f2491
   draft: 'Klärwerkstraße 1 and 1A lie about 118 m from the property, on land the map data marks as industrial
@@ -47,8 +53,8 @@ examples:
   answers:
     explains_meaning:
       answer: 'yes'
-      reason: A commercial site needs no more than one short sentence with what it is and its
-        distance, and the report gives them.
+      reason: A commercial site needs no more than one short sentence with what it is and its distance,
+        and the report gives them.
     lists_unclear_objects:
       answer: 'yes'
       reason: There is no unclear object.
@@ -58,6 +64,7 @@ examples:
     fits_type:
       answer: 'yes'
       reason: No effect on people nearby fits the type commercial.
+  prompt_sha256: 1c0ccc8c84054580d786aca0ecfcb7d920d17fb276f0016b3bf8fd03d6407438
 - run: 2026-10-12T01-45-18-783505Z-run.json
   run_sha256: c4181c1bcfe8e2a67ca5ee8f04ed583741eec92f650d5cd4a67024e21b0e8f5c
   draft: The map source failed after its retries, so this part of the report is missing. No objects near
@@ -76,3 +83,819 @@ examples:
     fits_type:
       answer: 'yes'
       reason: No object, so no meaning.
+  prompt_sha256: 8bb379a7deb065e7aa0baeac9029c5710297b5ae623cdc320179f6748cf061a4
+- run: 2026-10-16T19-30-29-212120Z-run.json
+  run_sha256: 05583cfc22d182d0fb1b89697b7b8f7bf8701190fb59dcdab644ff52097383b9
+  draft: 'A main railway line is 67 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-295391379]
+
+
+    Another main railway line is 74 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-4495782]
+
+
+    A third main railway line is 95 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-23147988]
+
+
+    The Ruhleben waste incineration plant is 95 m away and in use. It has run since 1967. It burns waste
+    and makes power, hot water and steam. It can bring noise, smell, emissions and a risk of accidents
+    to people nearby. [osm-way-49572120]
+
+
+    A railway yard is 109 m away and in use. Trains there can bring noise and vibration to people nearby.
+    [osm-way-813431602]
+
+
+    The Klärwerk Ruhleben sewage treatment works is 112 m away and in use. It can bring smell to people
+    nearby. [osm-way-26131403]
+
+
+    A railway line is 210 m away and in use. It is a main line. Trains on it can bring noise and vibration
+    to people nearby. [osm-way-290305121]
+
+
+    The RWG I waste and recycling business is 343 m away and in use. Its site can bring noise, smell,
+    emissions and a risk of accidents to people nearby. [osm-way-185943862]
+
+
+    The development plan Bebauungsplan VIII-129 is 217 m away. It allows the widening of the Charlottenburger
+    Chaussee and the Spandauer Damm roads. Its type is other, so it is not known whether what it allows
+    can affect people nearby. It is in force. It is unknown whether building has started there. [bplan-0508129]
+
+
+    The development plan Bebauungsplan 5-1VE is 264 m away. It allows a special area for shops. Its type
+    alone shows no effect on people nearby. It is in force. It is unknown whether building has started
+    there. [bplan-0500001VE]
+
+
+    The development plan Bebauungsplan VIII-145 is 343 m away. It allows a police use area and a cemetery
+    green area. Its type is other, so it is not known whether what it allows can affect people nearby.
+    It is in force. It is unknown whether building has started there. [bplan-0508145]
+
+
+    An industrial area is 118 m away. It could not be identified. [osm-way-23156479]
+
+
+    An industrial area is 217 m away. It could not be identified. [osm-way-985575964]
+
+
+    An industrial area is 314 m away. It could not be identified. [osm-way-813407382]
+
+
+    The development plan Bebauungsplan VIII-286 is 228 m away. It is still in the planning procedure,
+    not yet in force. What it is meant to allow could not be identified. It is unknown whether building
+    has started there. [bplan-0508286]
+
+
+    The development plan Bebauungsplan VIII-B6 is 315 m away. It is in force. Its map data names business
+    and industrial areas, but it could not be identified. It is unknown whether building has started there.
+    [bplan-0508000B06]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: Every identified object has its status and its type's effect; plans VIII-129, 5-1VE and
+        VIII-145 give legal status, that building start is unknown, and the other or commercial wording.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The industrial areas at 118, 217 and 314 m and plans VIII-286 (228 m) and VIII-B6 (315 m)
+        come last with distances, each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: Effects match plant, wastewater plant and railway for operating objects; plans with status
+        not known say building start is unknown; unidentified objects get no meaning.
+  prompt_sha256: bc6e75ee941a4e518cce6cf66c0a6510859a731a196faec29ea51d20f2b00ae0
+- run: 2026-10-16T19-43-03-265074Z-run.json
+  run_sha256: 97579cf313839f11fe8d5820d826007ac4e77229dc6e0a09bc02f26ebaacddce
+  made_faulty: 'The last plan that could not be identified, XV-51j, is left out of the end list: lists_unclear_objects
+    is no.'
+  draft: 'A heating and power plant is 141 m away. It is in use. It burns gas to make electricity and
+    hot water. It can bring noise, smell, emissions and a risk of accidents to people nearby. [osm-way-361138484]
+
+
+    A wastewater treatment plant, the Retentionsbodenfilteranlage, is 276 m away. It is in use. It can
+    bring smell to people nearby. [osm-way-118132969]
+
+
+    A works 602 m away, FMB, makes ultra-high vacuum systems and parts. It is in use. It can bring noise
+    and delivery traffic to people nearby. [osm-way-778281678]
+
+
+    A factory 613 m away, Jenoptik, makes electronics. It is in use. It can bring noise and delivery traffic
+    to people nearby. [osm-way-32340235]
+
+
+    A factory 671 m away, in the Technologiepark Adlershof, makes reagents for biotech and pharma, in
+    large and small batches. It is in use. It can bring noise and delivery traffic to people nearby. [osm-way-778281679]
+
+
+    A factory 716 m away, Sentech, makes thin-film measurement systems. It is in use. It can bring noise
+    and delivery traffic to people nearby. [osm-way-377345893]
+
+
+    Berlin Brandenburg Airport is 3899 m away. It is in use. It can bring aircraft noise to people nearby,
+    mostly under its flight paths. [osm-way-859790021]
+
+
+    The development plan Bebauungsplan XV-19 is 138 m away. It is in force. It is meant to allow general
+    residential areas, mixed-use areas and roads. It is unknown whether building has started there. It
+    is not known whether what it allows can affect people nearby. [bplan-0915019]
+
+
+    The development plan Bebauungsplan XV-51j-1 is 130 m away. It is in force. It allows research facilities
+    in a special research area, and these facilities are already built. It is not known whether what it
+    allows can affect people nearby. [bplan-0915051j-1]
+
+
+    The development plan Bebauungsplan XV-18 is 20 m away. It is in force. It allows residential areas,
+    mixed-use areas, a public playground, and roads. It is unknown whether building has started there.
+    It could not be identified. [bplan-0915018]
+
+
+    The development plan Bebauungsplan XV-51k is 82 m away. It is in force. It allows a public park and
+    roads. It is unknown whether building has started there. It could not be identified. [bplan-0915051k]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: All identified objects have status and their type's effect; XV-19 and XV-51j-1 give legal
+        status, building state and that the effect is not known.
+    lists_unclear_objects:
+      answer: 'no'
+      reason: bplan-0915051j, 130 m, which could not be identified, is missing from the report.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: Effects fit plant, production, wastewater plant and airport in use; the other-type plans
+        get no effect; unidentified plans XV-18 and XV-51k get no meaning.
+  prompt_sha256: 68524d192c644cb5001c8056235e6f97f8e0835bbf9b48eeafce747a2fc28613
+- run: 2026-10-16T19-33-35-402940Z-run.json
+  run_sha256: 33c1a48da4d6c929afae39ef66600fe45839e942cd3279f64c38348bb874e6f8
+  draft: 'A factory run by Philip Morris GmbH is 74 m away. It is closed. Its last production day in Berlin
+    was 30 June 2025, so it brings no noise or delivery traffic. [osm-way-32195750]
+
+
+    A motorway, the A 100, runs through a tunnel 193 m away. It opened on 27 August 2025 and is in use.
+    It can bring traffic noise and exhaust to people nearby. [osm-way-46670760]
+
+
+    A railway line, the Verbindungsbahn Baumschulenweg–Neukölln, is 225 m away and in use. It can bring
+    train noise and vibration to people nearby. [osm-way-24258845]
+
+
+    A light rail line is 232 m away and in use. It can bring train noise and vibration to people nearby.
+    [osm-way-29652979]
+
+
+    Another stretch of the A 100 motorway, also in a tunnel, is 243 m away and in use. It can bring traffic
+    noise and exhaust to people nearby. [osm-way-1425801228]
+
+
+    A manufacturer of cardboard packaging, DS Smith Packaging, is 372 m away and in use. It can bring
+    noise and delivery traffic to people nearby. [osm-way-404960674]
+
+
+    A snooker equipment shop is 0 m away. [osm-way-260062333]
+
+
+    A food business, Global Food Center GmbH, is 289 m away. [osm-way-1429114463]
+
+
+    A development plan 30 m away allows homes in a general residential area, green spaces and road space.
+    [bplan-0814039]
+
+
+    The plan is in force. [bplan-0814039]
+
+
+    It is unknown whether building has started there. [bplan-0814039]
+
+
+    It is not known whether what it allows can affect people nearby. [bplan-0814039]
+
+
+    An industrial area 358 m away could not be identified. [osm-way-1185963533]
+
+
+    A development plan 0 m away could not be identified. [bplan-0800081B]
+
+
+    Another development plan 0 m away could not be identified. [bplan-0814003]
+
+
+    A development plan 217 m away could not be identified. [bplan-0800004]
+
+
+    A development plan 252 m away could not be identified. [bplan-0814182]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: The closed factory gives its status and that it brings none; roads, railways and DS Smith
+        get status and effects; the two commercial sites get one short sentence; plan 0814039 gives in
+        force, building unknown and effect unknown.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The industrial area at 358 m and the plans at 0, 0, 217 and 252 m come last with distances,
+        each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: Every meaning fits its type and status, including 'brings no noise or delivery traffic'
+        for the closed production site.
+  prompt_sha256: 68cf127cacb83f942ed9d38acfd56d505460a6a98c3a7a55561f00dcb930f4c5
+- run: 2026-10-16T19-37-06-090821Z-run.json
+  run_sha256: 6eaad664d5994f6b1ed03f56961d1c22e4ef9208630da7e81cbe8392aba95b47
+  made_faulty: 'The pumping station, of type other, is said to show no effect by its type: fits_type is
+    no.'
+  draft: 'A planned motorway, the A 100, is 145 m away. It is planned and not yet built. Once in use,
+    it can bring traffic noise and exhaust to people nearby. [osm-way-231134026]
+
+
+    Railway lines are 187 m, 189 m, 192 m and 207 m away. All are in use. They can bring train noise and
+    vibration to people nearby. [osm-way-4686020][osm-way-200143181][osm-way-200247643][osm-way-200143176]
+
+
+    A heating plant, Heizwerk Treptow, is 795 m away. It is in use and burns gas to make heat. It can
+    bring noise, smell, emissions and a risk of accidents to people nearby. [osm-way-150809997]
+
+
+    A concrete works run by Cemex Deutschland is 814 m away. It is in use. It can bring noise and delivery
+    traffic to people nearby. [osm-way-359610265]
+
+
+    A works run by Talgo Deutschland, which repairs rail vehicles, is 871 m away. It is in use. It can
+    bring noise and delivery traffic to people nearby. [osm-way-32514434]
+
+
+    A pumping station for sewage, Pumpwerk Stralau, is 971 m away. It is not known whether it is in use.
+    Its type alone shows no effect on people nearby. [osm-way-825029881]
+
+
+    Development plan V-13 is 217 m away. It is in force. It allows mixed-use and core-area zones, with
+    offices or flats on the upper floors, a youth centre, a public park and roads. Part of it has been
+    replaced by plan 2-49. It is not known whether building has started there. Its type alone shows no
+    effect on people nearby. [bplan-0205013]
+
+
+    Development plan V-31 is 58 m away. It is still in the planning procedure. What it is meant to allow
+    is not stated in the data. It is not known whether building has started there. It could not be identified.
+    [bplan-0205031]
+
+
+    Development plan 2-10 is 136 m away. It is still in the planning procedure. What it is meant to allow
+    is not stated in the data. It is not known whether building has started there. It could not be identified.
+    [bplan-0200010]
+
+
+    Development plan 2-56E is 189 m away. It is still in the planning procedure, under a simplified procedure.
+    It covers several properties in Friedrichshain. What it is meant to allow is not stated in the data.
+    It is not known whether building has started there. It could not be identified. [bplan-0200056E]
+
+
+    Development plan V-18 is 246 m away. It is in force. It allows general housing and mixed-use areas,
+    a park with a playground, a rail area, a water area, a lounger area and roads. It is not known whether
+    building has started there. It could not be identified. [bplan-0205018]
+
+
+    An industrial area is 1032 m away. It could not be identified. [osm-relation-4807959]'
+  answers:
+    explains_meaning:
+      answer: 'no'
+      reason: Pumpwerk Stralau is of type other but the report does not say it is not known whether it
+        can affect people nearby; it says 'Its type alone shows no effect on people nearby.'
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: Plans V-31, 2-10, 2-56E, V-18 and the industrial area at 1032 m come last with distances,
+        each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'no'
+      reason: 'For Pumpwerk Stralau, of type other: ''Its type alone shows no effect on people nearby.'''
+  prompt_sha256: d55f05774adb90fc5d2abfd9d44dd9dba6ccac16eb43f9dfa0333954792db842
+- run: 2026-10-16T19-39-54-526460Z-run.json
+  run_sha256: dcd497654b9b2e99ea76a201dcfd245e3c45ebdcd10a77c5a2b5959fe7ef04c2
+  draft: 'The airport is 3380 m away and is in use. It is Berlin Brandenburg Airport. It can bring aircraft
+    noise to people nearby, mostly under its flight paths. [osm-way-859790021]
+
+
+    A showroom of W. & L. Jordan, a building products firm, is 818 m away and in use. Its type alone shows
+    no effect on people nearby. [osm-way-334170247]
+
+
+    A development plan is 0 m from the property. It is meant to allow housing on a site that has not been
+    used until now. The plan is still in the planning procedure. Building has not started there yet. It
+    is not known whether what it allows can affect people nearby. [bplan-0915025-1]
+
+
+    A development plan is 94 m away. It allows housing and mixed-use areas, community facilities for social
+    and cultural use, private allotment gardens, a pedestrian and cycle path and a street. The plan is
+    in force. It is not known whether building has started there. It is not known whether what it allows
+    can affect people nearby. [bplan-0915023]
+
+
+    A development plan is 323 m away. It allows a public park and a street. The plan is in force. It is
+    not known whether building has started there. It is not known whether what it allows can affect people
+    nearby. [bplan-0915014]
+
+
+    Areas marked on the map as industrial land are at 166 m, 254 m, 878 m and 934 m. Their kind could
+    not be identified. [osm-way-1197467986][osm-way-1197467979][osm-way-1241619192][osm-way-118132465]
+
+
+    A development plan is 0 m from the property. It allows a residential area, a mixed-use area, a school
+    and sports hall, a public park with a playground and a street. The plan is in force. It is not known
+    whether building has started there. Its type could not be identified. [bplan-0915025]
+
+
+    A development plan is 190 m away. The data do not say what it allows. The plan is still in the planning
+    procedure. It is not known whether building has started there. Its type could not be identified. [bplan-0915000F]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: Airport and showroom are covered; plans 0915025-1, 0915023 and 0915014 give legal status,
+        building state and that the effect is not known.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The industrial areas at 166, 254, 878 and 934 m and plans at 0 m and 190 m come last with
+        distances, each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: '''Building has not started there yet'' fits the planned status of 0915025-1 and is not
+        given as following from the procedure; other meanings fit.'
+  prompt_sha256: 28f96d26b8c54c854f3eae66b74609d7e9bdc6362f2fd6522510dc59eeec4457
+- run: 2026-10-16T19-33-35-402940Z-run.json
+  run_sha256: 33c1a48da4d6c929afae39ef66600fe45839e942cd3279f64c38348bb874e6f8
+  made_faulty: 'The Verbindungsbahn, a railway in use, loses what it can mean for people nearby: explains_meaning
+    is no.'
+  draft: 'A factory run by Philip Morris GmbH is 74 m away. It is closed. Its last production day in Berlin
+    was 30 June 2025, so it brings no noise or delivery traffic. [osm-way-32195750]
+
+
+    A motorway, the A 100, runs through a tunnel 193 m away. It opened on 27 August 2025 and is in use.
+    It can bring traffic noise and exhaust to people nearby. [osm-way-46670760]
+
+
+    A railway line, the Verbindungsbahn Baumschulenweg–Neukölln, is 225 m away and in use. [osm-way-24258845]
+
+
+    A light rail line is 232 m away and in use. It can bring train noise and vibration to people nearby.
+    [osm-way-29652979]
+
+
+    Another stretch of the A 100 motorway, also in a tunnel, is 243 m away and in use. It can bring traffic
+    noise and exhaust to people nearby. [osm-way-1425801228]
+
+
+    A manufacturer of cardboard packaging, DS Smith Packaging, is 372 m away and in use. It can bring
+    noise and delivery traffic to people nearby. [osm-way-404960674]
+
+
+    A snooker equipment shop is 0 m away. [osm-way-260062333]
+
+
+    A food business, Global Food Center GmbH, is 289 m away. [osm-way-1429114463]
+
+
+    A development plan 30 m away allows homes in a general residential area, green spaces and road space.
+    [bplan-0814039]
+
+
+    The plan is in force. [bplan-0814039]
+
+
+    It is unknown whether building has started there. [bplan-0814039]
+
+
+    It is not known whether what it allows can affect people nearby. [bplan-0814039]
+
+
+    An industrial area 358 m away could not be identified. [osm-way-1185963533]
+
+
+    A development plan 0 m away could not be identified. [bplan-0800081B]
+
+
+    Another development plan 0 m away could not be identified. [bplan-0814003]
+
+
+    A development plan 217 m away could not be identified. [bplan-0800004]
+
+
+    A development plan 252 m away could not be identified. [bplan-0814182]'
+  answers:
+    explains_meaning:
+      answer: 'no'
+      reason: 'The operating railway osm-way-24258845 gets no effect: ''A railway line, the Verbindungsbahn
+        Baumschulenweg–Neukölln, is 225 m away and in use.'' omits train noise and vibration.'
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The industrial area at 358 m and the plans at 0, 0, 217 and 252 m come last with distances,
+        each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: Every meaning given fits its type and status; a missing effect is not a misfit.
+  prompt_sha256: 524a33629f1eeed55db6c9537a62141f098f3b19682bbfed4c4b5224b58f386e
+- run: 2026-10-16T19-37-06-090821Z-run.json
+  run_sha256: 6eaad664d5994f6b1ed03f56961d1c22e4ef9208630da7e81cbe8392aba95b47
+  draft: 'A planned motorway, the A 100, is 145 m away. It is planned and not yet built. Once in use,
+    it can bring traffic noise and exhaust to people nearby. [osm-way-231134026]
+
+
+    Railway lines are 187 m, 189 m, 192 m and 207 m away. All are in use. They can bring train noise and
+    vibration to people nearby. [osm-way-4686020][osm-way-200143181][osm-way-200247643][osm-way-200143176]
+
+
+    A heating plant, Heizwerk Treptow, is 795 m away. It is in use and burns gas to make heat. It can
+    bring noise, smell, emissions and a risk of accidents to people nearby. [osm-way-150809997]
+
+
+    A concrete works run by Cemex Deutschland is 814 m away. It is in use. It can bring noise and delivery
+    traffic to people nearby. [osm-way-359610265]
+
+
+    A works run by Talgo Deutschland, which repairs rail vehicles, is 871 m away. It is in use. It can
+    bring noise and delivery traffic to people nearby. [osm-way-32514434]
+
+
+    A pumping station for sewage, Pumpwerk Stralau, is 971 m away. It is not known whether it is in use.
+    It is not known whether it can affect people nearby. [osm-way-825029881]
+
+
+    Development plan V-13 is 217 m away. It is in force. It allows mixed-use and core-area zones, with
+    offices or flats on the upper floors, a youth centre, a public park and roads. Part of it has been
+    replaced by plan 2-49. It is not known whether building has started there. Its type alone shows no
+    effect on people nearby. [bplan-0205013]
+
+
+    Development plan V-31 is 58 m away. It is still in the planning procedure. What it is meant to allow
+    is not stated in the data. It is not known whether building has started there. It could not be identified.
+    [bplan-0205031]
+
+
+    Development plan 2-10 is 136 m away. It is still in the planning procedure. What it is meant to allow
+    is not stated in the data. It is not known whether building has started there. It could not be identified.
+    [bplan-0200010]
+
+
+    Development plan 2-56E is 189 m away. It is still in the planning procedure, under a simplified procedure.
+    It covers several properties in Friedrichshain. What it is meant to allow is not stated in the data.
+    It is not known whether building has started there. It could not be identified. [bplan-0200056E]
+
+
+    Development plan V-18 is 246 m away. It is in force. It allows general housing and mixed-use areas,
+    a park with a playground, a rail area, a water area, a lounger area and roads. It is not known whether
+    building has started there. It could not be identified. [bplan-0205018]
+
+
+    An industrial area is 1032 m away. It could not be identified. [osm-relation-4807959]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: All identified objects covered; Pumpwerk Stralau (other) says its use and its effect are
+        not known; V-13 gives legal status and building unknown.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: Plans V-31, 2-10, 2-56E, V-18 and the industrial area at 1032 m come last with distances,
+        each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: The planned motorway gets what it can bring once in use; the other-type pumping station
+        gets no effect; commercial V-13 gets no effect.
+  prompt_sha256: 8bbc8909ffa17a9d95b54ffa6e41a403eed0f2cd42f81bdc2ad9cecee608b7f9
+- run: 2026-10-16T19-39-54-526460Z-run.json
+  run_sha256: dcd497654b9b2e99ea76a201dcfd245e3c45ebdcd10a77c5a2b5959fe7ef04c2
+  made_faulty: 'A verdict on buying is added at the end: free_of_verdicts is no.'
+  draft: 'The airport is 3380 m away and is in use. It is Berlin Brandenburg Airport. It can bring aircraft
+    noise to people nearby, mostly under its flight paths. [osm-way-859790021]
+
+
+    A showroom of W. & L. Jordan, a building products firm, is 818 m away and in use. Its type alone shows
+    no effect on people nearby. [osm-way-334170247]
+
+
+    A development plan is 0 m from the property. It is meant to allow housing on a site that has not been
+    used until now. The plan is still in the planning procedure. Building has not started there yet. It
+    is not known whether what it allows can affect people nearby. [bplan-0915025-1]
+
+
+    A development plan is 94 m away. It allows housing and mixed-use areas, community facilities for social
+    and cultural use, private allotment gardens, a pedestrian and cycle path and a street. The plan is
+    in force. It is not known whether building has started there. It is not known whether what it allows
+    can affect people nearby. [bplan-0915023]
+
+
+    A development plan is 323 m away. It allows a public park and a street. The plan is in force. It is
+    not known whether building has started there. It is not known whether what it allows can affect people
+    nearby. [bplan-0915014]
+
+
+    Areas marked on the map as industrial land are at 166 m, 254 m, 878 m and 934 m. Their kind could
+    not be identified. [osm-way-1197467986][osm-way-1197467979][osm-way-1241619192][osm-way-118132465]
+
+
+    A development plan is 0 m from the property. It allows a residential area, a mixed-use area, a school
+    and sports hall, a public park with a playground and a street. The plan is in force. It is not known
+    whether building has started there. Its type could not be identified. [bplan-0915025]
+
+
+    A development plan is 190 m away. The data do not say what it allows. The plan is still in the planning
+    procedure. It is not known whether building has started there. Its type could not be identified. [bplan-0915000F]
+
+
+    On balance, this is a good place for a family to buy.'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: 'Same object coverage as a complete report: airport, showroom and three identified plans
+        all have what they need.'
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: All unidentified objects follow every identified one with distances and are said not to
+        be identified; only the closing verdict sentence comes after them.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: Every object's meaning fits its type and status; the closing verdict is about no single
+        object.
+  prompt_sha256: cc7b905e01682192f974294bd73fa8f94a49b2bcb012c846418ee6633e44bb48
+- run: 2026-10-16T19-43-03-265074Z-run.json
+  run_sha256: 97579cf313839f11fe8d5820d826007ac4e77229dc6e0a09bc02f26ebaacddce
+  draft: 'A heating and power plant is 141 m away. It is in use. It burns gas to make electricity and
+    hot water. It can bring noise, smell, emissions and a risk of accidents to people nearby. [osm-way-361138484]
+
+
+    A wastewater treatment plant, the Retentionsbodenfilteranlage, is 276 m away. It is in use. It can
+    bring smell to people nearby. [osm-way-118132969]
+
+
+    A works 602 m away, FMB, makes ultra-high vacuum systems and parts. It is in use. It can bring noise
+    and delivery traffic to people nearby. [osm-way-778281678]
+
+
+    A factory 613 m away, Jenoptik, makes electronics. It is in use. It can bring noise and delivery traffic
+    to people nearby. [osm-way-32340235]
+
+
+    A factory 671 m away, in the Technologiepark Adlershof, makes reagents for biotech and pharma, in
+    large and small batches. It is in use. It can bring noise and delivery traffic to people nearby. [osm-way-778281679]
+
+
+    A factory 716 m away, Sentech, makes thin-film measurement systems. It is in use. It can bring noise
+    and delivery traffic to people nearby. [osm-way-377345893]
+
+
+    Berlin Brandenburg Airport is 3899 m away. It is in use. It can bring aircraft noise to people nearby,
+    mostly under its flight paths. [osm-way-859790021]
+
+
+    The development plan Bebauungsplan XV-19 is 138 m away. It is in force. It is meant to allow general
+    residential areas, mixed-use areas and roads. It is unknown whether building has started there. It
+    is not known whether what it allows can affect people nearby. [bplan-0915019]
+
+
+    The development plan Bebauungsplan XV-51j-1 is 130 m away. It is in force. It allows research facilities
+    in a special research area, and these facilities are already built. It is not known whether what it
+    allows can affect people nearby. [bplan-0915051j-1]
+
+
+    The development plan Bebauungsplan XV-18 is 20 m away. It is in force. It allows residential areas,
+    mixed-use areas, a public playground, and roads. It is unknown whether building has started there.
+    It could not be identified. [bplan-0915018]
+
+
+    The development plan Bebauungsplan XV-51k is 82 m away. It is in force. It allows a public park and
+    roads. It is unknown whether building has started there. It could not be identified. [bplan-0915051k]
+
+
+    The development plan Bebauungsplan XV-51j is 130 m away. It is partly out of force. It allows business
+    areas, a special research area, and roads. It is unknown whether building has started there. It could
+    not be identified. [bplan-0915051j]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: All identified objects have status and their type's effect; XV-19 and XV-51j-1 give legal
+        status, building state and that the effect is not known.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: XV-18 (20 m), XV-51k (82 m) and XV-51j (130 m) come last, each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'yes'
+      reason: Effects fit the plant, production sites, wastewater plant and airport in use; the unidentified
+        plans get no meaning.
+  prompt_sha256: 07dd6d4d0c7d3fe5a20ab8f8874df187f3fb79f75d5f41f820ce1d9d637c1c8d
+- run: 2026-10-16T19-30-29-212120Z-run.json
+  run_sha256: 05583cfc22d182d0fb1b89697b7b8f7bf8701190fb59dcdab644ff52097383b9
+  made_faulty: 'Plan VIII-286 is said not to be built on because it is in the procedure, its legal status
+    as the reason: fits_type is no.'
+  draft: 'A main railway line is 67 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-295391379]
+
+
+    Another main railway line is 74 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-4495782]
+
+
+    A third main railway line is 95 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-23147988]
+
+
+    The Ruhleben waste incineration plant is 95 m away and in use. It has run since 1967. It burns waste
+    and makes power, hot water and steam. It can bring noise, smell, emissions and a risk of accidents
+    to people nearby. [osm-way-49572120]
+
+
+    A railway yard is 109 m away and in use. Trains there can bring noise and vibration to people nearby.
+    [osm-way-813431602]
+
+
+    The Klärwerk Ruhleben sewage treatment works is 112 m away and in use. It can bring smell to people
+    nearby. [osm-way-26131403]
+
+
+    A railway line is 210 m away and in use. It is a main line. Trains on it can bring noise and vibration
+    to people nearby. [osm-way-290305121]
+
+
+    The RWG I waste and recycling business is 343 m away and in use. Its site can bring noise, smell,
+    emissions and a risk of accidents to people nearby. [osm-way-185943862]
+
+
+    The development plan Bebauungsplan VIII-129 is 217 m away. It allows the widening of the Charlottenburger
+    Chaussee and the Spandauer Damm roads. Its type is other, so it is not known whether what it allows
+    can affect people nearby. It is in force. It is unknown whether building has started there. [bplan-0508129]
+
+
+    The development plan Bebauungsplan 5-1VE is 264 m away. It allows a special area for shops. Its type
+    alone shows no effect on people nearby. It is in force. It is unknown whether building has started
+    there. [bplan-0500001VE]
+
+
+    The development plan Bebauungsplan VIII-145 is 343 m away. It allows a police use area and a cemetery
+    green area. Its type is other, so it is not known whether what it allows can affect people nearby.
+    It is in force. It is unknown whether building has started there. [bplan-0508145]
+
+
+    An industrial area is 118 m away. It could not be identified. [osm-way-23156479]
+
+
+    An industrial area is 217 m away. It could not be identified. [osm-way-985575964]
+
+
+    An industrial area is 314 m away. It could not be identified. [osm-way-813407382]
+
+
+    The development plan Bebauungsplan VIII-286 is 228 m away. It is still in the planning procedure,
+    not yet in force. What it is meant to allow could not be identified. Building has not started there
+    yet, since it is still in the planning procedure. [bplan-0508286]
+
+
+    The development plan Bebauungsplan VIII-B6 is 315 m away. It is in force. Its map data names business
+    and industrial areas, but it could not be identified. It is unknown whether building has started there.
+    [bplan-0508000B06]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: All identified objects have status and effects as needed; VIII-286 could not be identified
+        and needs no explanation.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The industrial areas at 118, 217 and 314 m and plans VIII-286 (228 m) and VIII-B6 (315 m)
+        come last with distances, each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'no'
+      reason: 'For unidentified VIII-286: ''Building has not started there yet, since it is still in the
+        planning procedure.'' gives the legal status as the reason building has not started and treats
+        an unknown status as known.'
+  prompt_sha256: 22f82c2a6aa2362a70b43d017e0748fbb16ca2485b6e1645cee71770f1b94fd0
+- run: 2026-10-12T01-48-03-733193Z-run.json
+  run_sha256: 4082220addfef5d7cee33fc21f9bfae1c907fa033610e33287d64f9e8334e54c
+  made_faulty: 'Where the map failed, the report says that nothing was found: tells_failures is no.'
+  draft: The map source failed after its retries, so this part of the report is missing. No industrial
+    sites, railways or roads were found near the property.
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: No object was identified, so none needs anything.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: There is no unidentified or uninvestigated object.
+    tells_failures:
+      answer: 'no'
+      reason: 'It says the map part is missing but then: ''No industrial sites, railways or roads were
+        found near the property.'''
+    fits_type:
+      answer: 'yes'
+      reason: No object is given a meaning.
+  prompt_sha256: 4c417b491eed02b0f0a3336af20ad1f15721374b741550918aa913aa7395e2df
+- run: 2026-10-16T19-30-29-212120Z-run.json
+  run_sha256: 05583cfc22d182d0fb1b89697b7b8f7bf8701190fb59dcdab644ff52097383b9
+  made_faulty: 'A railway that its finding found in use is said to be not known to be in use: fits_type
+    is no.'
+  draft: 'A main railway line is 67 m away. It is not known whether it is in use. Once in use, trains
+    on it can bring noise and vibration to people nearby. [osm-way-295391379]
+
+
+    Another main railway line is 74 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-4495782]
+
+
+    A third main railway line is 95 m away and in use. Trains on it can bring noise and vibration to people
+    nearby. [osm-way-23147988]
+
+
+    The Ruhleben waste incineration plant is 95 m away and in use. It has run since 1967. It burns waste
+    and makes power, hot water and steam. It can bring noise, smell, emissions and a risk of accidents
+    to people nearby. [osm-way-49572120]
+
+
+    A railway yard is 109 m away and in use. Trains there can bring noise and vibration to people nearby.
+    [osm-way-813431602]
+
+
+    The Klärwerk Ruhleben sewage treatment works is 112 m away and in use. It can bring smell to people
+    nearby. [osm-way-26131403]
+
+
+    A railway line is 210 m away and in use. It is a main line. Trains on it can bring noise and vibration
+    to people nearby. [osm-way-290305121]
+
+
+    The RWG I waste and recycling business is 343 m away and in use. Its site can bring noise, smell,
+    emissions and a risk of accidents to people nearby. [osm-way-185943862]
+
+
+    The development plan Bebauungsplan VIII-129 is 217 m away. It allows the widening of the Charlottenburger
+    Chaussee and the Spandauer Damm roads. Its type is other, so it is not known whether what it allows
+    can affect people nearby. It is in force. It is unknown whether building has started there. [bplan-0508129]
+
+
+    The development plan Bebauungsplan 5-1VE is 264 m away. It allows a special area for shops. Its type
+    alone shows no effect on people nearby. It is in force. It is unknown whether building has started
+    there. [bplan-0500001VE]
+
+
+    The development plan Bebauungsplan VIII-145 is 343 m away. It allows a police use area and a cemetery
+    green area. Its type is other, so it is not known whether what it allows can affect people nearby.
+    It is in force. It is unknown whether building has started there. [bplan-0508145]
+
+
+    An industrial area is 118 m away. It could not be identified. [osm-way-23156479]
+
+
+    An industrial area is 217 m away. It could not be identified. [osm-way-985575964]
+
+
+    An industrial area is 314 m away. It could not be identified. [osm-way-813407382]
+
+
+    The development plan Bebauungsplan VIII-286 is 228 m away. It is still in the planning procedure,
+    not yet in force. What it is meant to allow could not be identified. It is unknown whether building
+    has started there. [bplan-0508286]
+
+
+    The development plan Bebauungsplan VIII-B6 is 315 m away. It is in force. Its map data names business
+    and industrial areas, but it could not be identified. It is unknown whether building has started there.
+    [bplan-0508000B06]'
+  answers:
+    explains_meaning:
+      answer: 'yes'
+      reason: Every identified object has its status or that its status is not known, plus its type's
+        effect; plans VIII-129, 5-1VE and VIII-145 give legal status, that building start is unknown,
+        and the other or commercial wording.
+    lists_unclear_objects:
+      answer: 'yes'
+      reason: The industrial areas at 118, 217 and 314 m and plans VIII-286 (228 m) and VIII-B6 (315 m)
+        come last with distances, each said not to be identified.
+    tells_failures:
+      answer: 'yes'
+      reason: No source failed.
+    fits_type:
+      answer: 'no'
+      reason: 'osm-way-295391379 has status operating in the list, but the report gives it as not known:
+        ''It is not known whether it is in use. Once in use, ...'''
+  prompt_sha256: 2598dce6512bf381427ed4f57c5e935cdfecb775e7713e235dc76d417f0412f4
