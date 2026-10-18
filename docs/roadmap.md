@@ -270,21 +270,25 @@ observed failure needs them; they are not a planned phase after the MVP.
 
 ## After the MVP: the demo
 
-A live demo that a reviewer can try without signing up. From the person's reading of the five
-reports of step 10.4.
+A live demo that a reviewer can try without signing up. Most items come from the person's
+reading of the five reports of step 10.4.
 
 1. **The report in Markdown, in sections,** such as the identified objects, the objects that
    could not be identified and the journeys, with the sources and licences at the end. The CLI
    stays a technical mode and prints the report as it does now.
 2. **Sources as named links, not numbers:** a page by its site's name, a map object by its
    OpenStreetMap page, a plan by its document where the B-Plan WFS links one.
-3. **The agent as a service on Aegra,** the open-source server for LangGraph agents over the
+3. **Answers in the user's language,** such as English, German or Russian: the questions and
+   the report alike. This changes the architecture: code writes parts of the report, such as
+   the journeys and the credits, in English, and the judges' rubrics are written for English
+   drafts.
+4. **The agent as a service on Aegra,** the open-source server for LangGraph agents over the
    Agent Protocol. It keeps the conversation's state between messages in PostgreSQL, where
    step 7, the input conversation, keeps it in memory only.
-4. **A web page as a separate service,** on a ready UI framework such as Chainlit, chosen at
+5. **A web page as a separate service,** on a ready UI framework such as Chainlit, chosen at
    this step, that talks to the agent over the Agent Protocol: the conversation and the
    report as Markdown, without signing up, at most 5 runs a day in total.
-5. **Deployment on one VPS:** the two services apart, with only the web page open to the
+6. **Deployment on one VPS:** the two services apart, with only the web page open to the
    internet and the agent reachable from the web page alone.
 
 A change of the report reaches the judges: their rubrics and calibration sets are checked
