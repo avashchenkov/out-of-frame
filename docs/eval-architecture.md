@@ -231,16 +231,17 @@ Five judges, one per dimension, each isolated, with its own rubric. Each may ans
   fetched, not the live page, or the object's name, details without the category, and
   addresses from the map or plan, so the grade can be repeated. It does not compare sources.
   A general reason that fits the object's type, such as smell for a wastewater plant, counts
-  as supported; a reason for another kind of object does not. Code adds the journeys after
-  the draft, so no judge grades them.
+  as supported; a reason for another kind of object does not. Code adds the journeys and
+  what a development plan is after the draft, so no judge grades them.
 - **Search relevance:** does each search query, and each page the model chooses to read, aim
   at the object and its location, and does it help settle what is unclear? Each tool call is
   graded on its own, never against an expected one, so the agent's path stays free. The
   number of tool calls is a cost, not a measure of correctness.
 - **Interpretation:** does the report explain what a fact means for a buyer, instead of
   repeating search results? Does its end list give each unidentified and not investigated
-  object with its distance? Where a source failed, does it avoid saying that
-  nothing was found? Does what it says an object means fit the object's type?
+  object with its distance, or at 0 m that the property lies in its area or right next to it?
+  Where a source failed, does it avoid saying that nothing was found? Does what it says an
+  object means fit the object's type?
 - **No verdict:** is the report, or a question to the user, free of advice, scores and verdicts
   on buying or renting? Explaining why a fact matters is not a verdict.
 - **Question:** does a question to the user ask for everything code found missing, and for
@@ -252,10 +253,15 @@ come from real runs, stored as they are, plus a few copies made faulty on purpos
 report with a planted verdict or a statement its source does not support. Each example is
 graded once, by the judge's rubric, frozen first, before seeing any judge's grades: the first
 few by the person, the rest by two models, a Claude session and Codex, apart, on a form that
-shows each example as the judge sees it, while the person settles what they disagree on. Each
-judge version is checked against these grades, answer by answer: it must catch every faulty
-example and may disagree on at most two of the other answers. Until a judge passes, only the
-numbers from code-based graders are quoted, and its axis is left out.
+shows each example as the judge sees it, while the person settles what they disagree on. A
+grade does not change after a judge is checked, with one exception: when the person changes a
+rule that the agent's prompt and the rubric share, a grade that follows from that rule may
+change, and the set's header says which and why. Each
+judge version is checked against these grades, answer by answer, in three trials: an answer
+agrees only if every trial gives it, since one run of a judge varies and a run of the agent asks
+it once. It must catch every faulty example and may disagree on at most two of the other
+answers. Until a judge passes, only the numbers from code-based graders are quoted, and its
+axis is left out.
 
 ### Metrics
 
@@ -441,9 +447,9 @@ label; the support judge grades the finding.
 | R6 | A rewrite: the run state and the unknown IDs of the first draft | Only known IDs are cited, and every finding is still in the report |
 
 In every report task, code also checks that each cited ID is known, and that each distance
-equals the value in the run state; for an object at 0 m, the report may say instead that the
-property lies in its area. Code adds the journeys after the draft, so no report task covers
-them; code tests do.
+equals the value in the run state in whole metres; for an object at 0 m, the report may say
+instead that the property lies in its area or right next to it. Code adds the journeys after
+the draft, so no report task covers them; code tests do.
 
 ### Left out
 
@@ -497,7 +503,7 @@ flowchart TD
         GS --> JG
         SC --> MATCH
         SC --> CG
-        CAL -->|"per judge version:<br/>all faulty examples caught,<br/>at most two other disagreements"| JG
+        CAL -->|"per judge version, in 3 trials that all agree:<br/>all faulty examples caught,<br/>at most two other disagreements"| JG
         MATCH --> MET
         CG --> MET
         JG -->|"only judges that passed"| MET

@@ -69,7 +69,7 @@ def build_plan(feature: dict, category: str, origin: Coordinates, source_id: str
         details=details | {"category": category},
         addresses=[],  # a plan is found on the web by its name, see docs/architecture.md
         coordinates=find_centre(feature["geometry"]),
-        distance_from_property_m=round(measure_distance_m(origin, feature["geometry"])),
+        distance_from_property_m=measure_distance_m(origin, feature["geometry"]),
         source_id=source_id,
     )
 

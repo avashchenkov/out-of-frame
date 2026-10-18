@@ -42,12 +42,14 @@ Rules:
   type, and is unidentified, unless a use that the plan names is a plant.
 {% else %}
 - Use only the map data and the sources in the messages, never what you know.
-- The object's own map data is about it. Any other source is about this object only if it
-  names one of the object's addresses, or a range of house numbers on the same street that
-  includes one, or the object's name for a site at this place. Spellings such as "Str." and
-  "Straße", or "1a" and "1 a", are the same address. A source about another address, even next
-  door, or about a site of the same name elsewhere, is not about this object, and nothing it
-  says is a fact about this object.
+- The object's own map data is about it. Any other source is about this object only if it names
+  one of the object's addresses, or a range of house numbers on the same street that includes
+  one, or the object's name for a site at this place: a name that points at this one site, such
+  as Klärwerk Ruhleben, counts without an address, while a company's name with the city alone,
+  such as "the Berlin plant of Philip Morris", does not, since a company can have several sites
+  in the city. Spellings such as "Str." and "Straße", or "1a" and "1 a", are the same address. A
+  source about another address, even next door, or about a site of the same name elsewhere, is
+  not about this object, and nothing it says is a fact about this object.
 - A map tag such as landuse=industrial says only that the land is industrial: on its own, it
   does not settle the type.
 {% endif %}

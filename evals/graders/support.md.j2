@@ -7,10 +7,10 @@ companies. The report was written on {{ date }}.
 {% for map_object in objects %}
 <object id="{{ map_object.id }}">
 {% if map_object.id in plans %}
-A development plan. Distance from the property, computed from its data: {{ map_object.distance_from_property_m | int }} m
+A development plan. Distance from the property, computed from its data: {{ map_object.rounded_distance_m() }} m
 Plan data:
 {% else %}
-Distance from the property, computed from the map: {{ map_object.distance_from_property_m | int }} m
+Distance from the property, computed from the map: {{ map_object.rounded_distance_m() }} m
 Map data:
 {% endif %}
 {{ map_object.map_text().strip() or "none" }}
@@ -64,14 +64,21 @@ What backs what:
 - An object's map data, or a plan's data, are about it. A page is about an object that is not a
   plan only where it names one of the object's addresses, or a range of house numbers on the
   same street that includes one, or the object's name for a site at this place; for a plan, see
-  below. What a page says about another address, even next door, or about a site of the same
-  name elsewhere, backs or contradicts nothing about this object.
-- How an investigation ended backs only that the object was identified, could not be
-  identified, or was not investigated. It backs no type, status or other fact about the
-  object.
-- The distance backs the distance as given.
+  below. For a site at this place, a name that points at this one site, such as Klärwerk
+  Ruhleben, counts without an address, while a company's name with the city alone, such as "the
+  Berlin plant of Philip Morris", does not, since a company can have several sites in the city.
+  What a page says about another address, even next door, about a site of the same name
+  elsewhere, or about a company's site in the city that it does not name, backs or contradicts
+  nothing about this object: a claim that rests only on such a page is unsupported.
+- How an investigation ended backs only that the object was identified, could not be identified,
+  or was not investigated. It backs no type, status or other fact about the object, but a type
+  that a statement says the investigation found is backed where the cited page or the map data
+  back that type.
+- The distance backs the distance as given, or at 0 m that the property lies in the object's
+  area or right next to it.
 - What an object is must be backed by its cited page or its map data. landuse=industrial says
-  only that the land is used for industry, not what kind of site it is.
+  only that the land is used for industry, not what kind of site it is; man_made=works marks a
+  factory or other works, a site that makes things.
 - That an object is in use, closed, under construction or planned must be backed by its cited
   page or its map data. A tag about the whole object backs a status: disused, abandoned or
   closed backs closed, construction backs under construction, and proposed backs planned, such

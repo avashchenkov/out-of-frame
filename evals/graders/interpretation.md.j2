@@ -7,7 +7,7 @@ failed.
 <objects>
 {% for map_object in map_objects %}
 {% set finding = findings.get(map_object.id) %}
-- {{ map_object.id }}, {{ map_object.distance_from_property_m | int }} m from the property{% if map_object.id in plans %}, a development plan{% endif %}: {% if finding is none %}not investigated{% elif finding.outcome == "identified" %}identified as {{ finding.identified_type }}, status {{ finding.status or "not known" }}{% else %}could not be identified{% endif %}
+- {{ map_object.id }}, {{ map_object.rounded_distance_m() }} m from the property{% if map_object.id in plans %}, a development plan{% endif %}: {% if finding is none %}not investigated{% elif finding.outcome == "identified" %}identified as {{ finding.identified_type }}, status {{ finding.status or "not known" }}{% else %}could not be identified{% endif %}
 
 {% endfor %}
 {% if nothing_found %}
@@ -33,31 +33,33 @@ cannot tell from the report and the lists above.
    found about it? For an object whose type shows no effect, such as commercial, one short
    sentence with what it is and how far away is enough, without its status. An object of type
    other needs, instead of an effect, that it is not known whether it can affect people nearby.
-   A development plan needs its legal status and whether building has started there, even if
-   its type shows no effect. A closed object whose type names an effect needs its status
-   instead of that effect, and may say that it brings none of it. An object that could not be
-   identified or was not investigated needs no explanation. If no object needs anything, answer
-   yes.
+   A development plan needs its legal status and whether building has started there, even if its
+   type shows no effect. A closed object whose type names an effect needs its status instead of
+   that effect, and may say that it brings none of it. An object that could not be identified or
+   was not investigated needs no explanation. A status that differs from the list counts under
+   question 4, not here. If no object needs anything, answer yes.
 2. lists_unclear_objects: Does the report give each object that could not be identified and
-   each object that was not investigated at its end, with its distance, and say which it
-   was? If there is no such object, answer yes.
+   each object that was not investigated at its end, with its distance, or at 0 m that the
+   property lies in its area or right next to it, and say which it was? If there is no such
+   object, answer yes.
 3. tells_failures: For each failed source, does the report say that its part is missing,
    and never that nothing was found there? Saying that an object could not be identified or
    was not investigated is not saying that nothing was found. If no source failed, answer
    yes.
-4. fits_type: Does what the report says each object can mean fit its type and status in the
-   list above? Giving an object that could not be identified or was not investigated a meaning,
-   as if its type were known, is a no, while naming the kind of place the map shows, such as an
-   industrial area, is not a meaning. Treating a status that is not known as known, such as
-   saying that the site is in use, is a no too, and so is giving a status in the list as not
-   known. A plan's status says whether building has started there; its legal status, such as in
-   force, is another fact, and giving it is not treating that status as known, but giving it as
-   the reason that building has or has not started is a no. A meaning fits only if it is of the
-   kind that its type's meaning below gives, and fits the status: what an object in use brings;
-   for one under construction, planned or not known to be in use, what it can bring once in
-   use; for a closed object, only that it brings none of it. The type other gives none: any
-   effect for it, or saying that its type shows no effect or that it is harmless, is a no. If
-   none of this happens in the report, answer yes.
+4. fits_type: Does what the report says each object can mean fit its type and status in the list
+   above? Giving an object that could not be identified or was not investigated a meaning, as if
+   its type were known, is a no, while naming the kind of place the map shows, such as an
+   industrial area, or what a plan's data name, such as the uses it allows, is not a meaning.
+   Treating a status that is not known as known, such as saying that the site is in use, is a no
+   too, and so is giving a status in the list as not known. A plan's status says whether
+   building has started there; its legal status, such as in force, is another fact, and giving
+   it is not treating that status as known, but giving it as the reason that building has or has
+   not started is a no. A meaning fits only if it is of the kind that its type's meaning below
+   gives, and fits the status: what an object in use brings; for one under construction, planned
+   or not known to be in use, what it can bring once in use; for a closed object, only that it
+   brings none of it. The type other gives none: any effect for it, or saying that its type
+   shows no effect or that it is harmless, is a no. If none of this happens in the report,
+   answer yes.
 
 The types mean:
 {% for name, text in types.items() %}

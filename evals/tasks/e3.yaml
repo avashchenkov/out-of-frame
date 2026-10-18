@@ -47,8 +47,9 @@ expected:
       source_url: https://www.cemex.de/w/transportbeton-berlin-kreuzberg
       search: Cemex Deutschland Schleusenufer 5 Berlin
     # 871 m: Talgo Deutschland, man_made=works, Revaler Straße 99, website talgo.de. The page:
-    # Talgo maintains and repairs rail vehicles at its Berlin works ("Werk Berlin"). The page is
-    # linked in its map data (website).
+    # Talgo's site notice names Talgo (Deutschland) GmbH at Revaler Straße 99, a current listing,
+    # so in use; man_made=works gives a works. Its home page, linked in the map data, names its
+    # Berlin works without the address, which does not tie it to this site.
     - id: talgo-works
       object_id: osm-way-32514434
       category: industry
@@ -56,8 +57,8 @@ expected:
       distance_tolerance_m: 200
       identified_type: production
       status: operating
-      source_url: https://www.talgo.de/
-      search: null
+      source_url: https://www.talgo.de/en/impressum
+      search: Talgo Deutschland Revaler Straße 99 Berlin
     # 971 m: Pumpwerk Stralau, man_made=pumping_station, substance=sewage, operator Berliner
     # Wasserbetriebe. A search finds only copies of the map, no page about it.
     - id: pumpwerk-stralau

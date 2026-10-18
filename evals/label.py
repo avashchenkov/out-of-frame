@@ -87,7 +87,7 @@ def format_label(map_object: MapObject, tolerance_m: int) -> list[str]:
     """A label to fill in, with what the agent sees of the object as comments."""
     seen = " | ".join(map_object.map_text().splitlines())
     return [
-        f"  # {map_object.distance_from_property_m:.0f} m: {seen}",
+        f"  # {map_object.rounded_distance_m()} m: {seen}",
         "  - id: TODO",
         f"    object_id: {map_object.id}",
         f"    category: {map_object.details['category']}",

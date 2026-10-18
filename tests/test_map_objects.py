@@ -59,7 +59,7 @@ def test_one_query_gets_the_nearest_objects_of_every_category(monkeypatch):
         "road_rail": MAP_OBJECTS_PER_CATEGORY,
         "wastewater": 1,
     }
-    industry = [o.distance_from_property_m for o in objects if o.details["category"] == "industry"]
+    industry = [o.rounded_distance_m() for o in objects if o.details["category"] == "industry"]
     assert industry == [95, 118, 217, 314, 343]  # the nearest, nearest first
     assert "around:1500," in query and '["landuse"="industrial"]' in query
     assert '["highway"~"^(motorway|trunk)$"]' in query

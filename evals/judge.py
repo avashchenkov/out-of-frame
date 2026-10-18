@@ -1,6 +1,7 @@
 """Run the agent on a first message that completes the input, and grade its report with the
-three LLM judges of docs/eval-architecture.md#llm-judges. The judges are not calibrated until
-roadmap step 10, so their grades are printed and saved, never quoted.
+three LLM judges of docs/eval-architecture.md#llm-judges. TODO: check the judges' versions
+against evals/calibration/passed.yaml; until then their grades are saved as uncalibrated, never
+quoted.
 
 The run is saved before the judges start, so that a saved run can be judged again without
 running the agent. Run with the keys in .env:
@@ -34,7 +35,7 @@ from evals.graders.judges import (
 )
 from evals.load import EVALS
 from out_of_frame import agent, cli, prices
-from out_of_frame.config import JUDGE_MODEL, MODEL
+from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL, MODEL
 from out_of_frame.investigation import Context
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.record import Record
@@ -106,6 +107,7 @@ def judge_run(saved: dict, run_file: Path) -> tuple[dict, Path]:
         "run": run_file.name,
         "run_sha256": hashlib.sha256(run_file.read_bytes()).hexdigest(),
         "judge_model": JUDGE_MODEL,
+        "judge_effort": JUDGE_EFFORT,
         "rubrics_sha256": {
             name: hashlib.sha256((folder / name).read_bytes()).hexdigest() for name in RUBRICS
         },

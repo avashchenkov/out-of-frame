@@ -39,7 +39,7 @@ def test_the_nearest_plans_within_the_radius_are_kept_nearest_first(monkeypatch)
     # Six plans reach into the 500 m circle; the sixth, VIII-250 at 416 m, is over the limit
     # of five. The WFS returns three more whose shapes lie outside the circle, such as VII-A
     # at 1289 m.
-    assert [(plan.name, plan.distance_from_property_m) for plan in found] == [
+    assert [(plan.name, plan.rounded_distance_m()) for plan in found] == [
         ("Bebauungsplan VIII-129", 217),
         ("Bebauungsplan VIII-286", 228),
         ("Bebauungsplan 5-1VE", 264),
@@ -58,7 +58,7 @@ def test_the_plans_outside_the_circle_are_dropped(monkeypatch):
         "Bebauungsplan VIII-145",
         "Bebauungsplan VIII-250",
     ]
-    assert max(plan.distance_from_property_m for plan in found) == 416  # not VII-A at 1289 m
+    assert max(plan.rounded_distance_m() for plan in found) == 416  # not VII-A at 1289 m
 
 
 def test_a_plan_keeps_its_legal_status_and_what_it_allows(monkeypatch):

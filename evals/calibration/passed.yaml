@@ -1,21 +1,24 @@
-no_verdict:
-  checked: '2026-10-17'
+support:
+  checked: '2026-10-18'
   judge_model: claude-haiku-5-5
+  judge_effort: xhigh
+  set_sha256: 03dce37ff19ce8a46b767698b74263ce372b3db6db41c35117a5c0115db2b4fd
+  faulty_answers: 9
+  other_answers: 10
+  disagreements: 0
+interpretation:
+  checked: '2026-10-18'
+  judge_model: claude-haiku-5-5
+  judge_effort: xhigh
+  set_sha256: 807c48fc582b948446fd9992795c352dbcbd8e1cc4c146313ab3901149a753b9
+  faulty_answers: 7
+  other_answers: 53
+  disagreements: 0
+no_verdict:
+  checked: '2026-10-18'
+  judge_model: claude-haiku-5-5
+  judge_effort: xhigh
   set_sha256: e4c264e62c072fe08480cf639820c13f3762846dc06787c679601652068bd993
   faulty_answers: 1
   other_answers: 14
-  disagreements: 0
-interpretation:
-  checked: '2026-10-17'
-  judge_model: claude-haiku-5-5
-  set_sha256: 9f9c13f101122a34e1ef5f91b30e19df6c781e40878a88e1f16a16f3b13591d8
-  faulty_answers: 7
-  other_answers: 53
-  disagreements: 1
-support:
-  checked: '2026-10-17'
-  judge_model: claude-haiku-5-5
-  set_sha256: 2bc46dcc00cf767c9acae4922b308806efc285aa3a86eb1e89bc0bac2f6e2b3c
-  faulty_answers: 8
-  other_answers: 11
   disagreements: 1

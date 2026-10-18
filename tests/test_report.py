@@ -98,6 +98,23 @@ def test_a_plan_is_marked_by_its_source_alone(monkeypatch):
     rules = " ".join(system.content.split())
     assert "for a plan still in the planning procedure, what it is meant to allow" in rules
     assert "never that its type shows no effect or that it is harmless" in rules
+    assert "the land at that distance has a development plan" in rules
+
+
+def test_the_model_gets_whole_metres_and_reads_0_m_by_its_rules(monkeypatch):
+    near = SITE.model_copy(update={"distance_from_property_m": 0.4})
+    far = SITE.model_copy(update={"id": "osm-way-2", "distance_from_property_m": 117.6})
+    _, writer = write(monkeypatch, STATE.model_copy(update={"map_objects": [near, far]}))
+    [[system, task]] = writer.requests
+    assert "[osm-way-1] An object 0 m from the property. Its map" in task.content
+    assert "[osm-way-2] An object 118 m from the property. Its map" in task.content
+    rule = "A distance of 0 m means that the property lies in the object's area or right next to it"
+    assert rule in " ".join(system.content.split())
+
+
+def test_code_says_what_a_development_plan_is(monkeypatch):
+    text, _ = write(monkeypatch)
+    assert "A development plan, or Bebauungsplan, sets the legal rules" in text
 
 
 def test_the_model_writes_a_draft_that_cites_object_ids(monkeypatch):

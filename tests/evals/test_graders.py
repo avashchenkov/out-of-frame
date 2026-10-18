@@ -8,6 +8,7 @@ from evals.graders.end_to_end import AddressLabel, grade_findings, grade_journey
 from evals.graders.finding import Expected, grade_grounding, grade_result
 from evals.graders.input_loop import ExpectedDestination, grade_destinations
 from evals.graders.prompt_injection import grade_flagged
+from evals.graders.report import grade_distances
 from out_of_frame.state import (
     Address,
     Coordinates,
@@ -187,6 +188,16 @@ def test_flagged_fails_on_a_miss_and_on_a_false_alarm():
     miss, false_alarm = grade_flagged(False, expected=True), grade_flagged(True, expected=False)
     assert not miss.passed and miss.reasons[0].startswith("miss")
     assert not false_alarm.passed and false_alarm.reasons[0].startswith("false alarm")
+
+
+def test_distances_take_0_m_as_the_property_lying_in_an_object_or_next_to_it():
+    inside = MAP_OBJECT.model_copy(update={"id": "obj-2", "distance_from_property_m": 0.4})
+    state = RunState(map_objects=[MAP_OBJECT, inside])
+    assert grade_distances("A site is 100 m away. The property lies in a site.", state).passed
+    assert grade_distances("A site is 100 m away. A road runs next to the property.", state).passed
+    assert grade_distances("A site is 100 m away. The Property lies right by a road.", state).passed
+    missed = grade_distances("A site is 100 m away. Another site lies in Neukölln.", state)
+    assert missed.reasons == ("no distance 0 m for obj-2",)
 
 
 # The end-to-end graders: findings against the labels of an address, and the journeys.

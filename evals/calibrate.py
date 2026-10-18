@@ -4,10 +4,11 @@ docs/eval-architecture.md#llm-judges.
 form writes a judge's examples as the judge sees them, without their grades, for the graders.
 stamp records, once the grades are written, what each example's grades follow: the rubric, the
 research scope, and the judge's prompt with its answer schema. check refuses a set whose prompts
-have changed since, runs the judge on it and compares its answers with the grades, answer by
-answer. A judge passes if it catches every faulty answer and disagrees on at most two of the
-others; then its model and set are recorded in evals/calibration/passed.yaml, which
-evals/run.py reads.
+have changed since, runs the judge on it three times and compares its answers with the grades,
+answer by answer: an answer agrees only if all three trials give it. A judge passes if it
+catches every faulty answer and disagrees on at most two of the others; then its model, effort
+and set are recorded in evals/calibration/passed.yaml. TODO: evals/run.py runs a judge only
+if its version is recorded there.
 uv run python -m evals.calibrate form support
 uv run python -m evals.calibrate stamp support
 uv run --env-file .env python -m evals.calibrate check support
@@ -17,7 +18,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Literal
@@ -35,7 +36,7 @@ from evals.graders.judges import (
 )
 from evals.judge import RESEARCH_SCOPE
 from evals.load import EVALS
-from out_of_frame.config import JUDGE_MODEL
+from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL
 from out_of_frame.record import Record
 from out_of_frame.report import CITATION
 from out_of_frame.state import RunState
@@ -55,6 +56,7 @@ SCHEMAS = {
 }
 QUESTIONS = ["explains_meaning", "lists_unclear_objects", "tells_failures", "fits_type"]
 DISAGREEMENTS_ALLOWED = 2
+TRIALS = 3  # an answer agrees only if every trial gives it: a run of the agent asks once
 
 type JudgeName = Literal["support", "interpretation", "no_verdict"]
 
@@ -193,6 +195,15 @@ def ask_judge(judge: JudgeName, example: Example) -> Record:
     return judges.judge_no_verdict(example.draft)
 
 
+def ask_judge_safely(judge: JudgeName, example: Example) -> tuple[Record | None, dict]:
+    """The judge's grade, or none if it failed, with what is saved of it."""
+    try:
+        grade = ask_judge(judge, example)
+    except JudgeError as error:
+        return None, {"error": str(error)}
+    return grade, grade.model_dump()
+
+
 def compare(n: int, example: Example, grade: Record | None) -> list[Answer]:
     """The judge's answers against the example's grades. A grade of unknown is left out: the
     rubric does not settle it. A judge's error, or its unknown, never agrees."""
@@ -220,6 +231,13 @@ def compare(n: int, example: Example, grade: Record | None) -> list[Answer]:
 def normalise(grade: str) -> str:
     """Supported or not: the metrics count unsupported and contradicted together."""
     return grade if grade in ("supported", "unknown", "error") else "not supported"
+
+
+def settle(trials: list[Answer]) -> Answer:
+    """The answer that every trial gave; if they differ, one that never agrees, since a run of
+    the agent asks the judge once, and that one answer must be one to trust."""
+    given = {a.got for a in trials}
+    return replace(trials[0], got=given.pop() if len(given) == 1 else "split")
 
 
 def decide(answers: list[Answer]) -> tuple[bool, list[Answer], list[Answer]]:
@@ -271,14 +289,10 @@ def check(judge: JudgeName) -> bool:
     check_prompts(judge, graded)
     grades, answers = [], []
     for n, example in enumerate(graded.examples, 1):
-        try:
-            grade = ask_judge(judge, example)
-        except JudgeError as error:
-            grade, saved = None, {"error": str(error)}
-        else:
-            saved = grade.model_dump()
-        grades.append(saved)
-        answers += compare(n, example, grade)
+        trials = [ask_judge_safely(judge, example) for _ in range(TRIALS)]
+        grades.append([saved for _, saved in trials])
+        compared = [compare(n, example, grade) for grade, _ in trials]
+        answers += [settle(list(same)) for same in zip(*compared, strict=True)]
     passed, missed, disagreed = decide(answers)
     now = f"{dt.datetime.now(dt.UTC):%Y-%m-%dT%H-%M-%S-%fZ}"
     out = RESULTS / f"{now}-calibration-{judge}-grades.json"
@@ -290,6 +304,7 @@ def check(judge: JudgeName) -> bool:
         record[judge] = {
             "checked": dt.date.today().isoformat(),
             "judge_model": JUDGE_MODEL,
+            "judge_effort": JUDGE_EFFORT,
             # with its prompts' hashes, which evals/run.py checks against the prompts now
             "set_sha256": hashlib.sha256(content).hexdigest(),
             "faulty_answers": sum(a.faulty for a in answers),

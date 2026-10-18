@@ -55,8 +55,12 @@ class MapObject(Record):
     details: dict[str, str]  # the category and the source's own fields, such as landuse=industrial
     addresses: list[str]
     coordinates: Coordinates  # for an area or a line, the centre of its bounds
-    distance_from_property_m: float  # to the object's nearest edge
+    distance_from_property_m: float  # to the object's nearest edge, 0 inside a plan or closed way
     source_id: str  # the ID of the Source: the map or plan response the object comes from
+
+    def rounded_distance_m(self) -> int:
+        """The distance in whole metres, as the report, the judges and the graders give it."""
+        return round(self.distance_from_property_m)
 
     def map_text(self) -> str:
         """The object's own data as text: its name, details and addresses. The category is left

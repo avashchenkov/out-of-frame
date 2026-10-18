@@ -164,14 +164,15 @@ def describe_journey(journey: Journey) -> str:
 
 
 def describe_scope() -> str:
-    """Which kinds of objects the report covers, from the research scope, so that the model
-    never has to say it."""
+    """Which kinds of objects the report covers, from the research scope, and what a
+    development plan is, so that the model never has to say it and no judge grades it."""
     categories = [c for c in research_scope.load().categories if c.source == "overpass"]
     kinds = [c.name[0].lower() + c.name[1:] for c in categories]
     return (
         f"The report covers the nearest {MAP_OBJECTS_PER_CATEGORY} objects of each kind it "
         f"checks: {'; '.join(kinds)}; and the nearest {PLANS} development plans in force or "
-        "in procedure."
+        "in procedure. A development plan, or Bebauungsplan, sets the legal rules for what may "
+        "be built in its area; one still in procedure is only a draft of them."
     )
 
 

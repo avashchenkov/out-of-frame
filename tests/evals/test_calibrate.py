@@ -88,6 +88,11 @@ def test_a_judge_passes_with_two_other_disagreements_and_no_missed_fault():
     assert not decide([Answer(2, "free_of_verdicts", "no", "yes"), other("yes")])[0]
 
 
+def test_an_answer_that_the_trials_split_on_never_agrees():
+    trials = [Answer(1, "supported", "supported", got) for got in ("supported",) * 2 + ("no",)]
+    assert calibrate.settle(trials).got != "supported"
+
+
 @pytest.fixture
 def no_verdict_set(tmp_path, monkeypatch):
     """A no verdict set of one faulty report and one clean one, in tmp_path, stamped."""
@@ -111,6 +116,21 @@ def no_verdict_set(tmp_path, monkeypatch):
 def stub_the_judge(monkeypatch, verdict: Reply):
     grade = NoVerdictGrade(reason="", free_of_verdicts=verdict)
     monkeypatch.setattr(judges, "judge_no_verdict", lambda draft: grade)
+
+
+def test_an_answer_agrees_only_if_every_trial_gives_it(no_verdict_set, monkeypatch):
+    first: list[Reply] = ["no", "no", "no", "yes", "no", "yes"]  # three for each report
+    second: list[Reply] = ["no", "yes", "no", "yes", "yes", "yes"]  # for a second check
+    replies = iter(first + second)
+
+    def grade(draft):
+        return NoVerdictGrade(reason="", free_of_verdicts=next(replies))
+
+    monkeypatch.setattr(judges, "judge_no_verdict", grade)
+    assert calibrate.check("no_verdict")  # the fault caught by every trial
+    passed = yaml.safe_load((no_verdict_set / "passed.yaml").read_text())
+    assert passed["no_verdict"]["disagreements"] == 1  # the clean report, split
+    assert not calibrate.check("no_verdict")  # the fault caught by two trials of three
 
 
 def test_a_judge_that_passes_has_its_version_recorded(no_verdict_set, monkeypatch):

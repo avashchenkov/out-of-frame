@@ -94,7 +94,8 @@ def find_question(graph, config: RunnableConfig) -> str | None:
 @cache
 def build_graph():
     """The graph, which keeps the state of each run in memory, so that a run can wait for the
-    user's answer and go on; a known MVP limitation, see docs/roadmap.md, step 7."""
+    user's answer and go on; a known MVP limitation: a run that stops is not continued once
+    the process has ended."""
     if INVESTIGATIONS_AT_ONCE < 2:  # a stream with its subgraphs takes one, see config.py
         raise ValueError("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE must be at least 2")
     builder = StateGraph(RunState, context_schema=Context)

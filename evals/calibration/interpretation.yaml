@@ -11,8 +11,14 @@
 # the judge sees it, without the other's grades or any judge's. They agreed on every answer.
 # On 2026-10-17 the same two graders, in the same way, graded 1 more: the report failures
 # that the roadmap notes and the trials did not show. They agreed on every answer.
+# On 2026-10-18, in roadmap step 10.6, question 2 also took "the property lies in its area or
+# right next to it" for an object at 0 m, as the report prompt asks now, and the judge sees
+# each distance rounded to whole metres. No example says so, and the runs here store whole
+# metres, so every grade stands. On the same day, after a check of three trials each, the
+# rubric also said that what a plan's data name is not a meaning, and that a status that
+# differs from the list counts under question 4 only, as the graders had answered.
 graded: '2026-10-17'
-rubric_sha256: dacc2f227f3d3c10cec60db11b6440c64d491d5624ff5fc51f1b06b660f88cbb
+rubric_sha256: 51f1351d3b5c163d37cbbe69dcc9ad30a841c822841ee08d06c17675dc7a2573
 research_scope_sha256: 75270290240f0a573aa6b47465eb651c55a98faf084dd2290c4cf21b212b1a17
 examples:
 - run: 2026-10-12T01-51-48-538796Z-run.json
@@ -38,7 +44,7 @@ examples:
     fits_type:
       answer: 'yes'
       reason: No effect on people nearby fits the type commercial.
-  prompt_sha256: d42cdd61365ea7c7a01d449c0e86d54059829471b5a4af74cf4490a8c9f74e0c
+  prompt_sha256: 24959eaeafd2dcf884c018b2a93163452d090c6aee819bcdf5d9bb75b517accb
 - run: 2026-10-12T01-46-31-102269Z-run.json
   run_sha256: fd9a5e50375505bb531022820ede71593de7b3e15c46717aba1f8ac91b2f2491
   draft: 'Klärwerkstraße 1 and 1A lie about 118 m from the property, on land the map data marks as industrial
@@ -64,7 +70,7 @@ examples:
     fits_type:
       answer: 'yes'
       reason: No effect on people nearby fits the type commercial.
-  prompt_sha256: 1c0ccc8c84054580d786aca0ecfcb7d920d17fb276f0016b3bf8fd03d6407438
+  prompt_sha256: 70e9ff2a1a384005b9c74e9a95b41af4288e2d88ecfe428948050d72bc8b254e
 - run: 2026-10-12T01-45-18-783505Z-run.json
   run_sha256: c4181c1bcfe8e2a67ca5ee8f04ed583741eec92f650d5cd4a67024e21b0e8f5c
   draft: The map source failed after its retries, so this part of the report is missing. No objects near
@@ -83,7 +89,7 @@ examples:
     fits_type:
       answer: 'yes'
       reason: No object, so no meaning.
-  prompt_sha256: 8bb379a7deb065e7aa0baeac9029c5710297b5ae623cdc320179f6748cf061a4
+  prompt_sha256: 8e327bdf5526600954bff32d194d2d67a71b6edd8b481dc9f6554ad5cd73eeda
 - run: 2026-10-16T19-30-29-212120Z-run.json
   run_sha256: 05583cfc22d182d0fb1b89697b7b8f7bf8701190fb59dcdab644ff52097383b9
   draft: 'A main railway line is 67 m away and in use. Trains on it can bring noise and vibration to people
@@ -167,7 +173,7 @@ examples:
       answer: 'yes'
       reason: Effects match plant, wastewater plant and railway for operating objects; plans with status
         not known say building start is unknown; unidentified objects get no meaning.
-  prompt_sha256: bc6e75ee941a4e518cce6cf66c0a6510859a731a196faec29ea51d20f2b00ae0
+  prompt_sha256: 5fcca43d98fdd91853a37ee3bb86096fe80138a8260b1b3bdbadd2ecc418c009
 - run: 2026-10-16T19-43-03-265074Z-run.json
   run_sha256: 97579cf313839f11fe8d5820d826007ac4e77229dc6e0a09bc02f26ebaacddce
   made_faulty: 'The last plan that could not be identified, XV-51j, is left out of the end list: lists_unclear_objects
@@ -232,7 +238,7 @@ examples:
       answer: 'yes'
       reason: Effects fit plant, production, wastewater plant and airport in use; the other-type plans
         get no effect; unidentified plans XV-18 and XV-51k get no meaning.
-  prompt_sha256: 68524d192c644cb5001c8056235e6f97f8e0835bbf9b48eeafce747a2fc28613
+  prompt_sha256: f454407369905dda944874e343b541da454d000032f071e4c6ca09dac87a3602
 - run: 2026-10-16T19-33-35-402940Z-run.json
   run_sha256: 33c1a48da4d6c929afae39ef66600fe45839e942cd3279f64c38348bb874e6f8
   draft: 'A factory run by Philip Morris GmbH is 74 m away. It is closed. Its last production day in Berlin
@@ -308,7 +314,7 @@ examples:
       answer: 'yes'
       reason: Every meaning fits its type and status, including 'brings no noise or delivery traffic'
         for the closed production site.
-  prompt_sha256: 68cf127cacb83f942ed9d38acfd56d505460a6a98c3a7a55561f00dcb930f4c5
+  prompt_sha256: 71acbb4a28900d8a5849b1d19d4b72b0da54fba1df2ec29da9a135c9e9cdf078
 - run: 2026-10-16T19-37-06-090821Z-run.json
   run_sha256: 6eaad664d5994f6b1ed03f56961d1c22e4ef9208630da7e81cbe8392aba95b47
   made_faulty: 'The pumping station, of type other, is said to show no effect by its type: fits_type is
@@ -379,7 +385,7 @@ examples:
     fits_type:
       answer: 'no'
       reason: 'For Pumpwerk Stralau, of type other: ''Its type alone shows no effect on people nearby.'''
-  prompt_sha256: d55f05774adb90fc5d2abfd9d44dd9dba6ccac16eb43f9dfa0333954792db842
+  prompt_sha256: 9534280cf3dc9417c7fd957c46ac2607f9067fc637e313992f619c98d201b393
 - run: 2026-10-16T19-39-54-526460Z-run.json
   run_sha256: dcd497654b9b2e99ea76a201dcfd245e3c45ebdcd10a77c5a2b5959fe7ef04c2
   draft: 'The airport is 3380 m away and is in use. It is Berlin Brandenburg Airport. It can bring aircraft
@@ -433,7 +439,7 @@ examples:
       answer: 'yes'
       reason: '''Building has not started there yet'' fits the planned status of 0915025-1 and is not
         given as following from the procedure; other meanings fit.'
-  prompt_sha256: 28f96d26b8c54c854f3eae66b74609d7e9bdc6362f2fd6522510dc59eeec4457
+  prompt_sha256: fbb62413d5ea932838fefea479de08e4642b251aaa3ca1e82c70e5ad1261777d
 - run: 2026-10-16T19-33-35-402940Z-run.json
   run_sha256: 33c1a48da4d6c929afae39ef66600fe45839e942cd3279f64c38348bb874e6f8
   made_faulty: 'The Verbindungsbahn, a railway in use, loses what it can mean for people nearby: explains_meaning
@@ -508,7 +514,7 @@ examples:
     fits_type:
       answer: 'yes'
       reason: Every meaning given fits its type and status; a missing effect is not a misfit.
-  prompt_sha256: 524a33629f1eeed55db6c9537a62141f098f3b19682bbfed4c4b5224b58f386e
+  prompt_sha256: c67ba4a107bb029c7288015605f7158d17e028d54d03b11e96a85ee5c663330c
 - run: 2026-10-16T19-37-06-090821Z-run.json
   run_sha256: 6eaad664d5994f6b1ed03f56961d1c22e4ef9208630da7e81cbe8392aba95b47
   draft: 'A planned motorway, the A 100, is 145 m away. It is planned and not yet built. Once in use,
@@ -578,7 +584,7 @@ examples:
       answer: 'yes'
       reason: The planned motorway gets what it can bring once in use; the other-type pumping station
         gets no effect; commercial V-13 gets no effect.
-  prompt_sha256: 8bbc8909ffa17a9d95b54ffa6e41a403eed0f2cd42f81bdc2ad9cecee608b7f9
+  prompt_sha256: 043549132b063c7eea18b0119d3bb83663c0514297e7e83531fd0d67d5deb261
 - run: 2026-10-16T19-39-54-526460Z-run.json
   run_sha256: dcd497654b9b2e99ea76a201dcfd245e3c45ebdcd10a77c5a2b5959fe7ef04c2
   made_faulty: 'A verdict on buying is added at the end: free_of_verdicts is no.'
@@ -636,7 +642,7 @@ examples:
       answer: 'yes'
       reason: Every object's meaning fits its type and status; the closing verdict is about no single
         object.
-  prompt_sha256: cc7b905e01682192f974294bd73fa8f94a49b2bcb012c846418ee6633e44bb48
+  prompt_sha256: bb3d770b2239c87e9381edb1000c616a5f0451c7d046dde76e27ed3a65de2e9e
 - run: 2026-10-16T19-43-03-265074Z-run.json
   run_sha256: 97579cf313839f11fe8d5820d826007ac4e77229dc6e0a09bc02f26ebaacddce
   draft: 'A heating and power plant is 141 m away. It is in use. It burns gas to make electricity and
@@ -704,7 +710,7 @@ examples:
       answer: 'yes'
       reason: Effects fit the plant, production sites, wastewater plant and airport in use; the unidentified
         plans get no meaning.
-  prompt_sha256: 07dd6d4d0c7d3fe5a20ab8f8874df187f3fb79f75d5f41f820ce1d9d637c1c8d
+  prompt_sha256: 99070cc8fd816c072e41830b7fdb09e9d2f8555ce0e846515334a8c5985e481e
 - run: 2026-10-16T19-30-29-212120Z-run.json
   run_sha256: 05583cfc22d182d0fb1b89697b7b8f7bf8701190fb59dcdab644ff52097383b9
   made_faulty: 'Plan VIII-286 is said not to be built on because it is in the procedure, its legal status
@@ -791,7 +797,7 @@ examples:
       reason: 'For unidentified VIII-286: ''Building has not started there yet, since it is still in the
         planning procedure.'' gives the legal status as the reason building has not started and treats
         an unknown status as known.'
-  prompt_sha256: 22f82c2a6aa2362a70b43d017e0748fbb16ca2485b6e1645cee71770f1b94fd0
+  prompt_sha256: 3ca914989a0af65b59bc68b0cb74c10d11dd4194ee87e6e24b9e38536f3e92f2
 - run: 2026-10-12T01-48-03-733193Z-run.json
   run_sha256: 4082220addfef5d7cee33fc21f9bfae1c907fa033610e33287d64f9e8334e54c
   made_faulty: 'Where the map failed, the report says that nothing was found: tells_failures is no.'
@@ -811,7 +817,7 @@ examples:
     fits_type:
       answer: 'yes'
       reason: No object is given a meaning.
-  prompt_sha256: 4c417b491eed02b0f0a3336af20ad1f15721374b741550918aa913aa7395e2df
+  prompt_sha256: e7accb4b4bc4a1ce9890bd815410011016ed5a23346b357325c488d9575ecded
 - run: 2026-10-16T19-30-29-212120Z-run.json
   run_sha256: 05583cfc22d182d0fb1b89697b7b8f7bf8701190fb59dcdab644ff52097383b9
   made_faulty: 'A railway that its finding found in use is said to be not known to be in use: fits_type
@@ -898,4 +904,4 @@ examples:
       answer: 'no'
       reason: 'osm-way-295391379 has status operating in the list, but the report gives it as not known:
         ''It is not known whether it is in use. Once in use, ...'''
-  prompt_sha256: 2598dce6512bf381427ed4f57c5e935cdfecb775e7713e235dc76d417f0412f4
+  prompt_sha256: 0f4fc4e35503279061b400c9e3d0bc7ef193ed6279036f6f1ba3df9c56e5ba75

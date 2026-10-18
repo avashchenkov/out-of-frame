@@ -193,7 +193,7 @@ def build_map_object(
         details=tags | {"category": category},
         addresses=[],
         coordinates=find_centre(element),
-        distance_from_property_m=round(measure_distance_m(origin, element)),
+        distance_from_property_m=measure_distance_m(origin, element),
         source_id=source_id,
     )
 

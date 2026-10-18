@@ -234,19 +234,29 @@ calibration.
        the judge sees it, and the person settles what they disagree on; only then do the judges
        run on them, and a script checks each judge version against the grades. A judge that
        still fails after two changes of its rubric is left out, with its axis.
-    6. Fix what the person found wrong for the reader, reading the five reports of 10.4 as a
-       user does. "A development plan is 190 m away" reads as a paper at that distance: the
+    6. ✅ Fix what the person found wrong for the reader, reading the five reports of 10.4 as
+       a user does. "A development plan is 190 m away" reads as a paper at that distance: the
        report says instead that the land at that distance has a development plan. What such a
        plan is, the city's rules for what may be built there, code adds once after the draft,
-       as it adds what the report covers, so no judge grades a definition. For any object at
-       0 m, such as a plan or the industrial area around the property, the report says that
-       the property lies in its area, and the distance check accepts that. Code tests; live
-       runs at E2 and E4, where the property lies in a plan's area, with the three judges run
-       on them, and the person reads one report.
+       as it adds what the report covers, so no judge grades a definition. Code keeps each
+       distance exact and rounds it to whole metres wherever it is shown; the prompt reads 0 m
+       as the property lying in the object's area, such as a plan or the industrial area around
+       it, or right next to it. A plan that could not be identified goes at the end, like any
+       such object. The distance check and the support and interpretation rubrics accept that
+       wording, and both judges are calibrated again. A judge's answers varied from one check
+       to the next on the same prompts, so the check now asks three times and counts an answer
+       as agreeing only if every trial gives it, and every judge is checked again. The person
+       settled what the judges then disagreed on: a company's name with the city alone, such as
+       its Berlin plant, does not name a site, in the finding prompt as in the support rubric,
+       and three rubric lines say what the graders had meant. The faults the judges still
+       missed in one trial of three were lapses of attention, so they think at xhigh effort,
+       recorded with their model. Code tests; live runs at E2 and E4, where the property lies in
+       a plan's area, with the three judges run on them, and the person reads one report.
     7. The full run: every MVP task, three trials each. evals/run.py runs a judge only if the
-       calibration script has recorded that its version passed: the support judge on the
-       end-to-end suite, and the interpretation and no verdict judges on it and on the report
-       suite.
+       calibration script has recorded that its version passed, with the judge model and effort
+       of the run, the set as it is now and the prompts it was stamped with: the support judge
+       on the end-to-end suite, and the interpretation and no verdict judges on it and on the
+       report suite.
     8. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
     9. The results in docs/results.md: each suite's scores, its failures, the known

@@ -197,9 +197,10 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
 3. **Report.** Unidentified and not investigated objects are not removed; they are listed at
    the end. Code fills in the references (see [Grounding](#grounding)) and adds the journeys:
    each with its destination, direction, the time the user leaves and mean duration, or why
-   it has none. They are plain data, so no model writes them. Code also adds the credits the licences require:
-   "© OpenStreetMap contributors" with its link, and a link to the Transitous sources page if
-   there are journeys.
+   it has none. They are plain data, so no model writes them. Code also adds which kinds of
+   objects the report covers and what a development plan is, and the credits the licences
+   require: "© OpenStreetMap contributors" with its link, and a link to the Transitous sources
+   page if there are journeys.
 
 ## The state
 

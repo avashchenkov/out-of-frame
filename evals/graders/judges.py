@@ -2,7 +2,8 @@
 interpretation and no verdict. Each grades the report's draft, the model's own text before
 code fills in its references, in a model call of its own, by its rubric in a template here.
 
-Their grades are not quoted until the judges pass calibration in roadmap step 10.
+Their grades are quoted only for a judge version that passed calibration, see
+evals/calibrate.py.
 """
 
 import datetime as dt
@@ -18,7 +19,7 @@ from langchain_core.messages import HumanMessage
 from pydantic import Field
 
 from out_of_frame import research_scope
-from out_of_frame.config import JUDGE_MODEL
+from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL
 from out_of_frame.grounding import collect_cited_page
 from out_of_frame.record import Record
 from out_of_frame.report import CITATION, find_plans, find_reported_failures
@@ -216,10 +217,11 @@ def ask[T: Record](schema: type[T], prompt: str) -> T:
 @cache
 def build_judge_model(schema: type[Record]):
     """The judge model with native structured output, so that it can think before it answers,
-    as in out_of_frame.prompt_injection."""
-    return ChatAnthropic(model=JUDGE_MODEL).with_structured_output(
-        schema, method="json_schema", include_raw=True
+    as in out_of_frame.prompt_injection, with room for that thinking."""
+    model = ChatAnthropic(
+        model=JUDGE_MODEL, output_config={"effort": JUDGE_EFFORT}, max_tokens_to_sample=16_000
     )
+    return model.with_structured_output(schema, method="json_schema", include_raw=True)
 
 
 def read_answer(answer):

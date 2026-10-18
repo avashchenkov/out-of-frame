@@ -20,10 +20,14 @@ def grade_citations(draft: str, state: RunState) -> Grade:
 
 
 def grade_distances(draft: str, state: RunState) -> Grade:
-    """Each object's distance is in the draft as given, such as 118 m."""
+    """Each object's distance is in the draft as given, such as 118 m, or at 0 m, that the
+    property lies in the object's area or right next to it."""
     reasons = []
     for map_object in state.map_objects:
-        distance = int(map_object.distance_from_property_m)
-        if not re.search(rf"(?<![\d.,]){distance}\s?m\b", draft):
+        distance = map_object.rounded_distance_m()
+        given = rf"(?<![\d.,]){distance}\s?m\b"
+        if distance == 0:
+            given += r"|\bproperty lies\b|\bnext to the property\b"
+        if not re.search(given, draft, re.IGNORECASE):
             reasons.append(f"no distance {distance} m for {map_object.id}")
     return Grade("distances", not reasons, tuple(reasons))
