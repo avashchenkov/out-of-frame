@@ -252,7 +252,7 @@ calibration.
        missed in one trial of three were lapses of attention, so they think at xhigh effort,
        recorded with their model. Code tests; live runs at E2 and E4, where the property lies in
        a plan's area, with the three judges run on them, and the person reads one report.
-    7. The full run: every MVP task, three trials each.
+    7. ✅ The full run: every MVP task, three trials each.
        - A judge runs only if the calibration script has recorded that its version passed,
          with the judge model and effort of the run, the set as it is now and the prompts its
          examples were stamped with, which need the saved runs in local results. evals/run.py
@@ -274,13 +274,43 @@ calibration.
        - The end-to-end suite shows the query for the addresses of the objects to investigate
          next to the research branches, as failed when Overpass failed on it: the objects are
          then investigated without addresses, and nothing is added to `failures`, so a trial
-         graded on its state alone does not show it.
-       - Code tests; then every suite with its part, three trials per task. Claude sorts each
-         failure by its cause: the agent, a label or a judge. The person decides what is fixed
-         before the results; the rest goes into them.
-    8. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
+         graded on its state alone does not show it. The public Overpass instance failed on
+         it when it was busy, in the evening, so the end-to-end runs try each call to a source
+         five times, a run setting.
+       - Code tests; then every suite with its part, three trials per task: first the component
+         suites, then one end-to-end task, then the others. Claude sorted each failure by its
+         cause, the agent, a label or a judge, and Codex gave a second opinion. Three labels
+         contradicted the agent's own rules: two E2 sites without a type had a status, which no
+         finding can give, so their status is null now; plan 5-1VE needs a page about the
+         address that its own data name, which the finding prompt does not count yet, a fix of
+         8. The person settled the arguable labels by their evidence: V-13 is commercial, for
+         its core area; XV-19, XV-23 and Bergiusstraße 21 stay. The judges' findings were the
+         agent's faults. The runs stay the baseline, graded again by code against the changed
+         labels.
+    8. Fix the largest general failures of the full run, each by a rule that holds at any
+       address, never for one task. Before each change, Claude reads the failing runs for the
+       cause, and the person settles the change. In this order:
+       - A plan whose own data name its uses gets its type from them: other where none fits a
+         listed type, such as homes or a park, not unidentified.
+       - A name that says what an object is, against its map tag, such as a rainwater filter
+         tagged as a wastewater plant, is a conflict that the map data alone cannot settle.
+       - A page about what a site was, such as the factory it once housed, does not settle what
+         it is now.
+       - A page about the address that a plan's own data name is about that plan, so that it
+         can show whether building has started there.
+       - A use that a plan's own documents allow, such as a petrol station in a business area,
+         counts for its type.
+       - The report never gives a plan's legal status as the reason that building has or has
+         not started.
+       After each change, the tasks it touches run again, and the component suites, which must
+       still pass; the full run of 7 stays the baseline, and the results give both, with each
+       change. Known limitations, not fixed: whether trains still run on a line that the map
+       tags as in use, an unnamed site whose page no search finds, and a site that several
+       businesses share.
+    9. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
-    9. The results in docs/results.md: each suite's scores, its failures, the known
+    10. The results in docs/results.md: each suite's scores before and after the fixes of 8,
+       its failures, the wrong claims apart from the objects left unidentified, the known
        limitations above, the labels left out because of the search limits that the
        [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found, and the cost
        of the one-page rule in the end-to-end scores. The
