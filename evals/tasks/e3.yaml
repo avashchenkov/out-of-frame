@@ -162,16 +162,18 @@ expected:
       source_url: https://meinbezirk.app/berlin/friedrichshain-kreuzberg/karte/ds-1981-vi
       search: Bebauungsplan 2-56E Modersohnstraße Markgrafendamm
     # 217 m: Bebauungsplan V-13, In Kraft getreten in 2006; inhalt: Mischgebiet, Kerngebiet,
-    # Gemeinbedarf (youth centre), a park, roads. A mixed area allows housing, which has no
-    # listed type, and nothing named affects people nearby more, so other. Its reasons of 2006
-    # do not show what is built now, so the status is null. The page is linked in its WFS
-    # fields (grund_www).
+    # Gemeinbedarf (youth centre), a park, roads. A core area, Kerngebiet, is by law mainly for
+    # shops, offices and administration, which is commercial, and a plan is other only if
+    # nothing it allows fits a listed type; nothing else named affects people nearby more, so
+    # commercial. On 2026-10-18 the person changed it from other, which had left out the core
+    # area. Its reasons of 2006 do not show what is built now, so the status is null. The page
+    # is linked in its WFS fields (grund_www).
     - id: plan-v-13
       object_id: bplan-0205013
       category: planned_objects
       coordinates: {lat: 52.49784925, lon: 13.467849775000001}
       distance_tolerance_m: 50
-      identified_type: other
+      identified_type: commercial
       status: null
       source_url: https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/aemter/stadtentwicklungsamt/vermessung/begruendungen/0205013.pdf
       search: null
