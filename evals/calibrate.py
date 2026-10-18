@@ -7,8 +7,8 @@ research scope, and the judge's prompt with its answer schema. check refuses a s
 have changed since, runs the judge on it three times and compares its answers with the grades,
 answer by answer: an answer agrees only if all three trials give it. A judge passes if it
 catches every faulty answer and disagrees on at most two of the others; then its model, effort
-and set are recorded in evals/calibration/passed.yaml. TODO: evals/run.py runs a judge only
-if its version is recorded there.
+and set are recorded in evals/calibration/passed.yaml. evals/run.py and evals/judge.py run the
+judges only if check_calibrated finds each one's version recorded there.
 uv run python -m evals.calibrate form support
 uv run python -m evals.calibrate stamp support
 uv run --env-file .env python -m evals.calibrate check support
@@ -28,13 +28,14 @@ from pydantic_core import to_jsonable_python
 
 from evals.graders import judges
 from evals.graders.judges import (
+    RESEARCH_SCOPE,
+    RUBRICS,
     InterpretationGrade,
     JudgeError,
     NoVerdictGrade,
     Statement,
     SupportGrade,
 )
-from evals.judge import RESEARCH_SCOPE
 from evals.load import EVALS
 from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL
 from out_of_frame.record import Record
@@ -44,11 +45,6 @@ from out_of_frame.state import RunState
 CALIBRATION = EVALS / "calibration"
 RESULTS = EVALS / "results"
 PASSED = CALIBRATION / "passed.yaml"
-RUBRICS = {
-    "support": "support.md.j2",
-    "interpretation": "interpretation.md.j2",
-    "no_verdict": "no_verdict.md.j2",
-}
 SCHEMAS = {
     "support": SupportGrade,
     "interpretation": InterpretationGrade,
@@ -159,6 +155,46 @@ def check_prompts(judge: JudgeName, graded: CalibrationSet) -> None:
                 f"the {judge} judge's prompt for example {n} is not the one it was graded by: "
                 "grade it again, then stamp the set"
             )
+
+
+def check_calibrated() -> None:
+    """Every judge is the version that passed calibration, see check_passed."""
+    every: list[JudgeName] = ["support", "interpretation", "no_verdict"]
+    for judge in every:
+        check_passed(judge)
+
+
+def check_passed(judge: JudgeName) -> None:
+    """The judge is the version recorded as passed: the judge model and effort of this run, the
+    set as it is now, and the prompts its examples were stamped with, which need their saved
+    runs in local results. A mismatch raises, so that a run stops before any paid call."""
+    record = yaml.safe_load(PASSED.read_text(encoding="utf-8")) if PASSED.exists() else None
+    passed = (record or {}).get(judge)
+    if passed is None:
+        raise ValueError(f"the {judge} judge has not passed calibration")
+    content = (CALIBRATION / f"{judge}.yaml").read_bytes()
+    changed = [
+        name
+        for name, now, then in [
+            ("judge model", JUDGE_MODEL, passed["judge_model"]),
+            ("judge effort", JUDGE_EFFORT, passed["judge_effort"]),
+            ("set", hashlib.sha256(content).hexdigest(), passed["set_sha256"]),
+        ]
+        if now != then
+    ]
+    if changed:
+        raise ValueError(
+            f"the {judge} judge differs in its {', '.join(changed)} from the version that "
+            "passed calibration: check it again"
+        )
+    graded = parse_set(judge, content.decode("utf-8"))
+    check_versions(judge, graded)
+    try:
+        check_prompts(judge, graded)
+    except FileNotFoundError as error:
+        raise ValueError(
+            f"the {judge} judge's prompts cannot be checked without {error.filename}"
+        ) from error
 
 
 def hash_prompt(judge: JudgeName, example: Example) -> str:

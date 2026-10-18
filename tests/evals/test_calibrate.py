@@ -196,3 +196,38 @@ def test_the_form_shows_each_example_as_the_judge_sees_it(no_verdict_set):
         f"## Example {n}\n\n{judges.write_no_verdict_prompt(draft)}"
         for n, draft in [(1, "Buy it."), (2, "A railway is 67 m away.")]
     )
+
+
+def test_a_judge_is_calibrated_as_the_version_that_passed(no_verdict_set, monkeypatch):
+    stub_the_judge(monkeypatch, "no")
+    assert calibrate.check("no_verdict")
+    calibrate.check_passed("no_verdict")
+
+
+@pytest.mark.parametrize("change", ["model", "effort", "set", "run file", "check"])
+def test_a_judge_that_is_not_the_version_that_passed_stops_a_run(
+    no_verdict_set, monkeypatch, change
+):
+    stub_the_judge(monkeypatch, "no")
+    assert calibrate.check("no_verdict")
+    errors = {
+        "model": "in its judge model",
+        "effort": "in its judge effort",
+        "set": "in its set",
+        "run file": "cannot be checked without",
+        "check": "has not passed",
+    }
+    if change == "model":
+        monkeypatch.setattr(calibrate, "JUDGE_MODEL", "another model")
+    elif change == "effort":
+        monkeypatch.setattr(calibrate, "JUDGE_EFFORT", "low")
+    elif change == "set":
+        path = no_verdict_set / "no_verdict.yaml"
+        path.write_text(path.read_text() + "\n# changed\n")
+    elif change == "run file":
+        (no_verdict_set / "run.json").unlink()
+    else:
+        stub_the_judge(monkeypatch, "yes")  # a missed fault, which drops the recorded version
+        assert not calibrate.check("no_verdict")
+    with pytest.raises(ValueError, match=errors[change]):
+        calibrate.check_passed("no_verdict")

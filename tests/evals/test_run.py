@@ -4,6 +4,7 @@ import dataclasses
 import datetime as dt
 import functools
 import json
+import sys
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -14,6 +15,7 @@ from evals import judge
 from evals.graders.end_to_end import AddressLabel, ExpectedRun
 from evals.graders.finding import Expected
 from evals.graders.input_loop import ExpectedDestination, ExpectedInput
+from evals.graders.judges import InterpretationGrade, NoVerdictGrade, QuestionAnswer
 from evals.load import TASKS, Conversation, Task, load
 from evals.run import (
     NoWebSearch,
@@ -21,9 +23,11 @@ from evals.run import (
     Trial,
     abstain,
     check_page,
+    describe_judges,
     draft_finding,
     grade,
     investigate,
+    main,
     run,
     run_end_to_end,
     run_input_loop,
@@ -32,7 +36,7 @@ from evals.run import (
     trust_every_page,
 )
 from out_of_frame import conversation, finding, investigation, prices, prompt_injection, report
-from out_of_frame.config import MODEL
+from out_of_frame.config import JUDGE_MODEL, MODEL
 from out_of_frame.state import (
     Address,
     Coordinates,
@@ -44,7 +48,8 @@ from out_of_frame.state import (
     Source,
 )
 from out_of_frame.web_search import PageText, WebSearchAccessError
-from tests.evals.test_judge import StoppingWebSearch
+from tests.evals.test_judge import ANSWERS, StoppingWebSearch, stub_the_judges
+from tests.evals.test_judges import INTERPRETED, answer
 from tests.test_agent import (
     FREIHEIT_22,
     read_fixture,
@@ -652,7 +657,7 @@ def test_an_end_to_end_run_is_saved_and_its_findings_graded_against_the_labels(t
     [run_file] = [step["run"] for step in lines[1]["transcript"]]
     assert json.loads((tmp_path / run_file).read_text(encoding="utf-8"))["draft"]  # for judges
     branches = {"map": "ok", "plans": "empty", "transit": "empty", "web search": "ok"}
-    assert lines[1]["branches"] == branches
+    assert lines[1]["branches"] == branches | {"addresses": "ok"}
     found = lines[2]["findings"]
     assert found["results"] == {"incinerator": "correct", "treatment-works": "error"}
     assert len(found["false_alarms"]) == 9  # the other investigated or triaged objects
@@ -698,3 +703,125 @@ def test_an_end_to_end_run_that_web_search_stops_stops_the_eval_run(tmp_path, er
     lines = [json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()]
     assert lines[-1]["complete"] is False and len(lines) == 2  # no trial recorded
     assert len(list(tmp_path.glob("*-run.json"))) == 1  # the run that stopped is saved
+
+
+REPORT = load(TASKS / "r3.yaml")
+GOOD_DRAFT = (
+    "A railway line is 67 m away [osm-way-295391379]. An area 118 m away [osm-way-23156479]."
+)
+
+
+def write_the_good_draft(inputs, date, web_search):
+    UsageModel().invoke("write the report")
+    return Trial(GOOD_DRAFT, transcript=[])
+
+
+def test_the_judges_grade_a_report_task_after_the_part_at_their_own_cost(monkeypatch, tmp_path):
+    def answer_to(schema):
+        UsageModel().invoke("judge the report")
+        return answer(ANSWERS[schema])
+
+    stub_the_judges(monkeypatch, answer_to)
+    out = tmp_path / "report.jsonl"
+    summary = run([REPORT], write_the_good_draft, 2, out, judged=True)[REPORT.id]
+    [header, _, graded] = [
+        json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()[:3]
+    ]
+    assert header["judge_model"] == JUDGE_MODEL and header["judge_effort"]
+    assert graded["passed"] and graded["judges"] == {"interpretation": "pass", "no_verdict": "pass"}
+    assert graded["judge_grades"]["no_verdict"]["verdict"] == "pass"
+    assert summary["graders"]["interpretation"] == summary["graders"]["no_verdict"] == 2
+    assert summary["judges"] == {"interpretation": {"pass": 2}, "no_verdict": {"pass": 2}}
+    one_call = prices.load().compute_cost(MODEL, 1000, 100, 0)
+    assert summary["cost_usd"] == pytest.approx(2 * one_call)  # the part's calls only
+    judged = 4 * prices.load().compute_cost(JUDGE_MODEL, 1000, 100, 0)
+    assert summary["judge_cost_usd"] == pytest.approx(judged)
+
+
+NO = QuestionAnswer(reason="It calls the area safe.", answer="no")
+
+
+@pytest.mark.parametrize(
+    "interpretation, no_verdict, passed, found",
+    [
+        (
+            answer(INTERPRETED.model_copy(update={"fits_type": NO})),
+            answer(NoVerdictGrade(reason="", free_of_verdicts="yes")),
+            False,
+            {"interpretation": "fail", "no_verdict": "pass"},
+        ),
+        (
+            answer(INTERPRETED),
+            answer(NoVerdictGrade(reason="", free_of_verdicts="unknown")),
+            True,
+            {"interpretation": "pass", "no_verdict": "unknown"},
+        ),
+        (
+            answer(INTERPRETED, stop_reason="max_tokens"),
+            answer(NoVerdictGrade(reason="", free_of_verdicts="yes")),
+            True,
+            {"interpretation": "error", "no_verdict": "pass"},
+        ),
+    ],
+    ids=["no", "unknown", "cut off"],
+)
+def test_a_report_task_fails_only_if_a_judge_finds_something_wrong(
+    monkeypatch, tmp_path, interpretation, no_verdict, passed, found
+):
+    answers = {InterpretationGrade: interpretation, NoVerdictGrade: no_verdict}
+    stub_the_judges(monkeypatch, lambda schema: answers[schema])
+    out = tmp_path / "report.jsonl"
+    summary = run([REPORT], write_the_good_draft, 1, out, judged=True)[REPORT.id]
+    graded = json.loads(out.read_text(encoding="utf-8").splitlines()[2])
+    assert graded["passed"] is passed and graded["judges"] == found
+    assert summary["pass^k"] is passed
+
+
+def test_a_report_task_is_not_judged_unless_asked(monkeypatch, tmp_path):
+    stub_the_judges(monkeypatch, lambda schema: pytest.fail("a judge ran"))
+    summary = run([REPORT], write_the_good_draft, 1, tmp_path / "report.jsonl")[REPORT.id]
+    assert summary["pass^k"] and "judges" not in summary
+
+
+@pytest.mark.usefixtures("stubbed_agent")
+def test_the_judges_grade_an_end_to_end_run_and_save_their_grades_next_to_it(monkeypatch, tmp_path):
+    stub_the_judges(monkeypatch)
+    out = tmp_path / "e2e.jsonl"
+    summary = run(
+        [end_to_end()], run_end_to_end, 1, out, web_search=FakeWebSearch([SNIPPET]), judged=True
+    )["E"]
+    graded = json.loads(out.read_text(encoding="utf-8").splitlines()[2])
+    grades = json.loads((tmp_path / graded["judge_grades"]).read_text(encoding="utf-8"))
+    assert grades["calibrated"] and grades["run"] == graded_run(out)
+    assert graded["judges"] == {
+        "interpretation": "pass",
+        "no_verdict": "pass",
+        "support": {"supported": 11},
+    }
+    assert summary["judges"]["support"] == {"supported": 11}
+    suite = json.loads(out.read_text(encoding="utf-8").splitlines()[-1])["suites"]["end-to-end"]
+    assert suite["judges"]["interpretation"] == {"pass": 1}
+    assert describe_judges(suite).startswith(
+        "support: 0 of 11 statements unsupported or contradicted (unknown 0, error 0); "
+        "interpretation: pass 1; no_verdict: pass 1; cost: $"
+    )
+
+
+def graded_run(out) -> str:
+    """The run file that the first trial in out saved."""
+    [step] = json.loads(out.read_text(encoding="utf-8").splitlines()[1])["transcript"]
+    return step["run"]
+
+
+@pytest.mark.parametrize("part", ["write_report", "run_end_to_end"])
+def test_a_judge_version_that_did_not_pass_stops_the_eval_run_before_any_trial(monkeypatch, part):
+    def not_passed():
+        raise ValueError("the support judge has not passed calibration")
+
+    monkeypatch.setattr("evals.run.check_calibrated", not_passed)
+    monkeypatch.setattr("evals.run.TavilyWebSearch", lambda: FakeWebSearch())
+    monkeypatch.setattr("evals.run.run", lambda *args: pytest.fail("a trial ran"))
+    monkeypatch.setattr(sys, "argv", ["run", "--part", part])
+    with pytest.raises(SystemExit) as stopped:
+        main()
+    assert stopped.value.code == 2

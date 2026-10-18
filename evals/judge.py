@@ -1,7 +1,6 @@
 """Run the agent on a first message that completes the input, and grade its report with the
-three LLM judges of docs/eval-architecture.md#llm-judges. TODO: check the judges' versions
-against evals/calibration/passed.yaml; until then their grades are saved as uncalibrated, never
-quoted.
+three LLM judges of docs/eval-architecture.md#llm-judges. It stops before any paid call unless
+every judge is the version that passed calibration, see evals/calibrate.py.
 
 The run is saved before the judges start, so that a saved run can be judged again without
 running the agent. Run with the keys in .env:
@@ -19,14 +18,18 @@ import os
 import sys
 import traceback
 from collections.abc import Callable
-from importlib.resources import files
 from pathlib import Path
+from unittest import mock
 
 from langchain_core.callbacks import get_usage_metadata_callback
 from pydantic_core import to_jsonable_python
 
+from evals.calibrate import check_calibrated
 from evals.graders import judges
+from evals.graders.end_to_end import BranchResult
 from evals.graders.judges import (
+    RESEARCH_SCOPE,
+    RUBRICS,
     JudgeError,
     judge_interpretation,
     judge_no_verdict,
@@ -34,7 +37,7 @@ from evals.graders.judges import (
     split_into_statements,
 )
 from evals.load import EVALS
-from out_of_frame import agent, cli, prices
+from out_of_frame import agent, cli, map_objects, prices
 from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL, MODEL
 from out_of_frame.investigation import Context
 from out_of_frame.prices import compute_run_cost
@@ -43,24 +46,37 @@ from out_of_frame.state import RunState
 from out_of_frame.web_search import MeteredWebSearch, TavilyWebSearch, WebSearchAccessError
 
 RESULTS = EVALS / "results"
-RUBRICS = ["support.md.j2", "interpretation.md.j2", "no_verdict.md.j2"]
-RESEARCH_SCOPE = files("out_of_frame").joinpath("data/research_scope.yaml")
 
 
 def run_agent(
     message: str, date: dt.date, web_search: MeteredWebSearch
 ) -> tuple[dict, BaseException | None]:
     """One run of the agent, as it is saved: the draft that the judges grade, the final state,
-    each step's update, the investigations' steps among them, and the cost. A run that stops,
-    even when web search refuses the key or the run is cancelled, is saved too, with its error
-    and its last state: it has paid for its calls. The error is also returned, for a caller
-    that must stop on it."""
+    each step's update, the investigations' steps among them, how the query for the addresses
+    of the objects to investigate ended, and the cost. A run that stops, even when web search
+    refuses the key or the run is cancelled, is saved too, with its error and its last state:
+    it has paid for its calls. The error is also returned, for a caller that must stop on it."""
     saved = {"message": message, "date": date.isoformat(), "model": MODEL, "draft": None}
     saved |= {"transcript": [], "error": None}
     start, config = agent.start(message), agent.start_thread()
     end: dict | RunState = start
     stopped = None
-    with get_usage_metadata_callback() as usage:
+    addresses: list[BranchResult] = []
+    fetch = map_objects.fetch_addresses
+
+    def watch(objects, sources):  # a failure here leaves no trace in the state, by design
+        try:
+            found = fetch(objects, sources)
+        except map_objects.MapError:
+            addresses.append("failed")
+            raise
+        addresses.append("ok" if any(found.values()) else "empty")  # each area, if none found
+        return found
+
+    with (
+        get_usage_metadata_callback() as usage,
+        mock.patch.object(map_objects, "fetch_addresses", watch),
+    ):
         try:
             steps = agent.build_graph().stream(
                 start,
@@ -89,6 +105,7 @@ def run_agent(
             saved["error"] = traceback.format_exc()
             stopped = error
     saved["state"] = RunState.model_validate(end)
+    saved["addresses"] = addresses[-1] if addresses else None  # None if the query never ran
     saved["tool_calls"] = web_search.tool_calls
     saved["cost_usd"] = compute_run_cost(usage.usage_metadata, web_search.credits)
     saved["prices_as_of"] = prices.load().as_of.isoformat()  # so that stale prices show
@@ -103,13 +120,14 @@ def judge_run(saved: dict, run_file: Path) -> tuple[dict, Path]:
     draft, date = saved["draft"], dt.date.fromisoformat(saved["date"])
     folder = Path(judges.__file__).parent
     grades = {
-        "calibrated": False,  # not to be quoted until the judges pass calibration in step 10
+        "calibrated": True,  # its callers judge only after evals.calibrate.check_calibrated
         "run": run_file.name,
         "run_sha256": hashlib.sha256(run_file.read_bytes()).hexdigest(),
         "judge_model": JUDGE_MODEL,
         "judge_effort": JUDGE_EFFORT,
         "rubrics_sha256": {
-            name: hashlib.sha256((folder / name).read_bytes()).hexdigest() for name in RUBRICS
+            name: hashlib.sha256((folder / name).read_bytes()).hexdigest()
+            for name in RUBRICS.values()
         },
         # The judges also get the meanings of the types and statuses from the research scope.
         "research_scope_sha256": hashlib.sha256(RESEARCH_SCOPE.read_bytes()).hexdigest(),
@@ -122,13 +140,7 @@ def judge_run(saved: dict, run_file: Path) -> tuple[dict, Path]:
     }
     with get_usage_metadata_callback() as usage:
         try:
-            for statement in split_into_statements(draft):
-                grade = ask(judge_support, statement, state, date)
-                grades["support"].append(
-                    {"statement": statement.text, "cited": statement.cited} | grade
-                )
-            grades["interpretation"] = ask(judge_interpretation, draft, state)
-            grades["no_verdict"] = ask(judge_no_verdict, draft)
+            judge_draft(grades, draft, state, date)
             grades["complete"] = True
         finally:
             grades["cost_usd"] = compute_run_cost(usage.usage_metadata, 0, JUDGE_MODEL)
@@ -136,6 +148,23 @@ def judge_run(saved: dict, run_file: Path) -> tuple[dict, Path]:
             path = save(grades, "grades")
             print(f"Grades: {path}, cost: ${grades['cost_usd']:.4f}", file=sys.stderr)
     return grades, path
+
+
+def judge_draft(
+    grades: dict, draft: str, state: RunState, date: dt.date, support: bool = True
+) -> None:
+    """Fills in the judges' grades of a draft as each judge answers, so that those given are
+    kept if judging stops: the support judge's on each statement, unless support is false, then
+    the interpretation and no verdict judges'. A judge's answer that was cut off or does not
+    parse is saved as its error, and the other judges go on; any other error stops."""
+    if support:
+        for statement in split_into_statements(draft):
+            grade = ask(judge_support, statement, state, date)
+            grades["support"].append(
+                {"statement": statement.text, "cited": statement.cited} | grade
+            )
+    grades["interpretation"] = ask(judge_interpretation, draft, state)
+    grades["no_verdict"] = ask(judge_no_verdict, draft)
 
 
 def ask(judge: Callable[..., Record], *args) -> dict:
@@ -159,7 +188,7 @@ def save(record: dict, name: str) -> Path:
 
 
 def print_grades(grades: dict) -> None:
-    print("Uncalibrated grades, not to be quoted:")
+    print("Grades of the judge versions that passed calibration:")
     for n, support in enumerate(grades["support"], 1):
         result = support.get("grade") or f"error: {support['error']}"
         print(f"{n}. {result}: {support['statement']}\n   {support.get('reason', '')}")
@@ -185,6 +214,10 @@ def main() -> None:
     models = [MODEL, JUDGE_MODEL] if live else [JUDGE_MODEL]
     if missing := [model for model in models if model not in prices.load().models]:
         parser.error(f"no price for {', '.join(missing)}: add it to data/prices.yaml")
+    try:
+        check_calibrated()
+    except ValueError as error:
+        parser.error(str(error))
 
     if live:
         try:

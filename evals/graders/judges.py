@@ -10,6 +10,7 @@ import datetime as dt
 import re
 from dataclasses import dataclass
 from functools import cache
+from importlib.resources import files
 from pathlib import Path
 from typing import Literal
 
@@ -27,6 +28,15 @@ from out_of_frame.state import RunState
 
 type Answer = Literal["yes", "no", "unknown"]
 type Verdict = Literal["pass", "fail", "unknown"]
+
+# Each judge's rubric, a template in this folder.
+RUBRICS = {
+    "support": "support.md.j2",
+    "interpretation": "interpretation.md.j2",
+    "no_verdict": "no_verdict.md.j2",
+}
+# The judges also get the meanings of the types and statuses from the research scope.
+RESEARCH_SCOPE = files("out_of_frame").joinpath("data/research_scope.yaml")
 
 # A group of citations, with only spaces between them, and the punctuation, quotes and markup
 # after it, which belong to the sentence the group ends: "**A site [osm-way-1][osm-way-2]**."

@@ -1,6 +1,6 @@
-"""Code-based graders for a report draft, see docs/eval-architecture.md#report. What a person
-must read, such as an invented concern or "nothing found" for a failed source, is not graded
-here: until the judges are calibrated in step 10, the drafts are read by hand."""
+"""Code-based graders for a report draft, see docs/eval-architecture.md#report. What only a
+reader can tell, such as an invented concern or "nothing found" for a failed source, is not
+graded here: the LLM judges of evals/graders/judges.py grade it."""
 
 import re
 

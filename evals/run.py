@@ -25,6 +25,7 @@ import out_of_frame.prompt_injection
 import out_of_frame.report
 import out_of_frame.triage
 from evals import judge
+from evals.calibrate import check_calibrated
 from evals.graders.end_to_end import (
     ExpectedRun,
     grade_findings,
@@ -37,7 +38,7 @@ from evals.graders.prompt_injection import grade_flagged
 from evals.graders.report import grade_citations, grade_distances
 from evals.load import EVALS, FIXTURES, Conversation, Inputs, Task, load, load_all
 from out_of_frame import agent, geocoding, prices
-from out_of_frame.config import MODEL
+from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL, MODEL
 from out_of_frame.grounding import collect_cited_page, find_grounding_errors
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.state import (
@@ -56,6 +57,8 @@ from out_of_frame.web_search import (
 )
 
 RESULTS = EVALS / "results"
+JUDGED_PARTS = {"write_report", "run_end_to_end"}  # the parts whose reports the judges grade
+JUDGES = ["interpretation", "no_verdict"]  # the judges of a whole report, beside support
 
 
 @dataclass(frozen=True)
@@ -74,6 +77,7 @@ class Trial:
     # state where the input loop or an end-to-end run ends
     outcome: Outcome | bool | str | RunState
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
+    run: Path | None = None  # an end-to-end trial's saved run, which the judges grade
 
 
 class NoWebSearch:
@@ -203,10 +207,10 @@ def run_input_loop(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Tria
 
 def run_end_to_end(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
     """The whole agent on live sources, from the task's first message, which completes the
-    input, so a question fails the trial. The run is saved as evals/judge.py saves it, for the
-    judges once they pass calibration, and the transcript names its file. A run that stops is
-    saved too, and its error fails the trial, or stops the eval run if web search refused the
-    key or the run was cancelled."""
+    input, so a question fails the trial. The run is saved as evals/judge.py saves it, so that
+    the judges can grade it, and the transcript names its file. A run that stops is saved too,
+    and its error fails the trial, or stops the eval run if web search refused the key or the
+    run was cancelled."""
     if not isinstance(inputs, Conversation) or len(inputs.messages) != 1 or inputs.sources:
         raise TypeError("run_end_to_end needs an end-to-end task")
     saved, error = judge.run_agent(inputs.messages[0], date, MeteredWebSearch(web_search))
@@ -214,7 +218,8 @@ def run_end_to_end(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Tria
     if error is not None:
         error.add_note(f"The run is saved in {path}")
         raise error
-    return Trial(RunState.model_validate(saved["state"]), transcript=[{"run": path.name}])
+    state = RunState.model_validate(saved["state"])
+    return Trial(state, transcript=[{"run": path.name}], run=path)
 
 
 PARTS: dict[str, Part] = {
@@ -286,12 +291,15 @@ def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
     raise TypeError(f"{task.id}: the part's outcome does not fit the task's expected result")
 
 
-def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState) -> dict:
-    """What a person needs to check the grades; an end-to-end run's state is in its own file."""
+def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState, saved: dict | None) -> dict:
+    """What a person needs to check the grades; an end-to-end run's state is in its own file,
+    saved, which also tells how the query for the addresses ended, next to the branches."""
     if isinstance(outcome, RunState):
         dumped = outcome.model_dump(mode="json", include={"property", "destinations"})
         if isinstance(task.expected, ExpectedRun):
             dumped["branches"] = mark_branches(outcome)
+            if saved is not None and saved["addresses"] is not None:
+                dumped["branches"] |= {"addresses": saved["addresses"]}
         return dumped
     if isinstance(outcome, bool):
         return {"flagged": outcome}
@@ -304,8 +312,52 @@ def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState) -> dict:
     }
 
 
+def judge_trial(task: Task, trial: Trial, date: dt.date, saved: dict | None) -> dict | None:
+    """What the judges found in a report task's draft or an end-to-end trial's run, with their
+    grades and cost; None for a trial of another suite. A report task's grades go with its
+    trial, and an end-to-end trial's are saved next to its run, as evals/judge.py saves them.
+    The judges run after the part, so that their cost is counted apart, at the judge model's
+    price."""
+    if isinstance(trial.outcome, str) and isinstance(task.inputs, RunState):
+        grades: dict = {"support": [], "interpretation": None, "no_verdict": None}
+        with get_usage_metadata_callback() as usage:
+            judge.judge_draft(grades, trial.outcome, task.inputs, date, support=False)
+        cost = compute_run_cost(usage.usage_metadata, 0, JUDGE_MODEL)
+        return {"judges": sum_up_judges(grades), "judge_grades": grades, "judge_cost_usd": cost}
+    if saved is not None and trial.run is not None:
+        grades, path = judge.judge_run(saved, trial.run)
+        found = sum_up_judges(grades)
+        return {"judges": found, "judge_grades": path.name, "judge_cost_usd": grades["cost_usd"]}
+    return None
+
+
+def sum_up_judges(grades: dict) -> dict:
+    """What the judges found in one trial: the support grades by kind, if the support judge
+    graded any statement, and each other judge's verdict, or error if its answer was cut off or
+    does not parse."""
+    found: dict = {name: grades[name].get("verdict", "error") for name in JUDGES}
+    if grades["support"]:
+        found["support"] = Counter(grade.get("grade", "error") for grade in grades["support"])
+    return found
+
+
+def add_up_judges(found: list[dict]) -> dict[str, Counter]:
+    """What the judges found over trials or tasks, as counts."""
+    total: dict[str, Counter] = {}
+    for one in found:
+        for name, result in one.items():
+            counts = Counter(result) if isinstance(result, dict) else Counter([result])
+            total[name] = total.get(name, Counter()) + counts
+    return total
+
+
 def run_task(
-    task: Task, part: Part, k: int, record: Callable[[dict], None], web_search: WebSearch | None
+    task: Task,
+    part: Part,
+    k: int,
+    record: Callable[[dict], None],
+    web_search: WebSearch | None,
+    judged: bool = False,
 ) -> list[dict]:
     trials = []
     for n in range(1, k + 1):
@@ -336,21 +388,27 @@ def run_task(
             record(failed)
             trials.append(failed)
             continue
+        saved = json.loads(trial.run.read_text(encoding="utf-8")) if trial.run else None
         recorded = {
             "task": task.id,
             "trial": n,
             "date": date.isoformat(),
-            **dump_outcome(task, trial.outcome),
+            **dump_outcome(task, trial.outcome, saved),
             "transcript": trial.transcript,
             **counts,
         }
         record(recorded)  # before grading, so that a grader failure does not lose the trial
         grades = grade(task, trial.outcome)
+        found = judge_trial(task, trial, date, saved) if judged else None
+        if found is not None and task.suite == "report":  # it fails only if a judge says so
+            verdicts = found["judges"]
+            grades += [Grade(name, verdicts[name] != "fail", (verdicts[name],)) for name in JUDGES]
         graded = {
             "task": task.id,
             "trial": n,
             "passed": all(g.passed for g in grades),
             "grades": [asdict(g) for g in grades],
+            **(found or {}),
         }
         if isinstance(task.expected, ExpectedRun) and isinstance(trial.outcome, RunState):
             graded["findings"] = asdict(grade_findings(trial.outcome, task.expected.labels))
@@ -388,6 +446,9 @@ def summarise(task: Task, trials: list[dict]) -> dict:
             "pass@k": any(t["passed"] for t in trials),
             "pass^k": all(t["passed"] for t in trials),
         }
+    if judged := [t for t in trials if "judges" in t]:
+        summary["judges"] = add_up_judges([t["judges"] for t in judged])
+        summary["judge_cost_usd"] = sum(t["judge_cost_usd"] for t in judged)
     return summary
 
 
@@ -433,6 +494,9 @@ def summarise_suites(tasks: list[Task], summaries: dict[str, dict]) -> dict[str,
                     for id, s in ran.items()
                     if expected[id] is flagged
                 )
+        if judged := [s for s in ran.values() if "judges" in s]:
+            summary["judges"] = add_up_judges([s["judges"] for s in judged])
+            summary["judge_cost_usd"] = sum(s["judge_cost_usd"] for s in judged)
         suites[suite] = summary
     return suites
 
@@ -444,16 +508,21 @@ def run(
     out: Path,
     name: str | None = None,
     web_search: WebSearch | None = None,
+    judged: bool = False,
 ) -> dict[str, dict]:
-    """Run every task and write each trial to out at once. A cancelled run is incomplete.
+    """Run every task and write each trial to out at once. A cancelled run is incomplete. If
+    judged, the judges grade each report of the report and end-to-end suites; the caller checks
+    first that they passed calibration.
 
-    An error of the part fails its trial, and the run goes on; an error of a grader, or a
-    missing or refused web search key, stops it. The last line also has each suite's summary.
+    An error of the part fails its trial, and the run goes on; an error of a grader or a judge,
+    other than a judge's answer that was cut off or does not parse, or a missing or refused web
+    search key, stops it. The last line also has each suite's summary.
     """
     if k < 1:
         raise ValueError("k must be at least 1")
-    if MODEL not in prices.load().models:
-        raise ValueError(f"no price for {MODEL}: add it to data/prices.yaml")
+    models = [MODEL, JUDGE_MODEL] if judged else [MODEL]
+    if missing := [model for model in models if model not in prices.load().models]:
+        raise ValueError(f"no price for {', '.join(missing)}: add it to data/prices.yaml")
     tasks = list(tasks)
     ids = [task.id for task in tasks]
     if duplicates := sorted({id for id in ids if ids.count(id) > 1}):
@@ -473,10 +542,13 @@ def run(
                 "started": dt.datetime.now(dt.UTC).isoformat(),
                 "prices_as_of": prices.load().as_of.isoformat(),  # so that stale prices show
             }
+            # the judge version, as evals/calibration/passed.yaml records it
+            | ({"judge_model": JUDGE_MODEL, "judge_effort": JUDGE_EFFORT} if judged else {})
         )
         try:
             for task in tasks:
-                summaries[task.id] = summarise(task, run_task(task, part, k, record, web_search))
+                trials = run_task(task, part, k, record, web_search, judged)
+                summaries[task.id] = summarise(task, trials)
             complete = True
         finally:
             suites = summarise_suites(tasks, summaries)
@@ -506,15 +578,18 @@ def main() -> None:
     if args.k < 1:
         parser.error("--k must be at least 1")
 
+    judged = args.part in JUDGED_PARTS
     try:
         tasks = select_tasks(args.part, args.tasks)
         # only these parts search
         searches = args.part in ("investigate", "run_end_to_end")
         web_search = TavilyWebSearch() if searches else None
+        if judged:
+            check_calibrated()  # before any paid call
     except (ValueError, WebSearchAccessError) as error:
         parser.error(str(error))
     out = RESULTS / f"{dt.datetime.now(dt.UTC):%Y-%m-%dT%H-%M-%S-%fZ}.jsonl"
-    summaries = run(tasks, PARTS[args.part], args.k, out, args.part, web_search)
+    summaries = run(tasks, PARTS[args.part], args.k, out, args.part, web_search, judged)
     for task_id, s in summaries.items():
         graders = ", ".join(f"{name} {n}/{s['trials']}" for name, n in s["graders"].items())
         if "pass@k" in s:
@@ -535,6 +610,8 @@ def main() -> None:
         if s["errors"]:
             result += f"; part errors: {s['errors']}"
         result += f"; tool calls: {s['tool_calls']}, cost: ${s['cost_usd']:.4f}"
+        if "judges" in s:
+            result += f"; judges: {describe_judges(s)}"
         print(f"{task_id}: {result}")
     for suite, s in summarise_suites(tasks, summaries).items():
         if "pass@k" in s:
@@ -548,6 +625,8 @@ def main() -> None:
         if s["errors"]:
             result += f"; part errors: {s['errors']} of {s['trials']} trials"
         cost = f"tool calls: {s['tool_calls']}, cost: ${s['cost_usd']:.4f}"
+        if "judges" in s:
+            cost += f"; judges: {describe_judges(s)}"
         print(f"Suite {suite}, {s['tasks']} tasks: {result}; {cost}")
     print(f"Trials: {out}")
 
@@ -562,6 +641,24 @@ def describe_labels(summary: dict) -> str:
         f"miss {labels['miss']}; not fetched {labels['not fetched']}, "
         f"left out {labels['left out']}), false alarms {summary['false alarms']}"
     )
+
+
+def describe_judges(summary: dict) -> str:
+    """What the judges found, for a person: the statements that the support judge found
+    unsupported or contradicted among those it graded so, with the unknown ones and the errors
+    apart, each other judge's verdicts, and their cost."""
+    judges, parts = summary["judges"], []
+    if "support" in judges:
+        support = Counter(judges["support"])
+        graded = support["supported"] + support["unsupported"] + support["contradicted"]
+        parts.append(
+            f"support: {support['unsupported'] + support['contradicted']} of {graded} statements "
+            f"unsupported or contradicted (unknown {support['unknown']}, error {support['error']})"
+        )
+    for name in JUDGES:
+        verdicts = ", ".join(f"{verdict} {n}" for verdict, n in judges[name].items())
+        parts.append(f"{name}: {verdicts}")
+    return "; ".join(parts) + f"; cost: ${summary['judge_cost_usd']:.4f}"
 
 
 if __name__ == "__main__":

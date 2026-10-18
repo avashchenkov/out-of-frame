@@ -13,11 +13,13 @@ from evals.graders.judges import InterpretationGrade, NoVerdictGrade, SupportGra
 from out_of_frame import cli, geocoding, report
 from out_of_frame.config import REPORT_ATTEMPTS
 from out_of_frame.geocoding import GeocodingError
+from out_of_frame.map_objects import MapError
 from out_of_frame.plans import PlansError
 from out_of_frame.web_search import MeteredWebSearch, WebSearchAccessError
 from tests.evals.test_judges import INTERPRETED, SUPPORTED, answer
 from tests.test_agent import (
     FREIHEIT_22,
+    read_fixture,
     stub_the_conversation,
     stub_the_models,
     stub_the_sources,
@@ -133,7 +135,7 @@ def test_the_judges_grade_the_draft_of_a_saved_run(monkeypatch):
     stub_the_judges(monkeypatch)
     grades, grades_file = judge.judge_run(json.loads(run_file.read_text()), run_file)
     assert json.loads(grades_file.read_text(encoding="utf-8")) == grades
-    assert grades["calibrated"] is False and grades["complete"] is True
+    assert grades["calibrated"] is True and grades["complete"] is True
     assert grades["run"] == run_file.name and len(grades["rubrics_sha256"]) == 3
     assert grades["research_scope_sha256"] and grades["prices_as_of"]
     support = grades["support"]
@@ -179,18 +181,49 @@ def test_a_saved_run_is_judged_again_without_running_the_agent(monkeypatch, caps
     stub_the_judges(monkeypatch)
     monkeypatch.setattr(judge, "run_agent", lambda *args: pytest.fail("the agent ran again"))
     monkeypatch.setattr(judge, "MODEL", "an agent model without a price")  # not needed here
+    monkeypatch.setattr(judge, "check_calibrated", lambda: None)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "a key that no stub sends anywhere")
     monkeypatch.setattr(sys, "argv", ["judge", str(run_file)])
     judge.main()
     out = capsys.readouterr().out
-    assert out.startswith("Uncalibrated grades, not to be quoted:\n1. supported: An object")
+    assert out.startswith("Grades of the judge versions that passed calibration:\n1. supported")
     assert "interpretation: pass" in out and "no_verdict: pass" in out
 
 
 def test_a_run_that_stopped_is_not_judged(monkeypatch):
     run_file = judge.save({"error": "Traceback ..."}, "run")
+    monkeypatch.setattr(judge, "check_calibrated", lambda: None)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "a key that no stub sends anywhere")
     monkeypatch.setattr(sys, "argv", ["judge", str(run_file)])
     with pytest.raises(SystemExit) as stopped:
         judge.main()
     assert stopped.value.code == 1
+
+
+def test_a_judge_version_that_did_not_pass_stops_the_command_before_the_agent(monkeypatch):
+    def not_passed():
+        raise ValueError("the support judge has not passed calibration")
+
+    monkeypatch.setattr(judge, "check_calibrated", not_passed)
+    monkeypatch.setattr(judge, "run_agent", lambda *args: pytest.fail("the agent ran"))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "a key that no stub sends anywhere")
+    monkeypatch.setattr(sys, "argv", ["judge", FREIHEIT_22])
+    with pytest.raises(SystemExit) as stopped:
+        judge.main()
+    assert stopped.value.code == 2
+
+
+def test_a_run_saves_how_the_query_for_the_addresses_ended(monkeypatch):
+    assert run_the_agent(monkeypatch)["addresses"] == "ok"
+    stub_the_sources(
+        monkeypatch,
+        overpass=[read_fixture("overpass/freiheit-22.json"), MapError("Overpass gave 502")],
+    )
+    saved, error = judge.run_agent(FREIHEIT_22, DATE, MeteredWebSearch(FakeWebSearch([SNIPPET])))
+    assert saved["addresses"] == "failed" and error is None  # the run goes on without them
+    found = read_fixture("overpass/freiheit-22-addresses.json")
+    nothing = {"elements": [e for e in found["elements"] if e["type"] == "count"]}
+    stub_the_sources(monkeypatch, overpass=[read_fixture("overpass/freiheit-22.json"), nothing])
+    saved, _ = judge.run_agent(FREIHEIT_22, DATE, MeteredWebSearch(FakeWebSearch([SNIPPET])))
+    assert saved["addresses"] == "empty"  # an area without addresses is not a result
+    assert "map" not in saved["state"]["failures"]
