@@ -256,12 +256,14 @@ few by the person, the rest by two models, a Claude session and Codex, apart, on
 shows each example as the judge sees it, while the person settles what they disagree on. A
 grade does not change after a judge is checked, with one exception: when the person changes a
 rule that the agent's prompt and the rubric share, a grade that follows from that rule may
-change, and the set's header says which and why. Each
-judge version is checked against these grades, answer by answer, in three trials: an answer
-agrees only if every trial gives it, since one run of a judge varies and a run of the agent asks
-it once. It must catch every faulty example and may disagree on at most two of the other
-answers. Until a judge passes, only the numbers from code-based graders are quoted, and its
-axis is left out.
+change, and the set's header says which and why. Each judge version is checked against these
+grades, answer by answer, in three trials: an answer agrees only if every trial gives it, since
+one run of a judge varies and a run of the agent asks it once. It must catch every faulty
+example and may disagree on at most two of the other answers. Until a judge passes, only the
+numbers from code-based graders are quoted, and its axis is left out.
+
+No judge grades whether a reader understands a report, so the person also reads reports as a
+user would, and what reads wrong is fixed in the report prompt.
 
 ### Metrics
 
