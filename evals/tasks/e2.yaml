@@ -39,10 +39,12 @@ expected:
     # Haberstraße, Willstätterstraße. Philip Morris ended production there in 2025 (the press of
     # 2024 and 2025). The page: NLND Berlin at Neuköllnische Allee 80, now a campus with a
     # conference centre, offices, a hub for start-ups, "Innovative Production", a prototyping
-    # hall and a "Hydrogen & Electric Charging Station"; it hosts events now, so operating. No
-    # page shows which of these run and which affects people nearby the most: a hydrogen
+    # hall and a "Hydrogen & Electric Charging Station"; it hosts events now, so it is in use.
+    # No page shows which of these run and which affects people nearby the most: a hydrogen
     # station would make it a plant, but no page shows one in use. So the type is null, and a
-    # stale "cigarette factory", production, is wrong. LOXXESS also lists a logistics site at
+    # stale "cigarette factory", production, is wrong. A finding without a type has no status
+    # either, by the finding prompt, so the status is null: on 2026-10-18 the person changed it
+    # from operating, which no finding could give. LOXXESS also lists a logistics site at
     # Neuköllnische Allee 80, undated; no search from the address finds that page, even with 20
     # results or at advanced depth (spikes/search-depth).
     - id: nlnd-campus
@@ -51,7 +53,7 @@ expected:
       coordinates: {lat: 52.4647832, lon: 13.4622129}
       distance_tolerance_m: 310
       identified_type: null
-      status: operating
+      status: null
       source_url: https://www.nlnd.com
       search: Neuköllnische Allee 80 12057 Berlin
     # 289 m: landuse=industrial; Bergiusstraße 21, 12057 Berlin. The page: Allinone Trade, a
@@ -71,14 +73,16 @@ expected:
     # metal spinning and stamping shop at Neuköllnische Allee 108-110, a maker of analysers at
     # Neuköllnische Allee 134. No page settles which of them affects people nearby the most, so
     # the type is null. The page: the imprint of Process Insights at Neuköllnische Allee 134,
-    # the maker of analysers, so the site is in use.
+    # the maker of analysers, so the site is in use. A finding without a type has no status
+    # either, by the finding prompt, so the status is null: on 2026-10-18 the person changed it
+    # from operating, which no finding could give.
     - id: haberstrasse-1
       object_id: osm-way-1185963533
       category: industry
       coordinates: {lat: 52.463566650000004, lon: 13.467398750000001}
       distance_tolerance_m: 200
       identified_type: null
-      status: operating
+      status: null
       source_url: https://www.process-insights.com/imprint-process-insights-gmbh
       search: Neuköllnische Allee 134 12057 Berlin
     # 372 m: landuse=industrial; Neuköllnische Allee 2 and 4, 12057 Berlin. The page: the
