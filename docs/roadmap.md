@@ -282,31 +282,52 @@ calibration.
          cause, the agent, a label or a judge, and Codex gave a second opinion. Three labels
          contradicted the agent's own rules: two E2 sites without a type had a status, which no
          finding can give, so their status is null now; plan 5-1VE needs a page about the
-         address that its own data name, which the finding prompt does not count yet, a fix of
-         8. The person settled the arguable labels by their evidence: V-13 is commercial, for
-         its core area; XV-19, XV-23 and Bergiusstraße 21 stay. The judges' findings were the
-         agent's faults. The runs stay the baseline, graded again by code against the changed
-         labels.
+         address that its own data name, which the finding prompt does not count, a known
+         limitation of 8. The person settled the arguable labels by their evidence: V-13 is
+         commercial, for its core area; XV-19, XV-23 and Bergiusstraße 21 stay. The judges'
+         findings were the agent's faults. The runs stay the baseline, graded again by code
+         against the changed labels.
     8. Fix the largest general failures of the full run, each by a rule that holds at any
        address, never for one task. Before each change, Claude reads the failing runs for the
-       cause, and the person settles the change. In this order:
-       - A plan whose own data name its uses gets its type from them: other where none fits a
-         listed type, such as homes or a park, not unidentified.
+       cause, and the person settles the change. The rules go into the agent's prompts, not
+       into the types of the research scope, which every judge's set is checked against. In
+       this order:
+       - The agent reads a plan's documents. Most reads of a plan's PDF, such as its reasons,
+         returned no page, and each used one of the investigation's tool calls. First find out
+         why Tavily cannot read them; if its deeper extract can, use it. A read outside Tavily
+         would change the architecture, so the person decides it. A plan whose label rests only
+         on a document that no read gets, such as a scan, is left out, as the eval architecture
+         says. The plans whose documents become readable are checked against their labels, since
+         a business area's reasons can list uses such as petrol stations.
+       - A plan's type by its kind of area, written out in the finding prompt: a housing area
+         and a mixed area (Mischgebiet) are other, since a mixed area allows only businesses
+         that do not much disturb homes; a core area (Kerngebiet) is commercial, as for V-13; a
+         business area with no use named stays without a type; land copied into the plan from
+         other law, such as a railway ("nachrichtlich übernommen"), is not a use that the plan
+         allows; and a use that its reasons give only as the setting or a goal for the district,
+         not as what the plan allows, does not count. The person settled the mixed area.
+       - An offer of a site for rent or sale alone does not show what the site is used for; what
+         such a page says about the tenants there now does. A site that makes chemicals is a
+         plant, not production, and a wholesaler that keeps goods in stock is logistics, not
+         commercial, as the types already say.
        - A name that says what an object is, against its map tag, such as a rainwater filter
-         tagged as a wastewater plant, is a conflict that the map data alone cannot settle.
-       - A page about what a site was, such as the factory it once housed, does not settle what
-         it is now.
-       - A page about the address that a plan's own data name is about that plan, so that it
-         can show whether building has started there.
-       - A use that a plan's own documents allow, such as a petrol station in a business area,
-         counts for its type.
-       - The report never gives a plan's legal status as the reason that building has or has
-         not started.
-       After each change, the tasks it touches run again, and the component suites, which must
-       still pass; the full run of 7 stays the baseline, and the results give both, with each
-       change. Known limitations, not fixed: whether trains still run on a line that the map
-       tags as in use, an unnamed site whose page no search finds, and a site that several
-       businesses share.
+         tagged as a wastewater plant, is a conflict. Triage already counts it as one and missed
+         it, so the rule is made plainer, with no example from a task; if the finding prompt
+         takes it too, F6's label changes by it. The gain is wrong claims turned into objects
+         left unidentified.
+       Each rule first gets fixed-data tasks, as the eval architecture asks: T4, designed there,
+       and finding tasks of plans from their WFS data and documents, one per kind of area above.
+       After each change these run, and the component suites, which must still pass. Then, with
+       the label-trials that each change should turn written down first, one full run of E1–E5,
+       three trials each, on one day, graded label by label against the full run of 7, which
+       stays the baseline: the wrong claims apart from the objects left unidentified, the trials
+       whose address query failed marked on both sides, and a change of a label-trial or two
+       elsewhere taken as noise. Known limitations, not fixed: whether trains still run on a line
+       that the map tags as in use, since triage takes its status from the tags; a site that
+       several businesses share; an unnamed site whose page the agent's searches miss; a
+       directory entry that is out of date; a plan replaced in part by another; and a plan whose
+       state shows only on a page about the one plot that its data name, such as 5-1VE, since
+       counting such a page would change the support rubric and need its calibration again.
     9. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
     10. The results in docs/results.md: each suite's scores before and after the fixes of 8,
