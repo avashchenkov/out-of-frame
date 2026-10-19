@@ -287,7 +287,7 @@ calibration.
          commercial, for its core area; XV-19, XV-23 and Bergiusstraße 21 stay. The judges'
          findings were the agent's faults. The runs stay the baseline, graded again by code
          against the changed labels.
-    8. Fix the largest general failures of the full run, each by a rule that holds at any
+    8. ✅ Fix the largest general failures of the full run, each by a rule that holds at any
        address, never for one task. Before each change, Claude reads the failing runs for the
        cause, and the person settles the change. The rules go into the agent's prompts, not
        into the types of the research scope, which every judge's set is checked against. In
@@ -330,10 +330,28 @@ calibration.
        a site's planned uses as current; a use that only a plan's documents name; a plan
        replaced in part by another, such as XV-51j; and a plan whose state shows only on a page
        about the one plot that its data name, such as 5-1VE, since counting such a page would
-       change the support rubric and need its calibration again.
-    9. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
+       change the support rubric and need its calibration again. Done: the prompts, the labels
+       left out and the fixed-data tasks; the component suites pass, and the new tasks pass in
+       most trials, not all. The full run of E1–E5 waits for 9 and 10, so that one run
+       measures 8 to 10 against the baseline, with the predictions written down again first.
+    9. The agent's model calls at the extra-high effort, as the judges'. Its findings were
+       unstable from trial to trial where a page settled the object but a rule was applied one
+       way or another, in the full run of 7 and the component runs of 8, and the judges grew
+       stable at the extra-high effort in their calibration. First the finding suite at the
+       default effort, high and extra-high, then the effort that it shows best; the cost and
+       the time of a run are counted with it.
+    10. A classification funnel: the type of an object or a plan settled by questions in a
+       fixed order, from what can affect people nearby the most to the least, in place of the
+       special rules added one by one. Before any code: where the type is decided
+       now (the triage, investigation and finding prompts, the research scope's types, the
+       judges' rubrics), and a design that Claude and Codex review several times, each
+       without the other's answer, until no real point is left; the person settles it. If
+       the types and their lines can stay, the judges' calibration stays. Examples are made
+       up, never taken from a task. The finding suite checks it, then one full run of E1–E5
+       measures 8 to 10 against the full run of 7.
+    11. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
-    10. The results in docs/results.md: each suite's scores before and after the fixes of 8,
+    12. The results in docs/results.md: each suite's scores before and after the fixes of 8 to 10,
        its failures, the wrong claims apart from the objects left unidentified, the known
        limitations above, the labels left out because of the search limits that the
        [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found, and the cost
