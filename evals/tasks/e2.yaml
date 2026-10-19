@@ -199,13 +199,12 @@ expected:
     # shopping centre and a petrol station, which the Gewerbegebiet GE1 allows on one part
     # ("Im GE1 werden Tankstellen nur auf einer Teilfläche zugelassen"). Storing fuel is a plant,
     # and a site that fits plant and another type is a plant. Status null, as for XIV-3. The
-    # page is linked in its WFS fields (grund_www).
+    # page is linked in its WFS fields (grund_www). On 2026-10-19 the person left it out: the
+    # agent reads none of the PDFs that a plan's WFS fields link, and only these reasons name
+    # the petrol station.
     - id: plan-xiv-182
       object_id: bplan-0814182
       category: planned_objects
       coordinates: {lat: 52.47034653, lon: 13.46247952}
       distance_tolerance_m: 50
-      identified_type: plant
-      status: null
-      source_url: https://www.berlin.de/ba-neukoelln/_assets/dokumente/bebauungsplaene/bebauungsplan-festgesetzt/begruendung/begruendung_xiv-182.pdf
-      search: null
+      left_out: Only its reasons, a PDF that its WFS fields link, name the petrol station.

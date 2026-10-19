@@ -1,0 +1,19 @@
+# F9, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F9
+suite: finding
+covers: >-
+  A plan whose WFS data name a housing area and a mixed area, and no page about it: a mixed
+  area allows only businesses that do not much disturb homes, so nothing that the plan allows
+  fits a listed type.
+date: 2026-10-18  # fixed data: the date the pages and the map data were retrieved
+
+input:
+  state: f9-mixed-area.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: other  # a housing area and a mixed area
+  status: null  # the map data do not say whether building has started
+  evidence_id: bplan-wfs-1  # the map data alone

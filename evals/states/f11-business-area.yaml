@@ -1,0 +1,48 @@
+# An investigation state of a plan whose WFS data name a business area with no use, land for
+# public needs and roads: the finding rests on its map data alone. The plan is 8-4, 217 m from
+# Neuköllnische Allee 52, 12057 Berlin, the E2 address; its fields are as the WFS gave them on
+# 2026-10-18. One search by its number found no page about it, so that only the map data
+# speak.
+map_object:
+  id: bplan-0800004
+  name: Bebauungsplan 8-4
+  details:
+    gisid: 11008008_BP_0800004
+    planid: 0800004
+    planname: 8-4
+    planartname: Qualifizierter B-Plan
+    verfahrensart: Normal
+    bereich: für die Grundstücke Neuköllnische Allee 6, 10, 14, und Grenzallee 20 im Bezirk Neukölln
+    bezirk: 08 - Neukölln
+    bp_rechtsstand: In Kraft getreten
+    afs_behoer: Bezirksamt
+    afs_beschl: '2001-07-10'
+    bbg_anfang: '2001-11-26'
+    bbg_ende: '2001-12-07'
+    aul_anfang: '2005-09-12'
+    aul_ende: '2005-09-26'
+    festsg_von: Bezirk
+    festsg_am: '2006-05-09'
+    fsg_gvbl_n: '19'
+    fsg_gvbl_s: '463'
+    fsg_gvbl_d: '2006-06-03'
+    scan_www: https://www.berlin.de/ba-neukoelln/_assets/dokumente/bebauungsplaene/bebauungsplan-festgesetzt/planzeichnung/8-4.pdf
+    grund_www: https://www.berlin.de/ba-neukoelln/_assets/dokumente/bebauungsplaene/bebauungsplan-festgesetzt/begruendung/begruendung_8-4.pdf
+    url_www: https://www.berlin.de/ba-neukoelln/politik-und-verwaltung/aemter/stadtentwicklungsamt/stadtplanung/bebauungsplaene/bebauungsplan-festgesetzt/artikel.140435.php
+    inhalt: Gewerbegebiet, Flächen für den Gemeinbedarf (Schulungsstätte), Straßenverkehrsfläche
+    category: planned_objects
+  addresses: []
+  coordinates:
+    lat: 52.467848215000004
+    lon: 13.458151359999999
+  distance_from_property_m: 217
+  source_id: bplan-wfs-1  # the plans source of the task
+source_kind: plans  # the kind of the map object's source
+history:
+- role: model
+  tool: search
+  query: Bebauungsplan 8-4
+- role: tool
+  pages: []
+pages: []
+finding: null

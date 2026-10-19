@@ -1,0 +1,39 @@
+# An investigation state with one search whose page is the website of a company that makes
+# reagents and fine chemicals at the object's address. The object, OSM way 778281679, is tagged
+# man_made=works at Schwarzschildstraße 6, 671 m from Am Bruchland 22, 12524 Berlin, the E5
+# address. The page is real, from the full run of 2026-10-18, and is rewritten in new words, with
+# names, places and figures kept as found, and the facts that the task needs word for word.
+map_object:
+  id: osm-way-778281679
+  name: null
+  details: {category: industry, man_made: works}
+  addresses:
+    - Schwarzschildstraße 6, 12489 Berlin
+  coordinates: {lat: 52.4302437, lon: 13.5226763}
+  distance_from_property_m: 671
+  source_id: overpass-1  # the map source of the task
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: "Schwarzschildstraße 6, 12489 Berlin"}
+  - {role: tool, pages: [web-1]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Schwarzschildstraße 6, 12489 Berlin
+    url: https://www.empbiotech.com/en/This-is-emp
+    content: |-
+      This is emp
+      emp BIOTECH makes a select range of products for biotech, pharma, medtech and research:
+      columns and resins that purify biomolecules, reagents for oligonucleotide synthesis, and
+      fine chemicals.
+      Locations
+      Berlin-Buch
+      BiotechPark Berlin-Buch, Robert-Rössle-Straße 10, 13125 Berlin
+      The head office: chromatography, organic synthesis, research and development.
+      Berlin-Adlershof
+      Technologiepark Adlershof, Schwarzschildstraße 6, 12489 Berlin
+      Oligonucleotide synthesis reagents: large-scale production, and small-scale production and bottling.
+
+finding: null

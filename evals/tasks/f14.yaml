@@ -1,0 +1,19 @@
+# F14, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F14
+suite: finding
+covers: >-
+  A wholesaler's online shop gives its address at the object, goods in stock and trade prices
+  for traders. A wholesaler stores goods and ships them to other businesses: logistics, not
+  commercial.
+date: 2026-10-18  # fixed data: the date the pages and the map data were retrieved
+
+input:
+  state: f14-wholesaler.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: logistics  # a wholesaler with goods in stock
+  status: operating  # its own website, with opening hours
+  evidence_id: web-1

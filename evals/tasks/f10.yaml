@@ -1,0 +1,19 @@
+# F10, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F10
+suite: finding
+covers: >-
+  A plan whose WFS data name a mixed area and a core area, with land for public needs, a park
+  and roads, and no page about it: a core area is mainly for shops, offices and
+  administration, so the listed type that fits is commercial.
+date: 2026-10-18  # fixed data: the date the pages and the map data were retrieved
+
+input:
+  state: f10-core-area.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: commercial  # the core area
+  status: null  # the map data do not say whether building has started
+  evidence_id: bplan-wfs-1  # the map data alone

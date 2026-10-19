@@ -1,0 +1,51 @@
+# An investigation state of a plan whose WFS data name a mixed area, a core area, land for
+# public needs, a park and roads: the finding rests on its map data alone. The plan is V-13,
+# 217 m from Corinthstraße 60, 10245 Berlin, the E3 address; its fields are as the WFS gave
+# them on 2026-10-18. One search by its number found no page about it, so that only the map
+# data speak.
+map_object:
+  id: bplan-0205013
+  name: Bebauungsplan V-13
+  details:
+    gisid: 11002002_BP_0205013
+    planid: '0205013'
+    planname: V-13
+    planartname: Qualifizierter B-Plan
+    verfahrensart: Normal
+    bereich: für die Grundstücke Alt-Stralau 63-67 (teilweise), Kynaststraße 1-6 (teilweise) und 13-17
+      (teilweise)
+    bezirk: 02 - Friedrichshain-Kreuzberg
+    bp_rechtsstand: In Kraft getreten
+    afs_behoer: Bezirksamt
+    afs_beschl: '1992-04-30'
+    afs_l_aend: '1996-11-19'
+    bbg_anfang: '2004-12-13'
+    bbg_ende: '2005-01-14'
+    aul_anfang: '2005-10-17'
+    aul_ende: '2005-11-18'
+    festsg_von: Bezirk
+    festsg_am: '2006-06-13'
+    fsg_gvbl_n: '27'
+    fsg_gvbl_s: '763'
+    fsg_gvbl_d: '2006-07-15'
+    scan_www: https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/aemter/stadtentwicklungsamt/vermessung/abzeichnungen/0205013.pdf
+    grund_www: https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/aemter/stadtentwicklungsamt/vermessung/begruendungen/0205013.pdf
+    inhalt: Mischgebiet, Kerngebiet, Flächen für den Gemeinbedarf (Jugendfreizeiteinrichtung), Grünfläche
+      (öffentliche Parkanlage), Straßenverkehrsfläche
+    ersetztdurchteil: 0200049 (2-49)
+    category: planned_objects
+  addresses: []
+  coordinates:
+    lat: 52.49784925
+    lon: 13.467849775000001
+  distance_from_property_m: 217
+  source_id: bplan-wfs-1  # the plans source of the task
+source_kind: plans  # the kind of the map object's source
+history:
+- role: model
+  tool: search
+  query: Bebauungsplan V-13
+- role: tool
+  pages: []
+pages: []
+finding: null

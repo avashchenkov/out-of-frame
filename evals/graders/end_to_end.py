@@ -27,8 +27,8 @@ class AddressLabel(Record):
     identified_type: str | None = None  # None: the object cannot be identified
     status: str | None = None  # None: no source settles it
     source_url: str | None = None  # the address of one page that shows why the label is true
-    # A Tavily search, from what the agent sees, that finds the page; None if the page's link is
-    # in the object's own data, such as a plan's PDF, which the agent can read directly.
+    # A Tavily search, from what the agent sees, that finds the page; None if the object's own
+    # data settle the label alone, or link the page and the agent can read it directly.
     search: str | None = None
     left_out: str | None = None  # why the object is not scored, such as no page it can reach
 

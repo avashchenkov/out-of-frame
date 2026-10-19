@@ -292,42 +292,45 @@ calibration.
        cause, and the person settles the change. The rules go into the agent's prompts, not
        into the types of the research scope, which every judge's set is checked against. In
        this order:
-       - The agent reads a plan's documents. Most reads of a plan's PDF, such as its reasons,
-         returned no page, and each used one of the investigation's tool calls. First find out
-         why Tavily cannot read them; if its deeper extract can, use it. A read outside Tavily
-         would change the architecture, so the person decides it. A plan whose label rests only
-         on a document that no read gets, such as a scan, is left out, as the eval architecture
-         says. The plans whose documents become readable are checked against their labels, since
-         a business area's reasons can list uses such as petrol stations.
+       - The investigation of a plan reads none of the PDFs that its WFS data link, neither the
+         scan of its drawing nor its reasons: most reads of them returned no page, each used one
+         of the investigation's tool calls, and the reasons that were read were cut and gave uses
+         where the plan sets none. A PDF that a search finds, such as a press release, it still
+         reads. Its type comes from its WFS data, by the rules below, or, for a plan without
+         them, from a page about it; where its data name its uses, it searches only for whether
+         building has started. That settles every plan label but three. Only their reasons show
+         XIV-182's petrol station and that V-18's railway is copied in from railway law: both
+         are left out, as the eval architecture says of a label that the agent cannot reach, and
+         the baseline is graded again. XV-51j is a known limitation below.
        - A plan's type by its kind of area, written out in the finding prompt: a housing area
          and a mixed area (Mischgebiet) are other, since a mixed area allows only businesses
-         that do not much disturb homes; a core area (Kerngebiet) is commercial, as for V-13; a
-         business area with no use named stays without a type; land copied into the plan from
-         other law, such as a railway ("nachrichtlich übernommen"), is not a use that the plan
-         allows; and a use that its reasons give only as the setting or a goal for the district,
-         not as what the plan allows, does not count. The person settled the mixed area.
+         that do not much disturb homes; a core area (Kerngebiet) is commercial, as for V-13; and
+         a business area with no use named stays without a type. The person settled the mixed
+         area.
        - An offer of a site for rent or sale alone does not show what the site is used for; what
          such a page says about the tenants there now does. A site that makes chemicals is a
-         plant, not production, and a wholesaler that keeps goods in stock is logistics, not
-         commercial, as the types already say.
-       - A name that says what an object is, against its map tag, such as a rainwater filter
-         tagged as a wastewater plant, is a conflict. Triage already counts it as one and missed
-         it, so the rule is made plainer, with no example from a task; if the finding prompt
-         takes it too, F6's label changes by it. The gain is wrong claims turned into objects
-         left unidentified.
-       Each rule first gets fixed-data tasks, as the eval architecture asks: T4, designed there,
-       and finding tasks of plans from their WFS data and documents, one per kind of area above.
-       After each change these run, and the component suites, which must still pass. Then, with
-       the label-trials that each change should turn written down first, one full run of E1–E5,
-       three trials each, on one day, graded label by label against the full run of 7, which
-       stays the baseline: the wrong claims apart from the objects left unidentified, the trials
-       whose address query failed marked on both sides, and a change of a label-trial or two
-       elsewhere taken as noise. Known limitations, not fixed: whether trains still run on a line
-       that the map tags as in use, since triage takes its status from the tags; a site that
-       several businesses share; an unnamed site whose page the agent's searches miss; a
-       directory entry that is out of date; a plan replaced in part by another; and a plan whose
-       state shows only on a page about the one plot that its data name, such as 5-1VE, since
-       counting such a page would change the support rubric and need its calibration again.
+         plant, not production; a wholesaler that keeps goods in stock is logistics, not
+         commercial; and a page that shows a business of the plant type, such as a fuel depot, at
+         one of the object's addresses makes the site a plant: the types already say so.
+       Each rule first gets fixed-data tasks, as the eval architecture asks: finding tasks of
+       plans from their WFS data, one per kind of area above, and finding tasks from the pages
+       that the full run read, rewritten in new words, for the rules on offers, chemicals,
+       wholesalers and a business of the plant type at a site's address. After each change these
+       run, and the component suites, which must still pass. Then, with the labels that each
+       change should turn written down first, one full run of E1–E5, three trials each, on one
+       day, graded label by label against the full run of 7, which stays the baseline: the wrong
+       claims apart from the objects left unidentified, the trials whose address query failed
+       marked on both sides, the judges' counts next to those of 7, the reads of a plan's linked
+       PDFs, which should be none, and a label counted as turned only when it changes in two
+       trials of three at least. Known limitations, not fixed: whether trains still run on a line
+       that the map tags as in use, since triage takes its status from the tags; a map tag that
+       is wrong for an object with no address and a name that points at no one site, such as a
+       rainwater filter tagged as a wastewater plant; a site that several businesses share; an
+       unnamed site whose page the agent's searches miss; a page out of date, or one that gives
+       a site's planned uses as current; a use that only a plan's documents name; a plan
+       replaced in part by another, such as XV-51j; and a plan whose state shows only on a page
+       about the one plot that its data name, such as 5-1VE, since counting such a page would
+       change the support rubric and need its calibration again.
     9. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
     10. The results in docs/results.md: each suite's scores before and after the fixes of 8,

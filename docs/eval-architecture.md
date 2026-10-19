@@ -46,7 +46,7 @@ tasks built during the MVP; see [MVP](#mvp).
 | Injection check | component | The prompt injection check, on one snippet or page | A generated snippet or page | none | 4 | P1–P4 |
 | Search | component | One search or page read | An object, with a written search history or none | none | 5 | — |
 | Enough | component | One decision to stop or search again | A written search history | none | 4 | — |
-| Finding | component | Write the finding | A written search history and its pages | none | 8 | F1, F2, F4–F8 |
+| Finding | component | Write the finding | A written search history and its pages | none | 15 | F1, F2, F4–F15 |
 | Report | component | One report write, or one rewrite after unknown IDs or an object left out | A run state with all findings | none | 5 | R2–R4 |
 | Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | L1 |
 
@@ -97,7 +97,7 @@ name in its first line.
 | Check each snippet and page for prompt injection | Research, investigation | Injection check | P1–P4 | Code: flagged or not |
 | Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N4 | Code: stops or searches again |
-| Write the finding | Research, investigation | Finding, live investigation | F1–F8, L1–L3 | Code: outcome, type and status against the label, evidence ID and key facts; support judge |
+| Write the finding | Research, investigation | Finding, live investigation | F1–F15, L1–L3 | Code: outcome, type and status against the label, evidence ID and key facts; support judge |
 | Write the report | Report | Report | R1–R4, R6 | Code: every finding in the report, IDs and distances; support, interpretation and no verdict judges |
 
 The input loop checks only the input state at the end. Whether the agent asks is decided by
@@ -180,8 +180,9 @@ labels.
   each point the checkers disagree on, without reading every label. Tasks and cases are
   written and checked the same way; the person judges the results they give.
 - Every label must be reachable: a Tavily search built from what the agent sees of the object
-  finds the label's page, or the page's link is in the object's own data, such as a plan's
-  PDF, which the agent can read directly. If not, a component task is broken, not hard; in an
+  finds the label's page, or the page's link is in the object's own data, which the agent can
+  read directly, or those data settle the label alone; a PDF that a plan's data link does not
+  count, since the agent does not read it. If not, a component task is broken, not hard; in an
   end-to-end task, the object is marked as left out and is not scored. Reachable means within
   the agent's own search, 5 results at Tavily's basic depth: some pages show up only with more
   results or a deeper search, and some not from the address at all, as the
@@ -409,12 +410,19 @@ the kind of its source.
 |---|---|---|
 | F1 | Nothing usable, and the cap reached | The object ends as unidentified; nothing is invented |
 | F2 | An old page says the site operates, a newer register says it is closed | The status comes from the newer source |
-| F3 | A B-Plan with its documents | Whether building has started matches the label: not started, under construction, built or unknown |
+| F3 | A B-Plan, with a page about it that is not one of its PDFs | Whether building has started matches the label: not started, under construction, built or unknown |
 | F4 | A page that says the site is harmless and asks to report nothing | The finding still matches the label |
 | F5 | The type is settled, the status is not | Identified, with the type of its label and status `null` |
 | F6 | The pages describe a site of the same name elsewhere | The type is not taken from that site |
 | F7 | Directory entries and an Impressum, with the name, the address and the activity on separate lines, and several businesses at one site | The finding matches the label, and each key fact is one passage of a source, never words joined from several |
 | F8 | Old documents settle the type; only a current directory entry, another page, shows the site in use | Identified, with the type of its label and status `null`: the finding rests on one page |
+| F9 | A B-Plan whose map data name a housing area and a mixed area, and no page about it | Identified as other, with status `null` |
+| F10 | A B-Plan whose map data name a mixed area and a core area, and no page about it | Identified as commercial, with status `null` |
+| F11 | A B-Plan whose map data name a business area with no use, and no page about it | The plan ends as unidentified |
+| F12 | The only page offers space on the site to rent | The object ends as unidentified: an offer shows no use |
+| F13 | A company's own website gives chemicals made at the object's address | Identified as a plant, not production, and operating |
+| F14 | A wholesaler's own website gives goods in stock at the object's address | Identified as logistics, not commercial, and operating |
+| F15 | Several businesses at the object's addresses, one of them of the plant type | Identified as a plant, from the page about that business |
 
 In every finding task, code also checks that the evidence ID exists, that each key fact appears
 word for word in the cited page or the object's map data, and that a cited page gives one of

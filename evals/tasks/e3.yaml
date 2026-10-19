@@ -182,13 +182,12 @@ expected:
     # railway: its reasons say the railway embankment is only copied in from railway law
     # ("nachrichtlich als Bahnanlage in den Bebauungsplan übernommen"). What it allows is housing,
     # a mixed area, a park and roads, which have no listed type, so other. Status null, as for
-    # V-13. The page is linked in its WFS fields (grund_www).
+    # V-13. The page is linked in its WFS fields (grund_www). On 2026-10-19 the person left it
+    # out: the agent reads none of the PDFs that a plan's WFS fields link, and only these
+    # reasons show that the railway is copied in.
     - id: plan-v-18
       object_id: bplan-0205018
       category: planned_objects
       coordinates: {lat: 52.49497633, lon: 13.468116765000001}
       distance_tolerance_m: 50
-      identified_type: other
-      status: null
-      source_url: https://www.berlin.de/ba-friedrichshain-kreuzberg/politik-und-verwaltung/aemter/stadtentwicklungsamt/vermessung/begruendungen/0205018.pdf
-      search: null
+      left_out: Only its reasons, a PDF that its WFS fields link, show that the railway is copied in.

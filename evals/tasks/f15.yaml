@@ -1,0 +1,19 @@
+# F15, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F15
+suite: finding
+covers: >-
+  Several businesses are at the object's addresses: a trading company, thirteen registered
+  companies, and a car scrap dealer in a directory. A business of the plant type at one of its
+  addresses makes the site a plant, whatever else shares it.
+date: 2026-10-18  # fixed data: the date the pages and the map data were retrieved
+
+input:
+  state: f15-plant-among-several.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: plant  # car recycling is waste recycling
+  status: operating  # a current directory entry with opening hours
+  evidence_id: web-3

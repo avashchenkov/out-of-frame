@@ -33,10 +33,15 @@ Rules:
 - The plan's own map data is about it. Any other source is about this plan only if it names
   the plan's number, in any spelling, such as "5-1VE" or "5-1 VE". A source about another plan,
   even next to it, is not about this plan, and nothing it says is a fact about this plan.
-- The type is what the plan allows on its land, by the uses that it or a page about it names,
-  not every use that the law would also permit there: the listed type that fits, or other if
-  nothing that it allows fits a listed type, such as homes or a park. If it allows several,
-  such as factories and offices, the type is the one that can affect people nearby the most.
+- The type is what the plan allows on its land, by the uses that its map data name in inhalt,
+  not every use that the law would also permit there; only where they name none, by the uses
+  that a page about it names. It is the listed type that fits, or other if nothing that it
+  allows fits a listed type, such as homes or a park. A housing area (Wohngebiet) and a mixed
+  area (Mischgebiet) are other: a mixed area allows only businesses that do not much disturb
+  homes. A core area (Kerngebiet) is commercial: it is mainly for shops, offices and
+  administration. If it allows several, such as factories and offices, the type is the one
+  that can affect people nearby the most. It is other only if none of them fits a listed type:
+  any listed type, even one with no effect such as commercial, comes before other.
   An area for businesses of any kind, such as a Gewerbegebiet or an Industriegebiet, with no
   use named, allows production, storage, offices and plants alike: a plan with one has no
   type, and is unidentified, unless a use that the plan names is a plant.
@@ -52,6 +57,14 @@ Rules:
   not about this object, and nothing it says is a fact about this object.
 - A map tag such as landuse=industrial says only that the land is industrial: on its own, it
   does not settle the type.
+- An offer of a site, or of space in it, for rent or sale does not on its own show what the
+  site is used for; what such a page says about the businesses there now does.
+- A site that makes chemicals, in any amount, is a plant, not production. A wholesaler whose
+  page shows goods kept in stock or shipped from the site is logistics, not commercial; a shop
+  or a showroom, even one that sells only to businesses, is commercial. If a page about this
+  object shows that a business at one of its addresses does work of the plant type there, such
+  as a fuel depot, the site is a plant, whatever else shares it; a directory's category that
+  groups several trades does not show it.
 {% endif %}
 - The finding rests on one page and on the map data. A search snippet and the full text of
   the same page, with the same URL, are one page. Choose it among the pages about this object

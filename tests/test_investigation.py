@@ -99,6 +99,7 @@ def test_the_search_prompt_of_a_plan_asks_for_its_number(monkeypatch):
     [[system, task]] = searcher.requests
     assert "for example by the plan's number" in system.content
     assert "names the plan's number" in system.content and "next door" not in system.content
+    assert "not a PDF that the map data link" in system.content
     assert "planname=VIII-B6" in task.content and "inhalt=Gewerbegebiet" in task.content
 
 

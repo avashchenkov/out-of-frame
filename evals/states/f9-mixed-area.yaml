@@ -1,0 +1,51 @@
+# An investigation state of a plan whose WFS data name a housing area and a mixed area: the
+# finding rests on its map data alone. The plan is XV-19, 138 m from Am Bruchland 22, 12524
+# Berlin, the E5 address; its fields are as the WFS gave them on 2026-10-18. One search by its
+# number found no page about it, so that only the map data speak.
+map_object:
+  id: bplan-0915019
+  name: Bebauungsplan XV-19
+  details:
+    gisid: 11009009_BP_0915019
+    planid: 0915019
+    planname: XV-19
+    planartname: Qualifizierter B-Plan
+    verfahrensart: Normal
+    bereich: für das Gelände zwischen Semmelweisstraße, Ostgrenze der Grundstücke Semmelweisstraße 51/55
+      und Rudower Straße 76, Rudower Straße, östlicher Begrenzung des Grundstücks Rudower Straße 38, Südgrenzen
+      der Grundstücke Rudower Straße 25-38 und Am Kiesberg 7, Am Kiesberg, Rudower Straße, Wegedornstraße
+      sowie einen Abschnitt der Straße Am Alten Friedhof im Bezirk Treptow-Köpenick, Ortsteil Altglienicke
+    bezirk: 09 - Treptow-Köpenick
+    bp_rechtsstand: In Kraft getreten
+    afs_behoer: Bezirksamt
+    afs_beschl: '1992-08-11'
+    afs_l_aend: '1995-01-17'
+    bbg_anfang: '1992-11-02'
+    bbg_ende: '1992-12-02'
+    aul_anfang: '2003-11-24'
+    aul_ende: '2003-12-08'
+    festsg_von: Bezirk
+    festsg_am: '2004-11-19'
+    fsg_gvbl_n: '48'
+    fsg_gvbl_s: '499'
+    fsg_gvbl_d: '2004-12-14'
+    scan_www: https://tk.gis-broker.de/metadata/bplan/pdf/XV-19.pdf
+    grund_www: https://tk.gis-broker.de/metadata/bplan/begruendung/XV-19.pdf
+    inhalt: allgemeines Wohngebiet, Mischgebiet, Straßenverkehrsfläche
+    ersetztdurchteil: 0915019-1VE (XV-19-1VE)
+    category: planned_objects
+  addresses: []
+  coordinates:
+    lat: 52.42311928
+    lon: 13.52966745
+  distance_from_property_m: 138
+  source_id: bplan-wfs-1  # the plans source of the task
+source_kind: plans  # the kind of the map object's source
+history:
+- role: model
+  tool: search
+  query: Bebauungsplan XV-19
+- role: tool
+  pages: []
+pages: []
+finding: null

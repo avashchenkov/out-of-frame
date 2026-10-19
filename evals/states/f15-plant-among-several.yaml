@@ -1,0 +1,73 @@
+# An investigation state with one search whose pages name several businesses at the object's
+# addresses, among them a car scrap dealer. The object, OSM way 813407382, is the industrial area
+# at Wiesendamm 15 to 39, 314 m from the E1 address. The pages are real, from the full run of
+# 2026-10-18, and are rewritten in new words, with names, places and figures kept as found, and
+# the facts that the task needs word for word.
+map_object:
+  id: osm-way-813407382
+  name: null
+  details: {category: industry, landuse: industrial}
+  addresses:
+    - Wiesendamm 15, 13597 Berlin
+    - Wiesendamm 17, 13597 Berlin
+    - Wiesendamm 21, 13597 Berlin
+    - Wiesendamm 23, 13597 Berlin
+    - Wiesendamm 25, 13597 Berlin
+    - Wiesendamm 27, 13597 Berlin
+    - Wiesendamm 29, 13597 Berlin
+    - Wiesendamm 29-31, 13597 Berlin
+    - Wiesendamm 33, 13597 Berlin
+    - Wiesendamm 35, 13597 Berlin
+    - Wiesendamm 37-39, 13597 Berlin
+  coordinates: {lat: 52.52742575, lon: 13.24349015}
+  distance_from_property_m: 314
+  source_id: overpass-1  # the map source of the task
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: "Wiesendamm 15, 13597 Berlin"}
+  - {role: tool, pages: [web-1, web-2, web-3]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Wiesendamm 15, 13597 Berlin
+    url: https://www.creditsafe.com/business-index/en-gb/company/fobo-trading-gmbh-de20169959
+    content: |-
+      Fobo Trading GmbH, company profile
+      Company Address:
+      Wiesendamm 15 in 13597 Berlin
+      Founded: 2015
+      Register number: HRB 166169 B at the Amtsgericht Berlin-Charlottenburg
+      Fobo Trading GmbH works in the industry of dairies and cheese making.
+  - id: web-2
+    kind: web search
+    request: Wiesendamm 15, 13597 Berlin
+    url: https://implisense.com/en/addresses/13597-berlin-wiesendamm-15-17
+    content: |-
+      Wiesendamm 15-17, 13597 Berlin
+      13 companies are registered at this address.
+      Industries: other business support services, wholesale of fruit and vegetables,
+      advertising agencies, management consultancy, other specialised construction work
+      Companies at this address
+      AZ Werbeagentur UG (haftungsbeschränkt)
+      E-Commerce Wiesendamm GmbH
+      Gastrogeräte VS GmbH
+      Kriti Feinkost GmbH
+      Thomas Prütz Bauausführungen GmbH
+  - id: web-3
+    kind: web search
+    request: Wiesendamm 15, 13597 Berlin
+    url: https://www.dasoertliche.de/Themen/An-und-Verkauf-von-KFZ-Schrotthandel-Berlin-Spandau-Wiesendamm
+    content: |-
+      An- und Verkauf von KFZ Schrotthandel
+      Wiesendamm 15
+      13597 Berlin - Spandau
+      Branche:
+      Autoverwertung in Berlin
+      Phone: 030 77 90 69 61. One review gives it 5 of 5 stars.
+      Die Adresse von An- und Verkauf von KFZ Schrotthandel lautet: Wiesendamm 15, 13597 Berlin
+      Montag | 08:00 - 18:00 Uhr
+      Samstag | 08:00 - 16:00 Uhr
+
+finding: null

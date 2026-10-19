@@ -1,0 +1,42 @@
+# An investigation state with one search whose page is the online shop of a wholesaler that sells
+# sweets and drinks in stock to traders from the object's address. The object, OSM way 1429114463,
+# is the industrial area at Bergiusstraße 21, 289 m from Neuköllnische Allee 52, 12057 Berlin, the
+# E2 address. The page is real, from the full run of 2026-10-18, and is rewritten in new words,
+# with names, places and figures kept as found, and the facts that the task needs word for word.
+map_object:
+  id: osm-way-1429114463
+  name: null
+  details: {category: industry, landuse: industrial}
+  addresses:
+    - Bergiusstraße 21, 12057 Berlin
+  coordinates: {lat: 52.46404715, lon: 13.459513399999999}
+  distance_from_property_m: 289
+  source_id: overpass-1  # the map source of the task
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: "Bergiusstraße 21, 12057 Berlin"}
+  - {role: tool, pages: [web-1]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Bergiusstraße 21, 12057 Berlin
+    url: https://allinonetrade.de
+    content: |-
+      Süßwaren & Getränke Großhandel | Allinone Trade
+      Customer service, with help on returns and payment.
+      Versand & Lieferzeit
+      Händlerkonto beantragen
+      Contact
+      Bergiusstraße 21, 12057 Berlin
+      Phone: 030 98 56 50 46
+      (Mo-Sa.) 9:00 - 18:00
+      bae Bites Cookie Dough 12x40g, vegan and organic
+      Händlerpreise nach Prüfung und Freischaltung Ihres Kundenkontos.
+      Sofort verfügbar
+      Chaos Candy Splash Treats Fruity 24x 330 ml
+      Händlerpreise nach Prüfung und Freischaltung Ihres Kundenkontos.
+      Sofort verfügbar
+
+finding: null

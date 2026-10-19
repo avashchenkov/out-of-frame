@@ -1,0 +1,18 @@
+# F13, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F13
+suite: finding
+covers: >-
+  A company's own website gives its site at the object's address, where it makes reagents for
+  oligonucleotide synthesis. Making chemicals, in any amount, is a plant, not production.
+date: 2026-10-18  # fixed data: the date the pages and the map data were retrieved
+
+input:
+  state: f13-chemicals.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: plant  # chemicals are made there
+  status: operating  # the company's own website lists the site
+  evidence_id: web-1
