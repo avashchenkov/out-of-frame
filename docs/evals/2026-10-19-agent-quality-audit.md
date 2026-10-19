@@ -193,6 +193,86 @@ This is a basis for choosing work, not an approved implementation plan. No model
 tool-budget or full-pipeline wider-search comparison was run for this audit. The architecture
 candidates above are not implemented or added to the roadmap.
 
+## Readiness and proposed priorities
+
+**The audit is ready to guide implementation experiments.** Another broad investigation is
+not needed before starting step 10.9. It is not evidence that every proposed fix works, nor
+that every historical failure remains after 10.8. Keep the diagnosis here; promote only
+chosen interventions into the roadmap. Record experiment outcomes alongside their runs,
+then update this audit's conclusions when the evidence changes.
+
+**TODO: evaluate the proposals below.** The order is a recommendation, not a new commitment
+to implement every row. Effort estimates are relative engineering effort, not measured
+runtime cost. Expected benefit means a plausible target supported by the audit, not a
+predicted percentage gain.
+
+| Order | Intervention | Engineering effort / expected benefit | Smallest useful check |
+|---|---|---|---|
+| 1 | Step 10.9: compare default, high and extra-high effort on the existing finding suite, keeping prompts and evidence fixed | Small change, potentially broad benefit to rule execution; a cheap diagnostic where evidence and an existing rule are already sufficient. Runtime cost may rise | Three trials per task; type/status and grounding separately, plus cost and time. If violations remain, compare one stronger model under the same conditions before redesigning around a model limitation |
+| 2 | Step 10.10: a consistent classification decision order, with a separate status decision | Medium effort, broad potential because type errors also propagate into effects and report wording | Compare with the current prompts at the selected effort. Keep type meanings and evidence requirements; use general rules and new examples, not addresses from E1–E5 |
+| 3 | Make the next search action explicit when an eligible HTML result looks relevant but its snippet lacks the needed facts | Small prompt change; directly targets unused extract calls, such as CURVE. Benefit is confined to investigations with a useful next step | With cap still 3, compare stopping decisions from fixed histories: insufficient snippet → read; evidence already sufficient → stop; irrelevant page → no forced read. Then check selected live investigations |
+| 4 | Test wider/deeper search in the investigation, not just page retrieval | Small configuration change, potentially useful for missed HTML sources; more checker calls and larger context increase total cost | Use the existing spike as motivation. Compare basic/5 with basic/20, then basic/20 with advanced/20 while other settings stay fixed. Measure final findings as well as page recall; keep excluded labels out of the baseline score |
+| 5 | Review status rules that permit a wrong answer: map-default operating, stale directories, and a plot treated as a whole plan | Medium effort; directly relevant to observed status errors, but requires decisions about acceptable evidence rather than stronger wording alone | Agree the rule first. Contrast current operation / old evidence / unknown, and whole-site / one-plot evidence. Check triage, finding, report and rubric consistency before applying it |
+| 6 | Protect a few known report facts with code: distances, legal status and references in object-specific blocks | Medium effort, narrow but predictable protection against free-text distortion; does not improve identification | Replay saved Findings into report generation. Check exact values and citation placement while keeping the report readable. Avoid a full report redesign for these few facts |
+| 7 | One bounded correction attempt after a grounding rejection | Small to medium effort, narrow potential to recover evidence-format failures; extra model calls only on rejection | Retry on the same evidence with the exact validation errors, then validate again. Keep unidentified when evidence is insufficient; do not recover a case merely by weakening the check |
+
+Rows 1–2 are already represented by 10.9–10.10. The separate status-policy review in row 5
+is broader than ordering the existing classification rules. Rows 3–7 are candidates beyond
+those roadmap steps, not reasons to delay the next code change. The recommended next action
+is row 1. Reassess later priorities after rows 1–2 and their planned full run: an error that
+disappears does not need a second fix. Move row 5 ahead of further model spending if the
+remaining status errors follow the current rules correctly.
+
+### Conditions for trusting the comparison
+
+- Record the code revision, agent model and effort, prompt version, tool budget and search
+  settings. Keep judge model, effort and calibrated rubric fixed when comparing agent
+  models. `JUDGE_MODEL` currently defaults to `MODEL`, so set it explicitly for such runs;
+  changing the agent must not silently change its evaluator.
+- First use component inputs to isolate the intervention; retain the tasks that currently
+  pass as controls. Add a task only for a failure mechanism that no current task covers.
+  Include unfamiliar examples and negative cases: an order that always chooses a more
+  hazardous type is not an improvement.
+- Record wrong claims, unidentified outcomes and unknown statuses separately. Fewer false
+  assertions obtained by making everything unknown is a coverage tradeoff, not a general
+  quality gain. A page found or an extra call used is not itself a successful finding.
+- For a promising change, require a repeated improvement, not one fortunate answer. Use
+  the roadmap's two-of-three criterion for a changed E2E label as an operational signal,
+  not statistical proof. Inspect new regressions rather than hiding them in the total.
+- Compare live-search variants close together and retain their returned text: live data and
+  queries vary. Keep failed address lookups visible. Sprenger/AMR retrieval improvements
+  belong in a separate diagnostic result while those labels remain excluded.
+- Count all added work. Each search result has its own injection-check call; 20 instead of
+  5 results can raise checking and prompt costs even without more search calls. Reflect any
+  changed search depth in cost accounting before claiming a cost/quality improvement.
+- Use the already planned full E1–E5 run after 10.9–10.10 to check the combined result;
+  component comparisons supply the attribution. Do not run the whole suite after every
+  wording edit. If a later search or architecture change is selected, validate its final
+  pipeline too. Choose an acceptable cost/time tradeoff before adopting a costlier setting.
+
+### Defer unless new evidence makes the case
+
+- **A higher tool cap by itself:** first show failed investigations that exhaust all calls
+  and still have a useful next action. The one-call CURVE/Wiesendamm stops do not justify it.
+- **Multiple sources per finding, richer site/plan state, or a new orchestration design:**
+  these affect evidence semantics, citations and graders. First demonstrate residual
+  failures that the current contract prevents solving. The one-page rule also protects
+  against mixing different businesses' facts; removing it has a real tradeoff.
+- **Another search provider or subscription plan:** test available depth/results settings
+  and extraction first. The current evidence does not require a provider migration.
+- **More prompt text everywhere, repeated self-review, or a stronger model everywhere:**
+  target a demonstrated failure and measure it. Do not build model routing merely to avoid
+  the initial fixed-input comparison.
+- **Report-only effect fixes for upstream type errors:** fix classification first. A
+  deterministic effect mapping cannot repair a wrong type.
+- **Reopening linked-plan PDF support or redoing completed 10.8 fixes:** outside this
+  improvement batch. Nor should honest unknowns be turned into guesses to chase 100%.
+
+The stopping point is a measured, useful improvement with documented residual limits,
+not the elimination of every fail. After the planned batch, continue only where a remaining
+mechanism has a concrete affordable intervention. Otherwise record it as a limitation and
+finish the MVP. No exact return-on-effort ranking is proven until these comparisons run.
+
 ## Corrections to earlier interpretations
 
 - Do not mark every group as a prompt defect merely because more instructions might help.
