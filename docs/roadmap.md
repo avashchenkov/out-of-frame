@@ -337,9 +337,11 @@ calibration.
     9. The agent's model calls at the extra-high effort, as the judges'. Its findings were
        unstable from trial to trial where a page settled the object but a rule was applied one
        way or another, in the full run of 7 and the component runs of 8, and the judges grew
-       stable at the extra-high effort in their calibration. First the finding suite at the
-       default effort, high and extra-high, then the effort that it shows best; the cost and
-       the time of a run are counted with it.
+       stable at the extra-high effort in their calibration. First the Enough suite is built,
+       N1–N6: the finding suite starts from fixed pages, so it cannot show a search that stops
+       before reading a page whose snippet lacks the facts. Then the finding and Enough suites
+       at the default effort, high and extra-high, and the effort that they show best; the
+       cost and the time of a run are counted with it.
     10. A classification funnel: the type of an object or a plan settled by questions in a
        fixed order, from what can affect people nearby the most to the least, in place of the
        special rules added one by one. Before any code: where the type is decided
