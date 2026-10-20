@@ -41,9 +41,12 @@ from out_of_frame import agent, geocoding, prices
 from out_of_frame.config import (
     EFFORT,
     INJECTION_EFFORT,
+    INJECTION_MAX_TOKENS,
     INJECTION_MODEL,
     JUDGE_EFFORT,
+    JUDGE_MAX_TOKENS,
     JUDGE_MODEL,
+    MAX_TOKENS,
     MODEL,
 )
 from out_of_frame.grounding import collect_cited_page, find_grounding_errors
@@ -550,11 +553,21 @@ def run(
                 "prices_as_of": prices.load().as_of.isoformat(),  # so that stale prices show
                 "model": MODEL,
                 "effort": EFFORT,
+                "max_tokens": MAX_TOKENS,
                 "injection_model": INJECTION_MODEL,
                 "injection_effort": INJECTION_EFFORT,
+                "injection_max_tokens": INJECTION_MAX_TOKENS,
             }
-            # the judge version, as evals/calibration/passed.yaml records it
-            | ({"judge_model": JUDGE_MODEL, "judge_effort": JUDGE_EFFORT} if judged else {})
+            # the judge version, as evals/calibration/passed.yaml records it, and its output tokens
+            | (
+                {
+                    "judge_model": JUDGE_MODEL,
+                    "judge_effort": JUDGE_EFFORT,
+                    "judge_max_tokens": JUDGE_MAX_TOKENS,
+                }
+                if judged
+                else {}
+            )
         )
         try:
             for task in tasks:

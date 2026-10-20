@@ -229,7 +229,7 @@ remaining status errors follow the current rules correctly.
 
 - Record the code revision, agent model and effort, prompt version, tool budget and search
   settings. Keep judge model, effort and calibrated rubric fixed when comparing agent
-  models. `JUDGE_MODEL` no longer defaults to `MODEL`: it has its own setting since step 10.9,
+  models. Since step 10.9 `JUDGE_MODEL` has its own default and no longer falls back to `MODEL`,
   so changing the agent does not silently change its evaluator. The calibration gate refuses a
   judge model or effort other than the calibrated one, but only on report and end-to-end runs;
   the other component runs have no judge to change. The agent's effort does not touch the judges.

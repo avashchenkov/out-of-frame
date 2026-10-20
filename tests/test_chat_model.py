@@ -1,5 +1,10 @@
 """The chat model that every model call is built on, and the settings that each call gets."""
 
+import functools
+
+from langchain_anthropic import ChatAnthropic
+
+from evals.graders import judges
 from out_of_frame import (
     chat_model,
     conversation,
@@ -22,31 +27,42 @@ def test_the_model_gets_its_output_tokens():
     assert build_chat_model("m", "default", 1234).max_tokens == 1234
 
 
-def test_the_injection_check_has_its_own_settings_and_every_other_call_the_agents(monkeypatch):
-    builders = {
-        "extract": (conversation, conversation.build_extract_model),
-        "ask": (conversation, conversation.build_ask_model),
-        "triage": (triage, triage.build_triage_model),
-        "search": (investigation, investigation.build_search_model),
-        "finding": (finding, finding.build_finding_model),
-        "report": (report, report.build_report_model),
-        "injection check": (prompt_injection, prompt_injection.build_check_model),
-    }
-    # Settings of its own, apart from the agent's whatever the defaults, so that a swap shows.
+def test_each_call_gets_the_settings_of_its_role(monkeypatch):
+    """The settings of the models that the builders really build: the agent's for every call but
+    the injection check's and the judges', which get their own, set apart from the agent's here
+    whatever the defaults, so that a swap shows."""
     monkeypatch.setattr(prompt_injection, "INJECTION_MODEL", "an injection model")
     monkeypatch.setattr(prompt_injection, "INJECTION_EFFORT", "an injection effort")
     monkeypatch.setattr(prompt_injection, "INJECTION_MAX_TOKENS", 1234)
-    built = {}
-    for name, (module, builder) in builders.items():
+    monkeypatch.setattr(judges, "JUDGE_MODEL", "a judge model")
+    monkeypatch.setattr(judges, "JUDGE_EFFORT", "a judge effort")
+    monkeypatch.setattr(judges, "JUDGE_MAX_TOKENS", 5678)
+    built = []
 
-        def build(model=MODEL, effort=EFFORT, max_tokens=MAX_TOKENS, name=name):
-            built[name] = (model, effort, max_tokens)
-            return chat_model.build_chat_model(model, effort, max_tokens)
+    def record(**kwargs) -> ChatAnthropic:
+        built.append(ChatAnthropic(**kwargs))
+        return built[-1]
 
-        monkeypatch.setattr(module, "build_chat_model", build)
+    monkeypatch.setattr(chat_model, "ChatAnthropic", record)
+    builders = {
+        "extract": conversation.build_extract_model,
+        "ask": conversation.build_ask_model,
+        "triage": triage.build_triage_model,
+        "search": investigation.build_search_model,
+        "finding": finding.build_finding_model,
+        "report": report.build_report_model,
+        "injection check": prompt_injection.build_check_model,
+        "judge": judges.build_judge_model,
+    }
+    settings = {}
+    for name, builder in builders.items():
+        build = functools.partial(builder, judges.SupportGrade) if name == "judge" else builder
         builder.cache_clear()
-        builder()
+        build()
         builder.cache_clear()  # so that no later test gets this model
-    agent = {name: (MODEL, EFFORT, MAX_TOKENS) for name in builders if name != "injection check"}
-    injection = ("an injection model", "an injection effort", 1234)
-    assert built == agent | {"injection check": injection}
+        settings[name] = (built[-1].model, built[-1].output_config, built[-1].max_tokens)
+    agent = (MODEL, None if EFFORT == "default" else {"effort": EFFORT}, MAX_TOKENS)
+    assert settings == {name: agent for name in list(builders)[:6]} | {
+        "injection check": ("an injection model", {"effort": "an injection effort"}, 1234),
+        "judge": ("a judge model", {"effort": "a judge effort"}, 5678),
+    }

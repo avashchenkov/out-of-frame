@@ -36,7 +36,15 @@ from evals.run import (
     trust_every_page,
 )
 from out_of_frame import conversation, finding, investigation, prices, prompt_injection, report
-from out_of_frame.config import EFFORT, INJECTION_EFFORT, INJECTION_MODEL, MODEL
+from out_of_frame.config import (
+    EFFORT,
+    INJECTION_EFFORT,
+    INJECTION_MAX_TOKENS,
+    INJECTION_MODEL,
+    JUDGE_MAX_TOKENS,
+    MAX_TOKENS,
+    MODEL,
+)
 from out_of_frame.prices import ModelPrice
 from out_of_frame.state import (
     Address,
@@ -739,9 +747,12 @@ def test_the_judges_grade_a_report_task_after_the_part_at_their_own_cost(monkeyp
         json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()[:3]
     ]
     assert header["judge_model"] == judge_model and header["judge_effort"]
-    assert header["model"] == MODEL and header["effort"] == EFFORT
-    assert header["injection_model"] == INJECTION_MODEL
-    assert header["injection_effort"] == INJECTION_EFFORT
+    assert header["judge_max_tokens"] == JUDGE_MAX_TOKENS
+    assert (header["model"], header["effort"], header["max_tokens"]) == (MODEL, EFFORT, MAX_TOKENS)
+    injection = (INJECTION_MODEL, INJECTION_EFFORT, INJECTION_MAX_TOKENS)
+    assert (
+        tuple(header[f"injection_{key}"] for key in ("model", "effort", "max_tokens")) == injection
+    )
     assert graded["passed"] and graded["judges"] == {"interpretation": "pass", "no_verdict": "pass"}
     assert graded["judge_grades"]["no_verdict"]["verdict"] == "pass"
     assert summary["graders"]["interpretation"] == summary["graders"]["no_verdict"] == 2

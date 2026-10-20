@@ -41,9 +41,12 @@ from out_of_frame import agent, cli, map_objects, prices
 from out_of_frame.config import (
     EFFORT,
     INJECTION_EFFORT,
+    INJECTION_MAX_TOKENS,
     INJECTION_MODEL,
     JUDGE_EFFORT,
+    JUDGE_MAX_TOKENS,
     JUDGE_MODEL,
+    MAX_TOKENS,
     MODEL,
 )
 from out_of_frame.investigation import Context
@@ -69,8 +72,10 @@ def run_agent(
         "date": date.isoformat(),
         "model": MODEL,
         "effort": EFFORT,
+        "max_tokens": MAX_TOKENS,
         "injection_model": INJECTION_MODEL,
         "injection_effort": INJECTION_EFFORT,
+        "injection_max_tokens": INJECTION_MAX_TOKENS,
         "draft": None,
         "transcript": [],
         "error": None,
@@ -142,6 +147,7 @@ def judge_run(saved: dict, run_file: Path) -> tuple[dict, Path]:
         "run_sha256": hashlib.sha256(run_file.read_bytes()).hexdigest(),
         "judge_model": JUDGE_MODEL,
         "judge_effort": JUDGE_EFFORT,
+        "judge_max_tokens": JUDGE_MAX_TOKENS,
         "rubrics_sha256": {
             name: hashlib.sha256((folder / name).read_bytes()).hexdigest()
             for name in RUBRICS.values()

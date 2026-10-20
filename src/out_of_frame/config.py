@@ -8,15 +8,17 @@ from importlib.metadata import version
 # way in the next. An effort of "default" leaves it to the API.
 MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
 EFFORT = os.environ.get("OUT_OF_FRAME_EFFORT", "xhigh")
-# The output tokens of one answer, its thinking included: langchain's default of 4096 can go on
-# the thinking alone, as it did for a report about some 15 objects.
+# The output tokens of one answer, its thinking included: langchain's fallback of 4096, for a
+# model that it has no profile of, such as Haiku 5.5, can go on the thinking alone, as it did for
+# a report about some 15 objects.
 MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_MAX_TOKENS", "16000"))
 
 # The prompt injection check's own model, effort and output tokens: a classifier apart from the
 # agent's reasoning, which runs on every snippet and page.
 INJECTION_MODEL = os.environ.get("OUT_OF_FRAME_INJECTION_MODEL", "claude-haiku-5-5")
 INJECTION_EFFORT = os.environ.get("OUT_OF_FRAME_INJECTION_EFFORT", "default")
-INJECTION_MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_INJECTION_MAX_TOKENS", "16000"))
+# 4096, as the check had before it got its own settings, and passed its suites with.
+INJECTION_MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_INJECTION_MAX_TOKENS", "4096"))
 
 # The model of the evals' LLM judges, which grade the agent's output; the agent never uses it.
 JUDGE_MODEL = os.environ.get("OUT_OF_FRAME_JUDGE_MODEL", "claude-haiku-5-5")
