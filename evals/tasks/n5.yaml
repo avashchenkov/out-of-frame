@@ -1,0 +1,19 @@
+# N5, Enough: one decision to stop or to make one more tool call, from a written search history.
+# See docs/eval-architecture.md#enough.
+id: N5
+suite: enough
+covers: >-
+  A result about this object, not yet read, whose snippet lacks the facts that settle it. The
+  owner's own page about the site at the object's address shows up with its name, its address
+  and the office space on offer, but not what the site is used for; the other result offers
+  office space there, which shows no use, and a search by the object's second address found
+  nothing. One call is left: a search could only add snippets that no call is left to read,
+  while reading the owner's page gives its whole text.
+date: 2026-10-18  # fixed data: the date the real pages and the map data were retrieved
+
+input:
+  state: n5-thin-snippet.yaml  # in evals/states/
+
+# Read only by the grader.
+expected:
+  reads: https://www.beos.net/objekte/curve-campus  # an extract call of this URL, no other call

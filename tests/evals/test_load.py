@@ -52,6 +52,23 @@ def rename_page_to_map_source(task, state):
     state["history"][1]["pages"][0] = state["map_object"]["source_id"]
 
 
+def leave_the_read_page(task, state):
+    url = task["expected"]["leaves_unread"]
+    state["history"] += [
+        {"role": "model", "tool": "extract", "url": url},
+        {"role": "tool", "pages": []},
+    ]
+
+
+def read_the_page(task, state):
+    """N5's last call, the search that found nothing, becomes a read of the page instead."""
+    url = task["expected"]["reads"]
+    state["history"][-2:] = [
+        {"role": "model", "tool": "extract", "url": url},
+        {"role": "tool", "pages": []},
+    ]
+
+
 def drop_calls(task, state):
     state["history"] = [entry for entry in state["history"] if entry["role"] == "tool"]
 
@@ -126,6 +143,25 @@ BROKEN = [
         "only it, expects the property and the destinations",
     ),
     ("i2.yaml", lambda task, state: task["expected"].pop("destinations"), "together"),
+    ("n3.yaml", repeat_last_call, "at the cap"),
+    (
+        "n5.yaml",
+        lambda task, state: task["expected"].update(reads="https://other.example"),
+        "no page with the URL",
+    ),
+    ("n5.yaml", read_the_page, "has been read already"),
+    (
+        "n1.yaml",
+        lambda task, state: task["expected"].update(reads="https://other.example"),
+        "one of stops, reads and leaves_unread",
+    ),
+    ("f2.yaml", lambda task, state: task.update(expected={"stops": True}), "an Enough task"),
+    (
+        "n6.yaml",
+        lambda task, state: task["expected"].update(leaves_unread="https://other.example"),
+        "no page with the URL 'https://other.example'",
+    ),
+    ("n6.yaml", leave_the_read_page, "has been read already"),
 ]
 
 

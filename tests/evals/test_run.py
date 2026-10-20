@@ -23,6 +23,7 @@ from evals.run import (
     Trial,
     abstain,
     check_page,
+    decide_enough,
     describe_judges,
     draft_finding,
     grade,
@@ -308,6 +309,38 @@ def test_draft_finding_drafts_the_finding_from_the_state(monkeypatch):
     assert trial.outcome == found
     with pytest.raises(TypeError):
         draft_finding(MAP_OBJECT, dt.date(2026, 10, 3), NoWebSearch())
+
+
+@pytest.mark.parametrize(
+    "calls, passed",
+    [
+        ([("extract", {"url": "https://www.beos.net/objekte/curve-campus"})], True),
+        ([("search", {"query": "CURVE-Campus Adlershof"})], False),
+        ([], False),
+    ],
+    ids=["reads the page", "searches instead", "stops"],
+)
+def test_decide_enough_grades_the_model_s_one_call_and_runs_none(monkeypatch, calls, passed):
+    searcher = FakeSearcher(*calls)
+    monkeypatch.setattr(investigation, "build_search_model", lambda: searcher)
+    task = load(TASKS / "n5.yaml")
+    trial = decide_enough(task.inputs, dt.date(2026, 10, 18), NoWebSearch())  # no search runs
+    assert len(searcher.requests) == 1
+    [graded] = grade(task, trial.outcome)
+    assert graded.grader == "decision" and graded.passed is passed
+    with pytest.raises(TypeError):
+        decide_enough(MAP_OBJECT, dt.date(2026, 10, 18), NoWebSearch())
+
+
+def test_the_enough_tasks_record_the_model_s_call(monkeypatch, tmp_path):
+    read = ("extract", {"url": "https://www.beos.net/objekte/curve-campus"})
+    monkeypatch.setattr(investigation, "build_search_model", lambda: FakeSearcher(read))
+    tasks = select_tasks("decide_enough", [])
+    assert [task.id for task in tasks] == ["N1", "N2", "N3", "N4", "N5", "N6"]
+    out = tmp_path / "enough.jsonl"
+    assert run([load(TASKS / "n5.yaml")], decide_enough, 1, out)["N5"]["pass^k"]
+    recorded = json.loads(out.read_text(encoding="utf-8").splitlines()[1])
+    assert recorded["call"] == {"role": "model", "tool": "extract", "query": None} | read[1]
 
 
 def test_check_page_checks_the_page_alone(monkeypatch):

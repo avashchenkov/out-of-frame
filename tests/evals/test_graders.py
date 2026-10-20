@@ -5,6 +5,7 @@ import datetime as dt
 import pytest
 
 from evals.graders.end_to_end import AddressLabel, grade_findings, grade_journeys
+from evals.graders.enough import ExpectedDecision, grade_decision
 from evals.graders.finding import Expected, grade_grounding, grade_result
 from evals.graders.input_loop import ExpectedDestination, grade_destinations
 from evals.graders.prompt_injection import grade_flagged
@@ -18,6 +19,7 @@ from out_of_frame.state import (
     MapObject,
     RunState,
     Source,
+    ToolCall,
 )
 
 MAP_OBJECT = MapObject(
@@ -449,3 +451,36 @@ def test_two_places_in_one_building_keep_their_own_journeys(time):
 
 def test_the_input_is_graded_without_the_journeys():
     assert grade_destinations(journeys("found", "found"), [WORK_PLACE]).passed
+
+
+SEARCH_CALL = ToolCall(role="model", tool="search", query="Teststraße 1 Berlin")
+READ_PAGE = ToolCall(role="model", tool="extract", url="https://example.org/a")
+READ_OTHER = ToolCall(role="model", tool="extract", url="https://example.org/b")
+
+
+@pytest.mark.parametrize(
+    "call, expected, passed",
+    [
+        (None, ExpectedDecision(stops=True), True),
+        (SEARCH_CALL, ExpectedDecision(stops=True), False),
+        (READ_PAGE, ExpectedDecision(stops=False), True),
+        (None, ExpectedDecision(stops=False), False),
+        (READ_PAGE, ExpectedDecision(reads="https://example.org/a"), True),
+        (READ_OTHER, ExpectedDecision(reads="https://example.org/a"), False),
+        (SEARCH_CALL, ExpectedDecision(reads="https://example.org/a"), False),  # not a read
+        (None, ExpectedDecision(reads="https://example.org/a"), False),
+        (SEARCH_CALL, ExpectedDecision(leaves_unread="https://example.org/a"), True),
+        (None, ExpectedDecision(leaves_unread="https://example.org/a"), True),
+        (READ_OTHER, ExpectedDecision(leaves_unread="https://example.org/a"), True),
+        (READ_PAGE, ExpectedDecision(leaves_unread="https://example.org/a"), False),
+    ],
+)
+def test_the_decision_passes_only_as_expected(call, expected, passed):
+    grade = grade_decision(call, expected)
+    assert grade.passed is passed and bool(grade.reasons) is not passed
+
+
+def test_a_failed_decision_says_what_the_model_did():
+    assert grade_decision(None, ExpectedDecision(stops=False)).reasons == ("it stops",)
+    reasons = grade_decision(READ_OTHER, ExpectedDecision(reads="https://example.org/a")).reasons
+    assert reasons == ("it calls extract with 'https://example.org/b'",)

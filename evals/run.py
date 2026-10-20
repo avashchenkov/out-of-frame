@@ -32,6 +32,7 @@ from evals.graders.end_to_end import (
     grade_journeys,
     mark_branches,
 )
+from evals.graders.enough import ExpectedDecision, grade_decision
 from evals.graders.finding import Expected, Grade, grade_grounding, grade_result
 from evals.graders.input_loop import ExpectedInput, grade_destinations, grade_property
 from evals.graders.prompt_injection import grade_flagged
@@ -57,6 +58,7 @@ from out_of_frame.state import (
     MapObject,
     RunState,
     Source,
+    ToolCall,
 )
 from out_of_frame.web_search import (
     MeteredWebSearch,
@@ -80,12 +82,19 @@ class Outcome:
 
 
 @dataclass(frozen=True)
+class Decision:
+    """Where an Enough task ends: the tool call that the model makes, or None if it stops."""
+
+    call: ToolCall | None
+
+
+@dataclass(frozen=True)
 class Trial:
     """What a part returns. The harness counts the tool calls and the cost itself."""
 
     # bool: whether the injection check flagged the page; str: a report's draft; RunState: the
     # state where the input loop or an end-to-end run ends
-    outcome: Outcome | bool | str | RunState
+    outcome: Outcome | Decision | bool | str | RunState
     transcript: list[dict]  # for a person who looks into a failure; no grader reads it
     run: Path | None = None  # an end-to-end trial's saved run, which the judges grade
 
@@ -129,6 +138,15 @@ def draft_finding(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial
         raise TypeError("draft_finding needs a task from a written state")
     finding = out_of_frame.finding.draft_finding(inputs, date)
     return Trial(Outcome(finding, []), transcript=[])
+
+
+def decide_enough(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
+    """The model's decision to stop or to make one more tool call, on a task from a written
+    search history. Code does not run the call."""
+    if not isinstance(inputs, InvestigationState):
+        raise TypeError("decide_enough needs a task from a written state")
+    call = out_of_frame.investigation.choose_call(inputs, date)
+    return Trial(Decision(call), transcript=[])
 
 
 def investigate(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Trial:
@@ -237,6 +255,7 @@ PARTS: dict[str, Part] = {
     "trust_every_page": trust_every_page,
     "check_page": check_page,
     "draft_finding": draft_finding,
+    "decide_enough": decide_enough,
     "investigate": investigate,
     "triage_object": triage_object,
     "write_report": write_report,
@@ -249,6 +268,7 @@ PART_SUITES = {
     "trust_every_page": {"injection check"},
     "check_page": {"injection check"},
     "draft_finding": {"finding"},
+    "decide_enough": {"enough"},
     "investigate": {"live investigation"},
     "triage_object": {"triage"},
     "write_report": {"report"},
@@ -273,7 +293,7 @@ def select_graded_sources(task: Task, outcome: Outcome) -> list[Source]:
     return outcome.sources
 
 
-def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
+def grade(task: Task, outcome: Outcome | Decision | bool | str | RunState) -> list[Grade]:
     """The grades that pass or fail; an end-to-end trial's findings are graded against the
     labels apart, in run_task."""
     expected = task.expected
@@ -292,6 +312,8 @@ def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
         return [grade_citations(outcome, task.inputs), grade_distances(outcome, task.inputs)]
     if isinstance(outcome, bool) and isinstance(expected, bool):
         return [grade_flagged(outcome, expected)]
+    if isinstance(outcome, Decision) and isinstance(expected, ExpectedDecision):
+        return [grade_decision(outcome.call, expected)]
     if isinstance(outcome, Outcome) and isinstance(expected, Expected):
         map_object = find_map_object(task.inputs)
         return [
@@ -301,7 +323,9 @@ def grade(task: Task, outcome: Outcome | bool | str | RunState) -> list[Grade]:
     raise TypeError(f"{task.id}: the part's outcome does not fit the task's expected result")
 
 
-def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState, saved: dict | None) -> dict:
+def dump_outcome(
+    task: Task, outcome: Outcome | Decision | bool | str | RunState, saved: dict | None
+) -> dict:
     """What a person needs to check the grades; an end-to-end run's state is in its own file,
     saved, which also tells how the query for the addresses ended, next to the branches."""
     if isinstance(outcome, RunState):
@@ -315,6 +339,8 @@ def dump_outcome(task: Task, outcome: Outcome | bool | str | RunState, saved: di
         return {"flagged": outcome}
     if isinstance(outcome, str):
         return {"draft": outcome}
+    if isinstance(outcome, Decision):
+        return {"call": outcome.call.model_dump(mode="json") if outcome.call else None}
     return {
         "finding": outcome.finding.model_dump(mode="json"),
         # The sources the finding is graded against, so that the grade can be checked later.

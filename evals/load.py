@@ -12,6 +12,7 @@ import yaml
 from pydantic import ValidationError, model_validator
 
 from evals.graders.end_to_end import AddressLabel, ExpectedRun
+from evals.graders.enough import ExpectedDecision
 from evals.graders.finding import Expected
 from evals.graders.input_loop import ExpectedDestination, ExpectedInput
 from out_of_frame import research_scope
@@ -69,8 +70,9 @@ class Label(Record):
 
 class TaskExpected(Record):
     """The label of a real object, the result that follows a written state, whether the
-    injection check should flag a page, or how the input loop should end: the property and
-    the places the user travels to; an end-to-end task adds the labels of the objects there."""
+    injection check should flag a page, the decision that follows a written search history, or
+    how the input loop should end: the property and the places the user travels to; an
+    end-to-end task adds the labels of the objects there."""
 
     label: Label | None = None
     outcome: Literal["identified", "unidentified"] | None = None
@@ -78,6 +80,9 @@ class TaskExpected(Record):
     status: str | None = None
     evidence_id: str | None = None  # the source a finding from a written state must cite
     flagged: bool | None = None
+    stops: bool | None = None  # whether the model stops, or makes one more tool call
+    reads: str | None = None  # the URL of a page that the model must read
+    leaves_unread: str | None = None  # the URL of a page that the model must not read
     property: Coordinates | None = None
     destinations: list[ExpectedDestination] | None = None  # empty if the user travels nowhere
     labels: list[AddressLabel] | None = None
@@ -90,11 +95,12 @@ class TaskExpected(Record):
             "identified_type",
             "status",
         } & self.model_fields_set  # null counts as given
-        kinds = [self.label is not None, bool(written), self.flagged is not None]
-        if sum(kinds) + (self.property is not None) != 1:
+        decided = [self.stops is not None, self.reads is not None, self.leaves_unread is not None]
+        kinds = [self.label is not None, bool(written), self.flagged is not None, any(decided)]
+        if sum(kinds) + (self.property is not None) != 1 or sum(decided) > 1:
             raise ValueError(
-                "give a label, or outcome, identified_type and status, or flagged, or property "
-                "and destinations"
+                "give a label, or outcome, identified_type and status, or flagged, or one of "
+                "stops, reads and leaves_unread, or property and destinations"
             )
         if written and len(written) < 3:
             raise ValueError("give outcome, identified_type and status together")
@@ -108,7 +114,7 @@ class TaskExpected(Record):
             raise ValueError("give the labels with the name they were recorded under")
         return self
 
-    def result(self) -> Expected | bool | ExpectedInput | ExpectedRun:
+    def result(self) -> Expected | bool | ExpectedDecision | ExpectedInput | ExpectedRun:
         if self.property is not None and self.destinations is not None and self.labels is not None:
             assert self.recorded_as is not None  # see check_one_kind
             return ExpectedRun(
@@ -121,6 +127,8 @@ class TaskExpected(Record):
             return ExpectedInput(property=self.property, destinations=self.destinations)
         if self.flagged is not None:
             return self.flagged
+        if self.stops is not None or self.reads is not None or self.leaves_unread is not None:
+            return ExpectedDecision(self.stops, self.reads, self.leaves_unread)
         if self.label:
             outcome = "unidentified" if self.label.identified_type is None else "identified"
             return Expected(outcome, self.label.identified_type, self.label.status)
@@ -139,6 +147,7 @@ class TaskFile(Record):
     id: str
     suite: Literal[
         "finding",
+        "enough",
         "live investigation",
         "injection check",
         "triage",
@@ -158,10 +167,11 @@ class Task:
     suite: str
     date: dt.date | None  # None: the date of the trial
     inputs: Inputs
-    # bool: whether the injection check should flag the page; ExpectedInput: how the input
-    # loop should end; ExpectedRun: how an end-to-end run should end; None for a report task,
-    # whose graders read only its state
-    expected: Expected | bool | ExpectedInput | ExpectedRun | None
+    # bool: whether the injection check should flag the page; ExpectedDecision: the decision
+    # that follows a search history; ExpectedInput: how the input loop should end; ExpectedRun:
+    # how an end-to-end run should end; None for a report task, whose graders read only its
+    # state
+    expected: Expected | bool | ExpectedDecision | ExpectedInput | ExpectedRun | None
 
 
 def load_all() -> list[Task]:
@@ -202,6 +212,10 @@ def load(path: Path) -> Task:
             if task.expected and task.expected.evidence_id not in [None, *sources]:
                 fail(f"unknown evidence_id {task.expected.evidence_id!r}")
             inputs = state
+        case "enough", None, InvestigationState(), None:
+            check_state(state, fail)
+            check_decision_state(state, task.expected, fail)
+            inputs = state
         case "report", None, RunState(), None:
             check_run_state(state, fail)
             inputs = state
@@ -217,9 +231,9 @@ def load(path: Path) -> Task:
             inputs = Conversation(messages=task.input.messages, sources=[])
         case _:
             fail(
-                "a live investigation or triage task gives a map object, a finding or report "
-                "task a state, an injection check task a page, an input loop or end-to-end "
-                "task messages"
+                "a live investigation or triage task gives a map object, a finding, Enough or "
+                "report task a state, an injection check task a page, an input loop or "
+                "end-to-end task messages"
             )
 
     if (task.expected is None) != (task.suite == "report"):
@@ -227,6 +241,8 @@ def load(path: Path) -> Task:
     expected = task.expected.result() if task.expected else None
     if isinstance(expected, bool) != (task.suite == "injection check"):
         fail("an injection check task, and only it, expects flagged")
+    if isinstance(expected, ExpectedDecision) != (task.suite == "enough"):
+        fail("an Enough task, and only it, expects stops, reads or leaves_unread")
     if isinstance(expected, ExpectedRun) != (task.suite == "end-to-end"):
         fail("an end-to-end task, and only it, expects labels")
     if isinstance(expected, ExpectedInput) != (task.suite == "input loop"):
@@ -317,6 +333,21 @@ def check_state(state: InvestigationState, fail) -> None:
         fail("two sources have the same ID, counting the object's map source")
     if set(shown) != set(ids[:-1]):
         fail("every page must be shown in the history, and only pages")
+
+
+def check_decision_state(state: InvestigationState, expected: TaskExpected | None, fail) -> None:
+    """The model decides only under the cap, so an Enough task leaves a call; the page that it
+    must read or leave is a result shown in the history and not read yet."""
+    calls = [entry for entry in state.history if isinstance(entry, ToolCall)]
+    if len(calls) >= TOOL_CAP:
+        fail(f"{len(calls)} tool calls: at the cap of {TOOL_CAP}, the model decides nothing")
+    for url in [expected.reads, expected.leaves_unread] if expected else []:
+        if url is None:
+            continue
+        if url not in [page.url for page in state.pages]:
+            fail(f"no page with the URL {url!r}")
+        if url in [call.url for call in calls if call.tool == "extract"]:
+            fail(f"the page {url!r} has been read already")
 
 
 def read_yaml(path: Path):

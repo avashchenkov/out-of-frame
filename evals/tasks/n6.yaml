@@ -1,0 +1,18 @@
+# N6, Enough: one decision to stop or to make one more tool call, from a written search history.
+# See docs/eval-architecture.md#enough.
+id: N6
+suite: enough
+covers: >-
+  The status is not settled, and the only result not yet read is about another site. F6's
+  state: the map tags the object as a wastewater plant, no source says whether it is in use, and
+  the only result is a press release about a filter of the same operator and kind in
+  Blankenburg, far from the object in Adlershof. Reading that page cannot settle this object;
+  stopping or searching again both pass.
+date: 2026-10-16  # fixed data: the date the page was retrieved
+
+input:
+  state: f6-same-name-elsewhere.yaml  # in evals/states/
+
+# Read only by the grader.
+expected:
+  leaves_unread: https://www.bwb.de/de/pressemitteilungen-2000-2004_318.php

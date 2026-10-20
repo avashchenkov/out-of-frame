@@ -1,0 +1,57 @@
+# An investigation state with two searches: one result offers office space at the site to
+# rent, the other is the owner's own page about the site, whose snippet gives its name, its
+# address and the office space on offer but not what the site is used for, and a search by the
+# object's second address finds nothing. The state is F12's with
+# that result and that search added: the object, OSM way 118132465, is the industrial area at Am
+# Studio 16 and Köpenicker Straße 1, 934 m from Teutonenstraße 10, 12524 Berlin, the E4 address.
+# Both results are real, from the same search in the full run of 2026-10-18. The offer is F12's
+# page, rewritten in new words with the offer's German lines kept word for word; the owner's
+# snippet is rewritten in new words, with names, places and figures kept as found. The owner's
+# page, read whole, gives the site's production space and its tenants; its snippet does not.
+# The first search's other three results are left out, so that no snippet settles what the site
+# is. The second search is written for this task: it finds nothing, so that one call is left,
+# and only a read of the owner's page can still bring the facts that its snippet lacks.
+map_object:
+  id: osm-way-118132465
+  name: null
+  details: {category: industry, landuse: industrial}
+  addresses:
+    - Am Studio 16, 12489 Berlin
+    - Köpenicker Straße 1, 12489 Berlin
+  coordinates: {lat: 52.428236549999994, lon: 13.54711195}
+  distance_from_property_m: 934
+  source_id: overpass-1  # the map source of the task
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: "Am Studio 16, 12489 Berlin"}
+  - {role: tool, pages: [web-1, web-2]}
+  - {role: model, tool: search, query: "Köpenicker Straße 1, 12489 Berlin"}
+  - {role: tool, pages: []}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Am Studio 16, 12489 Berlin
+    url: https://www.bueroflaechen.berlin/immo/771d688a8be1c721a8c29a4f6b0fd976
+    content: |-
+      CURVE Am Studio 16
+      Flexible und moderne Büroflächen im Industrie-Stil am renommierten Technologiestandort
+      Berlin-Adlershof
+      The address: CURVE, Am Studio 16, 12489 Berlin, in Treptow-Köpenick.
+      Verfügbar ab
+      Sofort
+      Up to 16,530 m², to be split from 700 m², at a rent from 16.00 € per m², with no
+      commission. The exposé can be asked for.
+  - id: web-2
+    kind: web search
+    request: Am Studio 16, 12489 Berlin
+    url: https://www.beos.net/objekte/curve-campus
+    content: |-
+      CURVE-Campus | BEOS AG
+      Lage: Am Studio 16, 12489 Berlin
+      The page links to ten pictures, an exposé, the free space and all 138 office spaces, and
+      asks the reader to contact the company's team in Berlin about its projects and the space
+      on offer.
+
+finding: null

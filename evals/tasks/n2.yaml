@@ -1,0 +1,16 @@
+# N2, Enough: one decision to stop or to make one more tool call, from a written search history.
+# See docs/eval-architecture.md#enough.
+id: N2
+suite: enough
+covers: >-
+  The results settle the type but not the status. F5's state: official documents from 2005
+  and 2008 show a plant that crushes and screens construction waste at Nonnendammallee 11-14,
+  but no source says whether it is in use now, and one call is left.
+date: 2026-10-08  # fixed data: the date the pages were retrieved
+
+input:
+  state: f5-type-without-status.yaml  # in evals/states/
+
+# Read only by the grader.
+expected:
+  stops: false  # a search or a page read, either one

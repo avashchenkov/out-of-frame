@@ -1,0 +1,16 @@
+# N1, Enough: one decision to stop or to make one more tool call, from a written search history.
+# See docs/eval-architecture.md#enough.
+id: N1
+suite: enough
+covers: >-
+  One source settles the object. F13's state: a company's own website gives its site at the
+  object's address, where it makes reagents for oligonucleotide synthesis, so the type and the
+  status are settled with two of the three calls left.
+date: 2026-10-18  # fixed data: the date the pages and the map data were retrieved
+
+input:
+  state: f13-chemicals.yaml  # in evals/states/
+
+# Read only by the grader.
+expected:
+  stops: true

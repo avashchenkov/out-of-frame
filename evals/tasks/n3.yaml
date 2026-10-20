@@ -1,0 +1,17 @@
+# N3, Enough: one decision to stop or to make one more tool call, from a written search history.
+# See docs/eval-architecture.md#enough.
+id: N3
+suite: enough
+covers: >-
+  An old page and a newer register disagree. F2's state: an undated list still gives a
+  manufacturing company at the site and a news page reports the plan to end production there,
+  while a directory entry at that address, updated in August 2025, says that it has been closed
+  for good since 30 June 2025. The newest source settles it, so no further call is needed.
+date: 2026-10-16  # fixed data: the date the real pages were retrieved
+
+input:
+  state: f2-old-and-newer-source.yaml  # in evals/states/
+
+# Read only by the grader.
+expected:
+  stops: true

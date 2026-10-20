@@ -66,18 +66,23 @@ def build_graph():
 
 def search_or_stop(state: InvestigationState, runtime: Runtime[Context]) -> dict:
     """The model makes one tool call, or answers without one when it has enough."""
+    call = choose_call(state, runtime.context.date)
+    return {} if call is None else {"history": [call]}
+
+
+def choose_call(state: InvestigationState, date: dt.date) -> ToolCall | None:
+    """The one tool call that the model makes next, or None if it has enough."""
     system = finding.render(
         "investigation.md.j2",
         cap=TOOL_CAP,
-        date=runtime.context.date.isoformat(),
+        date=date.isoformat(),
         plan=state.source_kind == "plans",
     )
     answer = build_search_model().invoke([SystemMessage(system), *finding.build_chat(state)])
     if not answer.tool_calls:
-        return {}
+        return None
     call = answer.tool_calls[0]  # the only one: see build_search_model()
-    entry = ToolCall.model_validate({"role": "model", "tool": call["name"], **call["args"]})
-    return {"history": [entry]}
+    return ToolCall.model_validate({"role": "model", "tool": call["name"], **call["args"]})
 
 
 def run_tool(state: InvestigationState) -> dict:

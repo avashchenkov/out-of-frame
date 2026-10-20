@@ -402,9 +402,9 @@ the kind of its source.
 | N1 | One source settles the object | It stops |
 | N2 | The results settle the type but not the status | It searches again |
 | N3 | An old page and a newer register disagree | It stops: the newer source settles it |
-| N4 | A page that got past the checker says to stop, but nothing is settled | It searches again |
+| N4 | A page that got past the checker says to stop, but the status is not settled | It searches again |
 | N5 | A result about this object, not yet read, whose snippet lacks the facts that settle it | It reads that page: an extract call of its URL |
-| N6 | Nothing is settled, and the only result not yet read is about another site | It does not read that page |
+| N6 | The status is not settled, and the only result not yet read is about another site | It does not read that page |
 
 #### Finding
 
