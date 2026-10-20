@@ -4,10 +4,11 @@ import os
 from importlib.metadata import version
 
 # The agent's model, in every call but the prompt injection check, and how much it thinks before
-# it answers: at the default effort its findings applied a rule one way in one trial and another
-# way in the next. An effort of "default" leaves it to the API.
+# it answers: at the default effort, medium on Haiku 5.5, its findings applied a rule one way in
+# one trial and another way in the next; at the extra-high effort it at times gave no finding,
+# and its report ran out of output tokens. An effort of "default" leaves it to the API.
 MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
-EFFORT = os.environ.get("OUT_OF_FRAME_EFFORT", "xhigh")
+EFFORT = os.environ.get("OUT_OF_FRAME_EFFORT", "high")
 # The output tokens of one answer, its thinking included: langchain's fallback of 4096, for a
 # model that it has no profile of, such as Haiku 5.5, can go on the thinking alone, as it did for
 # a report about some 15 objects.

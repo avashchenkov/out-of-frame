@@ -278,6 +278,50 @@ not the elimination of every fail. After the planned batch, continue only where 
 mechanism has a concrete affordable intervention. Otherwise record it as a limitation and
 finish the MVP. No exact return-on-effort ranking is proven until these comparisons run.
 
+## Step 10.9 results, 2026-10-20
+
+The same code, prompts and inputs at each effort, three trials each; the default effort of
+Haiku 5.5 is medium. The judges stayed at their calibrated extra-high effort.
+
+| | Medium (default) | High | Extra-high |
+|---|---|---|---|
+| Finding F1–F14, trials passed | 41 of 42 | 42 of 42 | 38 of 42, three without a finding |
+| Enough N1–N6, trials passed | 17 of 18 | 13 of 18 | 14 of 18 |
+| Report replay, statements flagged by the support judge | 23 of 259 | 22 of 265 | 14 of 202 |
+| Report replay, interpretation fails | 4, and 1 judge error, of 21 | 0 of 21 | 2 of 17 |
+| Reports failed at 16,000 output tokens | 0 of 21 | 0 of 21 | 4 of 21 |
+| One report: time, cost | 21 s, $0.003 | 32 s, $0.005 | 74 s, $0.010 |
+| Finding suite: time, cost | 2.8 min, $0.033 | 3.7 min, $0.040 | 5.8 min, $0.056 |
+
+- **Selected: high.** Extra-high did not do clearly better, and it failed in two ways that
+  stop a full run: a finding answer without the Finding tool, and a report cut off at its
+  output tokens in both attempts. It is also about twice as slow and costly as high. At high
+  the triage and input loop suites pass every trial, 6 of 6 and 9 of 9.
+- **Enough at high** fails by extra reads where the evidence already sufficed (N1, N3): an
+  extra call, not a wrong finding. The CURVE case, N5, passes 2 of 3 at medium and at high, so
+  effort does not settle the read of a page whose snippet lacks the facts.
+- **Report inputs:** the four failing reports of 18 October (E1 trial 1, E2 trials 1–2, E5
+  trial 1) and three passing controls (E2, E3 and E5, trial 3 each). The 30 m inside-the-plan
+  distortion and the uncited E1 introduction did not recur at any effort; at medium, one E1
+  report put a railway 67 m away right next to the property.
+- **Two report errors remained at every effort**, and the report prompt now has a general rule
+  for each:
+  - A plan's legal status described as not given, although its data give it. The message's
+    "status not given" is the finding's status, whether building has started, and the model
+    took it for the legal status. At high, 3 of the 6 trials of the E5 inputs before; none
+    after.
+  - Statements without a citation: a sentence about several objects, or an effect after the
+    citation. 6 in two high trials before; none after.
+  - At high with the clarified prompt: 13 of 258 statements flagged; interpretation 1 fail and
+    1 judge error, no verdict 1 fail, of 21.
+- **The flags left follow the input Findings**, as in group 7: an operator or a status taken
+  from a page that does not name the object's address (FMB, the former Philip Morris works),
+  and the Finding's type (a maker of chemicals as production; a residential plan whose type
+  shows no effect, which the report then says, and the no-verdict judge once read as
+  reassurance). They belong to rows 2 and 6, not to the report prompt.
+- Cost about $2.10 in all, judges included; about two hours of runs, with the three efforts
+  in parallel.
+
 ## Corrections to earlier interpretations
 
 - Do not mark every group as a prompt defect merely because more instructions might help.
@@ -306,6 +350,20 @@ Code links show the checkout's version; the execution review used `7005abe`.
 - [E2–E5, three trials](../../evals/results/2026-10-18T18-29-57-344038Z.jsonl)
 - [F12 grounding run](../../evals/results/2026-10-19T00-17-45-422034Z.jsonl)
 - [F10 after the explicit rule](../../evals/results/2026-10-19T00-12-48-377180Z.jsonl)
+- Step 10.9, finding at medium, high and extra-high:
+  [medium](../../evals/results/2026-10-20T17-03-08-002408Z.jsonl),
+  [high](../../evals/results/2026-10-20T17-03-08-209948Z.jsonl),
+  [extra-high](../../evals/results/2026-10-20T17-03-08-235563Z.jsonl)
+- Step 10.9, Enough: [medium](../../evals/results/2026-10-20T17-06-00-183067Z.jsonl),
+  [high](../../evals/results/2026-10-20T17-06-57-909735Z.jsonl),
+  [extra-high](../../evals/results/2026-10-20T17-09-02-214176Z.jsonl)
+- Step 10.9, report replay:
+  [medium](../../evals/results/2026-10-20T17-08-24-008008Z-replay.jsonl),
+  [high](../../evals/results/2026-10-20T17-08-24-157131Z-replay.jsonl),
+  [extra-high](../../evals/results/2026-10-20T17-11-36-236296Z-replay.jsonl),
+  [high with the clarified prompt](../../evals/results/2026-10-20T18-30-58-177959Z-replay.jsonl)
+- Step 10.9, controls at high: [triage](../../evals/results/2026-10-20T18-10-44-513659Z.jsonl),
+  [input loop](../../evals/results/2026-10-20T18-11-05-753610Z.jsonl)
 - [Settings and limits](../../src/out_of_frame/config.py)
 - [Investigation loop, truncation and grounding fallback](../../src/out_of_frame/investigation.py)
 - [Single-page evidence and quote validation](../../src/out_of_frame/grounding.py)
