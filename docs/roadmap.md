@@ -334,7 +334,7 @@ calibration.
        left out and the fixed-data tasks; the component suites pass, and the new tasks pass in
        most trials, not all. The full run of E1–E5 waits for 9 and 10, so that one run
        measures 8 to 10 against the baseline, with the predictions written down again first.
-    9. The agent's model calls at the effort that the evals show best: high, unless
+    9. ✅ The agent's model calls at the effort that the evals show best: high, unless
        extra-high does clearly better. Its findings were unstable from trial to trial where a
        page settled the object but a rule was applied one way or another, in the full run of 7
        and the component runs of 8, and the judges grew stable at the extra-high effort in their
