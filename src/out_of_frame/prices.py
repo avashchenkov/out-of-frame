@@ -1,14 +1,16 @@
-"""The prices of the model and of Tavily, read from data/prices.yaml, for the cost of a run."""
+"""The prices of the models and of Tavily, read from data/prices.yaml, for the cost of a run."""
 
 import datetime as dt
+import logging
 from functools import cache
 from importlib.resources import files
 
 import yaml
 from pydantic import NonNegativeFloat
 
-from out_of_frame.config import MODEL
 from out_of_frame.record import Record
+
+log = logging.getLogger(__name__)
 
 
 class ModelPrice(Record):
@@ -43,10 +45,21 @@ def load() -> Prices:
     return Prices.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
 
 
-def compute_run_cost(usage: dict, credits: float, model: str = MODEL) -> float:
-    """USD for the model's tokens, as get_usage_metadata_callback counts them, and the Tavily
-    credits. The usage is keyed by the API's model snapshot, not by the model's name, so it must
-    come from calls to the one model given, such as the agent's or the judges'."""
-    input_tokens = sum(u["input_tokens"] for u in usage.values())
-    output_tokens = sum(u["output_tokens"] for u in usage.values())
-    return load().compute_cost(model, input_tokens, output_tokens, credits)
+def compute_run_cost(usage: dict, credits: float) -> float:
+    """USD for the models' tokens, as get_usage_metadata_callback counts them, and the Tavily
+    credits. The usage is keyed by the API's model snapshot, which begins with the model's name,
+    so each snapshot is priced as the longest model name that begins it: one run can call the
+    agent's model, the injection check's and the judges'. A snapshot with no price is left out
+    with a warning: the run has been paid for, so its record must still be saved."""
+    prices = load()
+    cost = credits * prices.tavily.credit
+    for snapshot, used in usage.items():
+        names = [name for name in prices.models if snapshot.startswith(name)]
+        if not names:
+            log.warning(
+                "no price for %s, left out of the cost: add it to data/prices.yaml", snapshot
+            )
+            continue
+        model = max(names, key=len)
+        cost += prices.compute_cost(model, used["input_tokens"], used["output_tokens"], 0)
+    return cost

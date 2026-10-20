@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Literal
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
 from out_of_frame import finding, prompt_injection
-from out_of_frame.config import MODEL, PAGE_CHARS, TOOL_CAP
+from out_of_frame.chat_model import build_chat_model
+from out_of_frame.config import PAGE_CHARS, TOOL_CAP
 from out_of_frame.grounding import find_grounding_errors
 from out_of_frame.state import (
     Finding,
@@ -161,6 +161,6 @@ def route_after_the_tool(
 def build_search_model():
     """The model with the web tools. It may answer without one to stop, and it makes one call
     at a time, so that code counts every call against the cap."""
-    return ChatAnthropic(model=MODEL).bind_tools(
+    return build_chat_model().bind_tools(
         list(TOOLS.values()), tool_choice="auto", parallel_tool_calls=False
     )

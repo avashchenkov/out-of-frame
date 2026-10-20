@@ -6,12 +6,11 @@ from functools import cache
 from typing import Literal
 
 import jinja2
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from pydantic import BaseModel, create_model
 
 from out_of_frame import research_scope
-from out_of_frame.config import MODEL
+from out_of_frame.chat_model import build_chat_model
 from out_of_frame.state import Finding, InvestigationState, ToolCall
 from out_of_frame.web_search import TOOLS
 
@@ -66,9 +65,7 @@ def build_finding_model():
     The prompt asks for the Finding tool, but does not force it: a forced tool call starts the
     answer at once and leaves out the model's thinking, which then misjudges the type."""
     tools = [*TOOLS.values(), build_finding_tool()]
-    return ChatAnthropic(model=MODEL).bind_tools(
-        tools, tool_choice="auto", parallel_tool_calls=False
-    )
+    return build_chat_model().bind_tools(tools, tool_choice="auto", parallel_tool_calls=False)
 
 
 def build_finding_tool() -> type[BaseModel]:

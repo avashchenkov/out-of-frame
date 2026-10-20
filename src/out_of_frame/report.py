@@ -5,11 +5,11 @@ import datetime as dt
 import re
 from functools import cache
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from out_of_frame import research_scope, transit
-from out_of_frame.config import MAP_OBJECTS_PER_CATEGORY, MODEL, PLANS, REPORT_ATTEMPTS
+from out_of_frame.chat_model import build_chat_model
+from out_of_frame.config import MAP_OBJECTS_PER_CATEGORY, PLANS, REPORT_ATTEMPTS
 from out_of_frame.finding import render
 from out_of_frame.state import Journey, RunState, Service, Source
 
@@ -92,9 +92,8 @@ def find_wrong_citations(draft: str, known: set[str]) -> list[str]:
 
 @cache
 def build_report_model():
-    """The model with room for its thinking and the report: at the default 4096 output tokens,
-    the thinking about some 15 objects used them all and left no report."""
-    return ChatAnthropic(model=MODEL, max_tokens_to_sample=16_000)
+    """The model, with room for its thinking and the report: see MAX_TOKENS in config.py."""
+    return build_chat_model()
 
 
 def fill_references(draft: str, state: RunState) -> str:

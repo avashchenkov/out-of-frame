@@ -38,7 +38,14 @@ from evals.graders.prompt_injection import grade_flagged
 from evals.graders.report import grade_citations, grade_distances
 from evals.load import EVALS, FIXTURES, Conversation, Inputs, Task, load, load_all
 from out_of_frame import agent, geocoding, prices
-from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL, MODEL
+from out_of_frame.config import (
+    EFFORT,
+    INJECTION_EFFORT,
+    INJECTION_MODEL,
+    JUDGE_EFFORT,
+    JUDGE_MODEL,
+    MODEL,
+)
 from out_of_frame.grounding import collect_cited_page, find_grounding_errors
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.state import (
@@ -322,7 +329,7 @@ def judge_trial(task: Task, trial: Trial, date: dt.date, saved: dict | None) -> 
         grades: dict = {"support": [], "interpretation": None, "no_verdict": None}
         with get_usage_metadata_callback() as usage:
             judge.judge_draft(grades, trial.outcome, task.inputs, date, support=False)
-        cost = compute_run_cost(usage.usage_metadata, 0, JUDGE_MODEL)
+        cost = compute_run_cost(usage.usage_metadata, 0)
         return {"judges": sum_up_judges(grades), "judge_grades": grades, "judge_cost_usd": cost}
     if saved is not None and trial.run is not None:
         grades, path = judge.judge_run(saved, trial.run)
@@ -520,7 +527,7 @@ def run(
     """
     if k < 1:
         raise ValueError("k must be at least 1")
-    models = [MODEL, JUDGE_MODEL] if judged else [MODEL]
+    models = [MODEL, INJECTION_MODEL] + ([JUDGE_MODEL] if judged else [])
     if missing := [model for model in models if model not in prices.load().models]:
         raise ValueError(f"no price for {', '.join(missing)}: add it to data/prices.yaml")
     tasks = list(tasks)
@@ -541,6 +548,10 @@ def run(
                 "k": k,
                 "started": dt.datetime.now(dt.UTC).isoformat(),
                 "prices_as_of": prices.load().as_of.isoformat(),  # so that stale prices show
+                "model": MODEL,
+                "effort": EFFORT,
+                "injection_model": INJECTION_MODEL,
+                "injection_effort": INJECTION_EFFORT,
             }
             # the judge version, as evals/calibration/passed.yaml records it
             | ({"judge_model": JUDGE_MODEL, "judge_effort": JUDGE_EFFORT} if judged else {})

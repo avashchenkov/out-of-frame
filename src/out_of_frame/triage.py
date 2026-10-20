@@ -7,12 +7,11 @@ import logging
 from functools import cache
 from typing import Any, Literal
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field, create_model
 
 from out_of_frame import research_scope
-from out_of_frame.config import MODEL
+from out_of_frame.chat_model import build_chat_model
 from out_of_frame.finding import render
 from out_of_frame.state import Finding, MapObject
 
@@ -71,7 +70,7 @@ def settle(map_object: MapObject, answer: Any) -> Finding | None:
 def build_triage_model():
     """The model with native structured output, which leaves it its thinking, as in
     prompt_injection.build_check_model."""
-    return ChatAnthropic(model=MODEL).with_structured_output(
+    return build_chat_model().with_structured_output(
         build_answer_schema(), method="json_schema", include_raw=True
     )
 

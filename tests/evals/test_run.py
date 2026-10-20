@@ -36,7 +36,8 @@ from evals.run import (
     trust_every_page,
 )
 from out_of_frame import conversation, finding, investigation, prices, prompt_injection, report
-from out_of_frame.config import JUDGE_MODEL, MODEL
+from out_of_frame.config import EFFORT, INJECTION_EFFORT, INJECTION_MODEL, MODEL
+from out_of_frame.prices import ModelPrice
 from out_of_frame.state import (
     Address,
     Coordinates,
@@ -492,13 +493,16 @@ def test_the_input_loop_passes_only_with_the_expected_destinations(destinations,
 class UsageModel(BaseChatModel):
     """A chat model that answers with a fixed token usage, as the Anthropic API reports it."""
 
+    snapshot: str = MODEL  # the model that the API names in its answer
+
     @property
     def _llm_type(self) -> str:
         return "usage"
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs) -> ChatResult:
         usage = {"input_tokens": 1000, "output_tokens": 100, "total_tokens": 1100}
-        answer = AIMessage("", usage_metadata=usage, response_metadata={"model_name": "snapshot"})
+        metadata = {"model_name": self.snapshot}
+        answer = AIMessage("", usage_metadata=usage, response_metadata=metadata)
         return ChatResult(generations=[ChatGeneration(message=answer)])
 
 
@@ -717,8 +721,15 @@ def write_the_good_draft(inputs, date, web_search):
 
 
 def test_the_judges_grade_a_report_task_after_the_part_at_their_own_cost(monkeypatch, tmp_path):
+    judge_model = "a judge model"  # at its own price, so that a cost at the wrong price shows
+    judge_price = ModelPrice(input_per_mtok=10.0, output_per_mtok=50.0)
+    table = prices.load()
+    table = table.model_copy(update={"models": table.models | {judge_model: judge_price}})
+    monkeypatch.setattr(prices, "load", lambda: table)
+    monkeypatch.setattr("evals.run.JUDGE_MODEL", judge_model)
+
     def answer_to(schema):
-        UsageModel().invoke("judge the report")
+        UsageModel(snapshot=judge_model).invoke("judge the report")
         return answer(ANSWERS[schema])
 
     stub_the_judges(monkeypatch, answer_to)
@@ -727,14 +738,17 @@ def test_the_judges_grade_a_report_task_after_the_part_at_their_own_cost(monkeyp
     [header, _, graded] = [
         json.loads(line) for line in out.read_text(encoding="utf-8").splitlines()[:3]
     ]
-    assert header["judge_model"] == JUDGE_MODEL and header["judge_effort"]
+    assert header["judge_model"] == judge_model and header["judge_effort"]
+    assert header["model"] == MODEL and header["effort"] == EFFORT
+    assert header["injection_model"] == INJECTION_MODEL
+    assert header["injection_effort"] == INJECTION_EFFORT
     assert graded["passed"] and graded["judges"] == {"interpretation": "pass", "no_verdict": "pass"}
     assert graded["judge_grades"]["no_verdict"]["verdict"] == "pass"
     assert summary["graders"]["interpretation"] == summary["graders"]["no_verdict"] == 2
     assert summary["judges"] == {"interpretation": {"pass": 2}, "no_verdict": {"pass": 2}}
-    one_call = prices.load().compute_cost(MODEL, 1000, 100, 0)
+    one_call = table.compute_cost(MODEL, 1000, 100, 0)
     assert summary["cost_usd"] == pytest.approx(2 * one_call)  # the part's calls only
-    judged = 4 * prices.load().compute_cost(JUDGE_MODEL, 1000, 100, 0)
+    judged = 4 * table.compute_cost(judge_model, 1000, 100, 0)
     assert summary["judge_cost_usd"] == pytest.approx(judged)
 
 

@@ -15,12 +15,12 @@ from pathlib import Path
 from typing import Literal
 
 import jinja2
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from pydantic import Field
 
 from out_of_frame import research_scope
-from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL
+from out_of_frame.chat_model import build_chat_model
+from out_of_frame.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from out_of_frame.grounding import collect_cited_page
 from out_of_frame.record import Record
 from out_of_frame.report import CITATION, find_plans, find_reported_failures
@@ -228,9 +228,7 @@ def ask[T: Record](schema: type[T], prompt: str) -> T:
 def build_judge_model(schema: type[Record]):
     """The judge model with native structured output, so that it can think before it answers,
     as in out_of_frame.prompt_injection, with room for that thinking."""
-    model = ChatAnthropic(
-        model=JUDGE_MODEL, output_config={"effort": JUDGE_EFFORT}, max_tokens_to_sample=16_000
-    )
+    model = build_chat_model(JUDGE_MODEL, JUDGE_EFFORT, JUDGE_MAX_TOKENS)
     return model.with_structured_output(schema, method="json_schema", include_raw=True)
 
 

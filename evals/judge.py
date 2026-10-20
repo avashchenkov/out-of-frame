@@ -38,7 +38,14 @@ from evals.graders.judges import (
 )
 from evals.load import EVALS
 from out_of_frame import agent, cli, map_objects, prices
-from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL, MODEL
+from out_of_frame.config import (
+    EFFORT,
+    INJECTION_EFFORT,
+    INJECTION_MODEL,
+    JUDGE_EFFORT,
+    JUDGE_MODEL,
+    MODEL,
+)
 from out_of_frame.investigation import Context
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.record import Record
@@ -51,13 +58,23 @@ RESULTS = EVALS / "results"
 def run_agent(
     message: str, date: dt.date, web_search: MeteredWebSearch
 ) -> tuple[dict, BaseException | None]:
-    """One run of the agent, as it is saved: the draft that the judges grade, the final state,
-    each step's update, the investigations' steps among them, how the query for the addresses
-    of the objects to investigate ended, and the cost. A run that stops, even when web search
-    refuses the key or the run is cancelled, is saved too, with its error and its last state:
-    it has paid for its calls. The error is also returned, for a caller that must stop on it."""
-    saved = {"message": message, "date": date.isoformat(), "model": MODEL, "draft": None}
-    saved |= {"transcript": [], "error": None}
+    """One run of the agent, as it is saved: its model settings, the draft that the judges
+    grade, the final state, each step's update, the investigations' steps among them, how the
+    query for the addresses of the objects to investigate ended, and the cost. A run that
+    stops, even when web search refuses the key or the run is cancelled, is saved too, with its
+    error and its last state: it has paid for its calls. The error is also returned, for a
+    caller that must stop on it."""
+    saved = {
+        "message": message,
+        "date": date.isoformat(),
+        "model": MODEL,
+        "effort": EFFORT,
+        "injection_model": INJECTION_MODEL,
+        "injection_effort": INJECTION_EFFORT,
+        "draft": None,
+        "transcript": [],
+        "error": None,
+    }
     start, config = agent.start(message), agent.start_thread()
     end: dict | RunState = start
     stopped = None
@@ -143,7 +160,7 @@ def judge_run(saved: dict, run_file: Path) -> tuple[dict, Path]:
             judge_draft(grades, draft, state, date)
             grades["complete"] = True
         finally:
-            grades["cost_usd"] = compute_run_cost(usage.usage_metadata, 0, JUDGE_MODEL)
+            grades["cost_usd"] = compute_run_cost(usage.usage_metadata, 0)
             grades = to_jsonable_python(grades)
             path = save(grades, "grades")
             print(f"Grades: {path}, cost: ${grades['cost_usd']:.4f}", file=sys.stderr)
@@ -211,7 +228,7 @@ def main() -> None:
         parser.error("set ANTHROPIC_API_KEY, for example in .env: see .env.example")
     run_file = Path(args.target)
     live = run_file.suffix != ".json"
-    models = [MODEL, JUDGE_MODEL] if live else [JUDGE_MODEL]
+    models = [MODEL, INJECTION_MODEL, JUDGE_MODEL] if live else [JUDGE_MODEL]
     if missing := [model for model in models if model not in prices.load().models]:
         parser.error(f"no price for {', '.join(missing)}: add it to data/prices.yaml")
     try:

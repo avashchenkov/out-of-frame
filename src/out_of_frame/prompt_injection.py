@@ -3,12 +3,17 @@ investigation model sees it, see docs/architecture.md#prompt-injection."""
 
 from functools import cache
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableLambda
 from pydantic import Field
 
-from out_of_frame.config import CHECK_ATTEMPTS, MODEL
+from out_of_frame.chat_model import build_chat_model
+from out_of_frame.config import (
+    CHECK_ATTEMPTS,
+    INJECTION_EFFORT,
+    INJECTION_MAX_TOKENS,
+    INJECTION_MODEL,
+)
 from out_of_frame.finding import render
 from out_of_frame.record import Record
 from out_of_frame.web_search import PageText
@@ -52,7 +57,8 @@ def flag_injections(texts: list[PageText]) -> list[bool]:
 def build_check_model():
     """The model with native structured output: the API holds the answer to the schema without
     forcing a tool call, so the model can still think before it answers."""
-    return ChatAnthropic(model=MODEL).with_structured_output(
+    model = build_chat_model(INJECTION_MODEL, INJECTION_EFFORT, INJECTION_MAX_TOKENS)
+    return model.with_structured_output(
         PromptInjectionCheck, method="json_schema", include_raw=True
     )
 

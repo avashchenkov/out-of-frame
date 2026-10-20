@@ -7,12 +7,11 @@ import itertools
 from functools import cache
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from out_of_frame import geocoding
-from out_of_frame.config import MODEL
+from out_of_frame.chat_model import build_chat_model
 from out_of_frame.finding import render
 from out_of_frame.state import Address, Destination, Message, RunState
 
@@ -165,11 +164,9 @@ def build_chat(messages: list[Message]) -> list[BaseMessage]:
 def build_extract_model():
     """The model with native structured output, which leaves it its thinking, as in
     triage.build_triage_model."""
-    return ChatAnthropic(model=MODEL).with_structured_output(
-        Change, method="json_schema", include_raw=True
-    )
+    return build_chat_model().with_structured_output(Change, method="json_schema", include_raw=True)
 
 
 @cache
 def build_ask_model():
-    return ChatAnthropic(model=MODEL)
+    return build_chat_model()

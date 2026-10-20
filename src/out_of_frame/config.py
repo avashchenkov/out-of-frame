@@ -3,13 +3,27 @@
 import os
 from importlib.metadata import version
 
-# One model for every call in the MVP; the evals show if it is not enough.
+# The agent's model, in every call but the prompt injection check, and how much it thinks before
+# it answers: at the default effort its findings applied a rule one way in one trial and another
+# way in the next. An effort of "default" leaves it to the API.
 MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
+EFFORT = os.environ.get("OUT_OF_FRAME_EFFORT", "xhigh")
+# The output tokens of one answer, its thinking included: langchain's default of 4096 can go on
+# the thinking alone, as it did for a report about some 15 objects.
+MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_MAX_TOKENS", "16000"))
+
+# The prompt injection check's own model, effort and output tokens: a classifier apart from the
+# agent's reasoning, which runs on every snippet and page.
+INJECTION_MODEL = os.environ.get("OUT_OF_FRAME_INJECTION_MODEL", "claude-haiku-5-5")
+INJECTION_EFFORT = os.environ.get("OUT_OF_FRAME_INJECTION_EFFORT", "default")
+INJECTION_MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_INJECTION_MAX_TOKENS", "16000"))
 
 # The model of the evals' LLM judges, which grade the agent's output; the agent never uses it.
-JUDGE_MODEL = os.environ.get("OUT_OF_FRAME_JUDGE_MODEL", MODEL)
+JUDGE_MODEL = os.environ.get("OUT_OF_FRAME_JUDGE_MODEL", "claude-haiku-5-5")
 # How much the judges think before they answer: their misses were lapses of attention.
 JUDGE_EFFORT = os.environ.get("OUT_OF_FRAME_JUDGE_EFFORT", "xhigh")
+# The output tokens of one judge's answer, with room for that thinking.
+JUDGE_MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_JUDGE_MAX_TOKENS", "16000"))
 
 # Tool calls in one investigation, Tavily searches and page reads together.
 TOOL_CAP = int(os.environ.get("OUT_OF_FRAME_TOOL_CAP", "3"))
