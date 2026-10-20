@@ -334,25 +334,29 @@ calibration.
        left out and the fixed-data tasks; the component suites pass, and the new tasks pass in
        most trials, not all. The full run of E1–E5 waits for 9 and 10, so that one run
        measures 8 to 10 against the baseline, with the predictions written down again first.
-    9. The agent's model calls at the extra-high effort, as the judges'. Its findings were
-       unstable from trial to trial where a page settled the object but a rule was applied one
-       way or another, in the full run of 7 and the component runs of 8, and the judges grew
-       stable at the extra-high effort in their calibration. Three settings, each a model, an
+    9. The agent's model calls at the effort that the evals show best: high, unless
+       extra-high does clearly better. Its findings were unstable from trial to trial where a
+       page settled the object but a rule was applied one way or another, in the full run of 7
+       and the component runs of 8, and the judges grew stable at the extra-high effort in their
+       calibration. Three settings, each a model, an
        effort and output tokens: the judges', the agent's and the injection check's. The agent's
        calls, from the input conversation and triage to the finding and the report, run at the
-       extra-high effort; the injection check stays at the default effort, since it is a
+       selected effort; the injection check stays at the default effort, since it is a
        classifier that runs on every snippet and page, apart from the agent's reasoning. First
        the Enough suite is built, N1–N6, as the
        [quality audit](evals/2026-10-19-agent-quality-audit.md) asks: the finding suite starts
        from fixed pages, so it cannot show a search that stops before
        reading a page whose snippet lacks the facts. Then the finding and Enough suites
-       at the default effort, high and extra-high, and the effort that they show best,
-       extra-high unless they show otherwise; the cost and the time of a run are counted with
-       it. The triage and input loop suites run at the selected effort as controls and must
-       still pass. At each effort, also replay fixed report inputs from saved runs, locally,
-       since a saved run holds the pages it read and is not committed as a task, with passing
-       reports as controls: check distances, inside/outside claims, legal status and
-       citations, including an uncited introduction.
+       at the default effort, which is medium on Haiku 5.5, high and extra-high, and the
+       effort that they show best: high, unless extra-high does clearly better for its cost
+       and time, as Anthropic advises extra-high on Haiku 5.5 only where the evals show a gain.
+       The cost and the time of a run are counted with it. A stronger model, Sonnet 5.5, is a
+       candidate only if no effort does well enough, and is not part of this step. The triage
+       and input loop suites run at the selected effort as controls and must still pass. At
+       each effort, also replay fixed report inputs from saved runs, locally, since a saved run
+       holds the pages it read and is not committed as a task, with passing reports as
+       controls: check distances, inside/outside claims, legal status and citations, including
+       an uncited introduction.
        If factual distortions or missing citations remain at the selected effort, clarify only
        the report prompt as needed and replay the same inputs. Accept equivalent plain-language
        wording; inspect flags for actual changes of fact. Do not
