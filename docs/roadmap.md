@@ -338,14 +338,16 @@ calibration.
        unstable from trial to trial where a page settled the object but a rule was applied one
        way or another, in the full run of 7 and the component runs of 8, and the judges grew
        stable at the extra-high effort in their calibration. First the Enough suite is built,
-       N1–N6, as the [quality audit](evals/2026-10-19-agent-quality-audit.md) asks: the finding suite starts from fixed pages, so it cannot show a search that stops
-       before reading a page whose snippet lacks the facts. Then the finding and Enough suites
+       N1–N6, as the [quality audit](evals/2026-10-19-agent-quality-audit.md) asks: the
+       finding suite starts from fixed pages, so it cannot show a search that stops before
+       reading a page whose snippet lacks the facts. Then the finding and Enough suites
        at the default effort, high and extra-high, and the effort that they show best; the
        cost and the time of a run are counted with it. At each effort, also replay fixed
        report inputs from saved runs, with passing reports as controls: check distances,
-       inside/outside claims and legal status. If factual distortions remain at the selected
-       effort, clarify only the report prompt as needed and replay the same inputs. Accept
-       equivalent plain-language wording; inspect flags for actual changes of fact. Do not
+       inside/outside claims, legal status and citations, including an uncited introduction.
+       If factual distortions or missing citations remain at the selected effort, clarify only
+       the report prompt as needed and replay the same inputs. Accept equivalent plain-language
+       wording; inspect flags for actual changes of fact. Do not
        add coded rendering or new report validators for this fix. For part-to-whole and
        time-scope errors, use saved inputs to locate the first wrong generalisation in the
        Finding or report. Try effort first, then clarify the existing prompt at that step
@@ -354,15 +356,19 @@ calibration.
        validation work have no demonstrated need. Keep the existing architecture.
     10. A classification funnel: the type of an object or a plan settled by questions in a
        fixed order, from what can affect people nearby the most to the least, in place of the
-       special rules added one by one. Before any code: where the type is decided
+       special rules added one by one. The status decision stays separate from this type
+       funnel. Before any code: where the type is decided
        now (the triage, investigation and finding prompts, the research scope's types, the
        judges' rubrics), and a design that Claude and Codex review several times, each
        without the other's answer, until no real point is left; the person settles it. If
        the types and their lines can stay, the judges' calibration stays. Examples are made
        up, never taken from a task. The finding suite checks it, then one full run of E1–E5
-       measures 8 to 10 against the full run of 7. The other candidate fixes of the
+       measures 8 to 10 against the full run of 7. Trace each remaining fail to the first
+       failing step: an effect inherited from a wrong type is a classification failure, not
+       a separate report fix. The other unselected candidates in the
        [quality audit](evals/2026-10-19-agent-quality-audit.md) are weighed only against the
-       failures that this run still shows.
+       failures that this run still shows; they are not scheduled work. Rejected MVP changes
+       stay excluded.
     11. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
     12. The results in docs/results.md: each suite's scores before and after the fixes of 8 to 10,

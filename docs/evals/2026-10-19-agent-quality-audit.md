@@ -127,9 +127,10 @@ a stronger model is a proven remedy.
 
 ### Axis 4 applied to the same eight groups
 
-**TODO: assess these candidate interventions before selecting any for implementation.**
-They are options, not scheduled changes or measured fixes. A possible intervention does
-not establish that the existing constraint caused a particular fail.
+**TODO: assess the remaining candidates before selecting any for implementation.**
+This table records options and decisions. Unselected options are not scheduled changes or
+measured fixes. A possible intervention does not establish that the existing constraint
+caused a particular fail.
 
 | # | Group | Candidate execution change | Evidence and limits |
 |---|---|---|---|
@@ -139,7 +140,7 @@ not establish that the existing constraint caused a particular fail.
 | 4 | Search and stopping | Change the search/extract budget; provide a further query or HTML read when evidence is missing | CURVE and Wiesendamm stopped after one search with a cap of 3. Raising the cap alone does not address that observed stopping mechanism |
 | 5 | Report distorts supplied facts | No execution change selected for this MVP fix | Use effort first, then a targeted report-prompt change if factual distortions remain. Code rendering and new report validators are excluded from this fix |
 | 6 | Claims exceed the evidence's scope | Declined for the MVP: separate subject/area/time fields for each fact and a new Finding/report consistency checker | The extra state and validation work have no demonstrated need. Use step 10.9: try effort first, then clarify the existing prompt where the first wrong generalization occurs if needed. Some flags already came from the Finding or the rules; a weak model is not established as their sole cause |
-| 7 | Effects on neighbours | Render the allowed effect from type and status in code | This can enforce the mapping, but the observed flags already followed the input types. It does not fix a wrong classification |
+| 7 | Effects on neighbours | No separate report execution change selected | Trace the first failing step: the observed report effects followed the assigned types. Fix classification through 10.9–10.10 where the type was wrong; review the evaluation where its type assessment was wrong. A coded effect mapping would not repair these causes |
 | 8 | Uncited report claims | Build object-specific blocks with required references; check unattached claims separately | Code already checks valid IDs and coverage of every object, but not support for every claim. The uncited introduction passed that guard |
 
 ### Current execution constraints
@@ -208,13 +209,13 @@ predicted percentage gain.
 
 | Order | Intervention | Engineering effort / expected benefit | Smallest useful check |
 |---|---|---|---|
-| 1 | Step 10.9: compare default, high and extra-high effort on the finding and Enough suites and on fixed report inputs, keeping prompts and evidence fixed | Small change, potentially broad benefit to rule execution; a cheap diagnostic where evidence and an existing rule are already sufficient. Runtime cost may rise | Three trials per task or saved report input; type/status, grounding, stopping, claim scope and report fidelity separately, plus cost and time. Replay the same report inputs at each effort, with passing controls; inspect flags for actual changes of fact, not equivalent wording. The finding suite drafts a finding from fixed pages and cannot see a stop such as CURVE's or Wiesendamm's. The Enough suite is designed in the evaluation architecture (N1–N4) but not built, and N1–N4 grade only stop or search again: build it, and add new cases beyond N1–N4 that, with cap still 3, compare stopping decisions from fixed histories: insufficient snippet → read; evidence already sufficient → stop; irrelevant page → no forced read. A read passes only as an extract call of that page's URL, not as any tool call. If finding or stopping violations remain, compare one stronger model under the same conditions before redesigning around a model limitation |
+| 1 | Step 10.9: compare default, high and extra-high effort on the finding and Enough suites and on fixed report inputs, keeping prompts and evidence fixed | Small change, potentially broad benefit to rule execution; a cheap diagnostic where evidence and an existing rule are already sufficient. Runtime cost may rise | Three trials per task or saved report input; type/status, grounding, stopping, claim scope, report fidelity and citation placement separately, plus cost and time. Replay the same report inputs at each effort, with passing controls; inspect flags for actual changes of fact, not equivalent wording. The finding suite drafts a finding from fixed pages and cannot see a stop such as CURVE's or Wiesendamm's. Build Enough N1–N6 as now specified in the evaluation architecture. With cap still 3, compare decisions from fixed histories: insufficient snippet → read; evidence already sufficient → stop; irrelevant page → no forced read. A read passes only as an extract call of that page's URL, not as any tool call. A same-input comparison with one stronger model remains an unselected candidate for residual finding or stopping violations, not a commitment in 10.9 |
 | 2 | Step 10.10: a consistent classification decision order, with a separate status decision | Medium effort, broad potential because type errors also propagate into effects and report wording | Compare with the current prompts at the selected effort. Keep type meanings and evidence requirements; use general rules and new examples, not addresses from E1–E5 |
 | 3 | One bounded correction attempt after a grounding rejection | Small to medium effort, narrow potential to recover evidence-format failures; extra model calls only on rejection | Retry on the same evidence with the exact validation errors, then validate again. Keep unidentified when evidence is insufficient; do not recover a case merely by weakening the check |
 | 4 | Make the next search action explicit when an eligible HTML result looks relevant but its snippet lacks the needed facts | Small prompt change; directly targets unused extract calls, such as CURVE. Benefit is confined to investigations with a useful next step | Only if the Enough read case still fails at the effort chosen in row 1: the same Enough tasks, then selected live investigations |
 | 5 | Test wider/deeper search in the investigation, not just page retrieval | Small configuration change, potentially useful for missed HTML sources; more checker calls and larger context increase total cost | Use the existing spike as motivation. Compare basic/5 with basic/20, then basic/20 with advanced/20 while other settings stay fixed. Measure final findings as well as page recall; keep excluded labels out of the baseline score |
 | 6 | Review status rules that permit a wrong answer: map-default operating, stale directories, and a plot treated as a whole plan | Medium effort; directly relevant to observed status errors, but requires decisions about acceptable evidence rather than stronger wording alone | Agree the rule first. Contrast current operation / old evidence / unknown, and whole-site / one-plot evidence. Align the existing triage, finding and report prompts and the rubric before applying it; this is a rule review, not a new runtime consistency checker |
-| 7 | Step 10.9: try effort first for report fact distortions; if they remain, clarify only the report prompt as needed | Small scope, targets report errors while keeping the architecture; benefit is unmeasured | At each effort, replay fixed saved report inputs with passing controls. If errors remain at the selected effort, refine the prompt with general rules and replay the same inputs. Preserve distances, inside/outside meaning, legal status and the scope of supplied facts; plain-language paraphrases are acceptable. No coded rendering or new report validators for this fix |
+| 7 | Step 10.9: try effort first for report fact distortions and missing citations; if they remain, clarify only the report prompt as needed | Small scope, targets report errors while keeping the architecture; benefit is unmeasured | At each effort, replay fixed saved report inputs with passing controls. If errors remain at the selected effort, refine the prompt with general rules and replay the same inputs. Preserve distances, inside/outside meaning, legal status and the scope of supplied facts; check citation placement, including uncited introductions. Plain-language paraphrases are acceptable. No coded rendering or new report validators for this fix |
 
 Rows 1–2 and the report effort/prompt sequence in row 7 are represented by 10.9–10.10.
 The separate status-policy review in row 6 is broader than ordering the existing
@@ -251,7 +252,8 @@ remaining status errors follow the current rules correctly.
 - Use the already planned full E1–E5 run after 10.9–10.10 to check the combined result;
   component comparisons supply the attribution. Do not run the whole suite after every
   wording edit. If a later search or architecture change is selected, validate its final
-  pipeline too. Choose an acceptable cost/time tradeoff before adopting a costlier setting.
+  pipeline too. For this demo MVP, prioritize observed quality; record cost and time for the
+  results without adding a separate cost-optimization task.
 
 ### Defer unless new evidence makes the case
 
