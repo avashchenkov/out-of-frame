@@ -346,7 +346,12 @@ calibration.
        inside/outside claims and legal status. If factual distortions remain at the selected
        effort, clarify only the report prompt as needed and replay the same inputs. Accept
        equivalent plain-language wording; inspect flags for actual changes of fact. Do not
-       add coded rendering or new report validators for this fix.
+       add coded rendering or new report validators for this fix. For part-to-whole and
+       time-scope errors, use saved inputs to locate the first wrong generalisation in the
+       Finding or report. Try effort first, then clarify the existing prompt at that step
+       only if needed. Separate subject/area/time fields for each fact and a new
+       Finding/report consistency checker are rejected for the MVP: the extra state and
+       validation work have no demonstrated need. Keep the existing architecture.
     10. A classification funnel: the type of an object or a plan settled by questions in a
        fixed order, from what can affect people nearby the most to the least, in place of the
        special rules added one by one. Before any code: where the type is decided
