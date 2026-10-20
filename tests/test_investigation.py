@@ -166,6 +166,18 @@ def test_a_finding_that_fails_the_grounding_check_makes_the_object_unidentified(
     assert state.finding == Finding.unidentified("obj-1")
 
 
+def test_an_answer_without_the_finding_tool_makes_the_object_unidentified(monkeypatch):
+    class TalkingModel:
+        def invoke(self, request):
+            return AIMessage("The object is a factory.")
+
+    monkeypatch.setattr(investigation, "build_search_model", lambda: FakeSearcher(SEARCH))
+    monkeypatch.setattr(finding, "build_finding_model", lambda: TalkingModel())
+    monkeypatch.setattr(prompt_injection, "flag_injections", pass_every_text)
+    state = investigation.investigate(MAP_OBJECT, "map", DATE, FakeWebSearch([SNIPPET]))
+    assert state.finding == Finding.unidentified("obj-1")
+
+
 def test_a_web_search_failure_ends_the_run_with_the_object_unidentified(monkeypatch):
     state, finder = investigate(monkeypatch, FakeSearcher(SEARCH), FakeWebSearch(fails=True))
     assert state.web_search_failed

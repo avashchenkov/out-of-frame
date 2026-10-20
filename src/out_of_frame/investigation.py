@@ -127,7 +127,13 @@ def cut_page(text: str) -> str:
 
 
 def write_finding(state: InvestigationState, runtime: Runtime[Context]) -> dict:
-    return {"finding": finding.draft_finding(state, runtime.context.date)}
+    """An answer without the Finding tool makes the object unidentified, as a rejected finding
+    does, so that it does not stop the run: the model does not get another try."""
+    try:
+        return {"finding": finding.draft_finding(state, runtime.context.date)}
+    except finding.MissingFindingError as error:
+        log.info("%s, so the object is unidentified", error)
+        return {"finding": Finding.unidentified(state.map_object.id)}
 
 
 def check_grounding(state: InvestigationState) -> dict:

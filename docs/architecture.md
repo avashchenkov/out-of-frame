@@ -419,8 +419,9 @@ that each fact's words, numbers and symbols appear in the stored text in the sam
 whatever the case, spacing and punctuation between them; for the object's own map or plan
 data, that text is the object's name, details without the category, and addresses. If not,
 the finding is rejected, and the object is marked unidentified. The check runs inside the
-investigation, so only a finding that passes it, or an unidentified one after a rejection or a
-web search failure, goes into `findings`. Triage findings are not checked: in triage the model
+investigation, so only a finding that passes it, or an unidentified one after a rejection, an
+answer without the Finding tool or a web search failure, goes into `findings`. Triage findings
+are not checked: in triage the model
 may use what it knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with

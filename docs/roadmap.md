@@ -383,8 +383,10 @@ calibration.
        read and looks relevant, but whose snippet lacks the facts needed, is read. The Enough
        suite checks it, with the tasks that must stop or must not read as controls against
        forced reads; then the live investigation suite and a live investigation of the CURVE
-       campus show whether the page read helps the finding. Then one full run of E1–E5
-       measures 8 to 10 against the full run of 7. Trace each remaining fail to the first
+       campus show whether the page read helps the finding. An answer without the Finding
+       tool, seen at the selected effort too, makes the object unidentified instead of
+       stopping the whole run. Then one full run of E1–E5 measures 8 to 10 against the full
+       run of 7. Trace each remaining fail to the first
        failing step: an effect inherited from a wrong type is a classification failure, not a
        separate report fix. The other unselected
        candidates in the [quality audit](evals/2026-10-19-agent-quality-audit.md) are weighed

@@ -16,7 +16,6 @@ from langgraph.types import Command
 
 from out_of_frame import agent
 from out_of_frame.conversation import ConversationError
-from out_of_frame.finding import MissingFindingError
 from out_of_frame.geocoding import GeocodingError
 from out_of_frame.investigation import Context
 from out_of_frame.prices import compute_run_cost
@@ -78,7 +77,6 @@ def main() -> None:
             pydantic.ValidationError,  # a model answer outside its schema, such as an unknown type
             PromptInjectionCheckError,
             ConversationError,
-            MissingFindingError,
             ReportError,
         ) as error:
             # A failed model call or geocoding stops the run, see docs/architecture.md#failures.
