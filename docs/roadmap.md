@@ -374,13 +374,17 @@ calibration.
        judges' rubrics), and a design that Claude and Codex review several times, each
        without the other's answer, until no real point is left; the person settles it. If
        the types and their lines can stay, the judges' calibration stays. Examples are made
-       up, never taken from a task. The finding suite checks it, then one full run of E1–E5
-       measures 8 to 10 against the full run of 7. Trace each remaining fail to the first
-       failing step: an effect inherited from a wrong type is a classification failure, not
-       a separate report fix. The other unselected candidates in the
-       [quality audit](evals/2026-10-19-agent-quality-audit.md) are weighed only against the
-       failures that this run still shows; they are not scheduled work. Rejected MVP changes
-       stay excluded.
+       up, never taken from a task. The finding suite checks it. In the same step, since the
+       Enough suite showed that effort does not settle the read of a page whose snippet lacks
+       the facts, the investigation prompt makes that next step explicit: a result that may be
+       read and looks relevant, but whose snippet lacks the facts needed, is read. The Enough
+       suite checks it, with the tasks that must stop or must not read as controls against
+       forced reads. Then one full run of E1–E5 measures 8 to 10 against the full run of 7.
+       Trace each remaining fail to the first failing step: an effect inherited from a wrong
+       type is a classification failure, not a separate report fix. The other unselected
+       candidates in the [quality audit](evals/2026-10-19-agent-quality-audit.md) are weighed
+       only against the failures that this run still shows; they are not scheduled work.
+       Rejected MVP changes stay excluded.
     11. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
     12. The results in docs/results.md: each suite's scores before and after the fixes of 8 to 10,

@@ -217,9 +217,10 @@ predicted percentage gain.
 | 6 | Review status rules that permit a wrong answer: map-default operating, stale directories, and a plot treated as a whole plan | Medium effort; directly relevant to observed status errors, but requires decisions about acceptable evidence rather than stronger wording alone | Agree the rule first. Contrast current operation / old evidence / unknown, and whole-site / one-plot evidence. Align the existing triage, finding and report prompts and the rubric before applying it; this is a rule review, not a new runtime consistency checker |
 | 7 | Step 10.9: try effort first for report fact distortions and missing citations; if they remain, clarify only the report prompt as needed | Small scope, targets report errors while keeping the architecture; benefit is unmeasured | At each effort, replay fixed saved report inputs with passing controls. If errors remain at the selected effort, refine the prompt with general rules and replay the same inputs. Preserve distances, inside/outside meaning, legal status and the scope of supplied facts; check citation placement, including uncited introductions. Plain-language paraphrases are acceptable. No coded rendering or new report validators for this fix |
 
-Rows 1–2 and the report effort/prompt sequence in row 7 are represented by 10.9–10.10.
+Rows 1–2 and the report effort/prompt sequence in row 7 are represented by 10.9–10.10, and
+row 4 by 10.10, since the Enough read case still failed at the effort selected in 10.9.
 The separate status-policy review in row 6 is broader than ordering the existing
-classification rules. Rows 3–6 remain candidates beyond those roadmap steps, not reasons
+classification rules. Rows 3, 5 and 6 remain candidates beyond those roadmap steps, not reasons
 to delay the next code change. The recommended next action
 is row 1. Reassess later priorities after rows 1–2 and their planned full run: an error that
 disappears does not need a second fix. Move row 6 ahead of further model spending if the
