@@ -371,7 +371,10 @@ calibration.
        special rules added one by one. The status decision stays separate from this type
        funnel. Before any code: where the type is decided
        now (the triage, investigation and finding prompts, the research scope's types, the
-       judges' rubrics), and a design that Claude and Codex review several times, each
+       judges' rubrics), and which of the special rules no task checks yet, such as a shop on
+       a wholesaler's site. Each such rule gets a negative control task first, built as the
+       eval architecture says, so that the funnel cannot lose it unseen. Then a design that
+       Claude and Codex review several times, each
        without the other's answer, until no real point is left; the person settles it. If
        the types and their lines can stay, the judges' calibration stays. Examples are made
        up, never taken from a task. The finding suite checks it. In the same step, since the
@@ -379,9 +382,11 @@ calibration.
        the facts, the investigation prompt makes that next step explicit: a result that may be
        read and looks relevant, but whose snippet lacks the facts needed, is read. The Enough
        suite checks it, with the tasks that must stop or must not read as controls against
-       forced reads. Then one full run of E1–E5 measures 8 to 10 against the full run of 7.
-       Trace each remaining fail to the first failing step: an effect inherited from a wrong
-       type is a classification failure, not a separate report fix. The other unselected
+       forced reads; then the live investigation suite and a live investigation of the CURVE
+       campus show whether the page read helps the finding. Then one full run of E1–E5
+       measures 8 to 10 against the full run of 7. Trace each remaining fail to the first
+       failing step: an effect inherited from a wrong type is a classification failure, not a
+       separate report fix. The other unselected
        candidates in the [quality audit](evals/2026-10-19-agent-quality-audit.md) are weighed
        only against the failures that this run still shows; they are not scheduled work.
        Rejected MVP changes stay excluded.
