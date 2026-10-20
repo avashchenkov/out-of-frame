@@ -1,0 +1,20 @@
+# F16, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F16
+suite: finding
+covers: >-
+  A flooring firm's own page gives its branch at the object's address: a showroom of floors,
+  doors and wallpaper, with opening hours for trade customers. A shop or a showroom, even one
+  for businesses, is commercial, not logistics like a wholesaler with goods in stock. The
+  control for F14.
+date: 2026-10-16  # fixed data: the date the page was retrieved
+
+input:
+  state: f16-showroom.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: commercial  # a showroom; the page shows nothing kept in stock or shipped
+  status: operating  # its own website, with opening hours
+  evidence_id: web-1

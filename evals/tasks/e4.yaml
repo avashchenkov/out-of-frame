@@ -58,18 +58,20 @@ expected:
       left_out: >-
         The page that shows its making, amr-shop.de, is not within 5 results at basic depth by
         its address, which finds only directories.
-    # 818 m: W. & L. Jordan GmbH NL Berlin-Adlershof, man_made=works, Ernst-Ruska-Ufer 2. The
-    # page: a 285 m² showroom of floors, doors and wallpaper, "Verkauf nur an gewerbliche
-    # Kunden", with opening hours; it names no making at this branch.
+    # 818 m: W. & L. Jordan GmbH NL Berlin-Adlershof, man_made=works, Ernst-Ruska-Ufer 2 and Am
+    # Studio 10. A flooring wholesaler's branch: a 285 m² showroom, and storage, lorry loading
+    # and dispatch, as a Jordan job advert for this address and an Adlershof article of 2012
+    # show. Storing goods is the use that affects people nearby the most, so logistics, but on
+    # 2026-10-20 a search by its name and address, or by either address, found only the
+    # showroom page, which shows no storage.
     - id: jordan-adlershof
       object_id: osm-way-334170247
       category: industry
       coordinates: {lat: 52.42626785, lon: 13.54449675}
       distance_tolerance_m: 80
-      identified_type: commercial
-      status: operating
-      source_url: https://www.jordanshop.de/de-DE/stores/7
-      search: W. & L. Jordan GmbH NL Berlin-Adlershof Ernst-Ruska-Ufer 2
+      left_out: >-
+        The page that shows its storage, a Jordan job advert, is not within 5 results at basic
+        depth by its name or its addresses, which find only its showroom page.
     # 878 m: landuse=industrial; Wegedornstraße 273, 12524 Berlin. No search by the address
     # finds a page about it.
     - id: wegedornstrasse-273

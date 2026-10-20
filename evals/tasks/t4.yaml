@@ -1,0 +1,34 @@
+# T4, triage: one call checks one map object that code does not send to investigation.
+# See docs/eval-architecture.md#triage.
+id: T4
+suite: triage
+covers: >-
+  A stormwater filter that the map tags as a wastewater plant, while its name,
+  Retentionsbodenfilteranlage, says that it is a retention soil filter, not a sewage works. The
+  type wastewater plant does not fit it closely, so triage sends it to investigation.
+date: 2026-10-18  # fixed data: the date the tags were read
+
+# What the agent gets: OSM way 118132969 as the full run of 2026-10-18 got it, 276 m from Am
+# Bruchland 22, 12524 Berlin, the E5 address. In all three E5 trials of that run, triage settled
+# it as a wastewater plant in use.
+input:
+  map_object:
+    id: osm-way-118132969
+    name: Retentionsbodenfilteranlage
+    details:
+      category: wastewater
+      man_made: wastewater_plant
+      operator: Berliner Wasserbetriebe
+      operator:short: BWB
+      operator:wikidata: Q821856
+    addresses: []
+    coordinates: {lat: 52.4274493, lon: 13.5246212}  # the centre of the way's bounds
+    distance_from_property_m: 276  # written: the task has no property
+    source_id: overpass-1
+
+# Read only by the graders. Unidentified: triage writes no finding and sends the object to
+# investigation.
+expected:
+  outcome: unidentified
+  identified_type: null
+  status: null

@@ -1,0 +1,57 @@
+# An investigation state with one search whose pages list a car repair workshop at the object's
+# address: one in a directory category of petrol stations and car workshops, one that shows it
+# repairs cars. The object, OSM way 985575964, is the industrial area at Klärwerkstraße 3 and 7,
+# 217 m from the E1 address, the object of L1. The pages are real, from the full run of
+# 2026-10-18, and are rewritten in new words, with names, places and figures kept as found, and
+# the facts that the task needs word for word.
+map_object:
+  id: osm-way-985575964
+  name: null
+  details: {category: industry, landuse: industrial}
+  addresses:
+    - Klärwerkstraße 3, 13597 Berlin
+    - Klärwerkstraße 7, 13597 Berlin
+  coordinates: {lat: 52.528403749999995, lon: 13.2320206}
+  distance_from_property_m: 217
+  source_id: overpass-1  # the map source of the task
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: "Klärwerkstraße 3, 13597 Berlin"}
+  - {role: tool, pages: [web-1, web-2]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Klärwerkstraße 3, 13597 Berlin
+    url: https://www.nochoffen.de/haselhorst-autoservice-mueller
+    content: |-
+      Öffnungszeiten Autoservice Müller Klärwerkstraße 3 in Berlin
+      Autoservice Müller
+      Klärwerkstraße 3
+      13597 Berlin
+      Telefon: +49 30 33308790
+      Andere Objekte der Kategorie "Tankstellen & Kfz-Werkstätten" in der Nähe
+      Shell Tankstelle, Am Juliusturm 33, 13599 Berlin, 1,10 km away
+      Aral Tankstelle, Reichsstraße 13/14, 14052 Berlin, 2,84 km away
+      A&D KFZ WERKSTATT Spandau, Brunsbütteler Damm 82, 13581 Berlin, 3,20 km away
+      Startseite > Berlin > Kfz > Tankstellen & Kfz-Werkstätten > Autoservice Müller
+      Öffnungszeiten für Autoservice Müller in Berlin
+      Montag - Freitag 08:00 - 18:00
+      Samstag 08:00 - 14:00
+      Sonntag geschlossen
+  - id: web-2
+    kind: web search
+    request: Klärwerkstraße 3, 13597 Berlin
+    url: https://autoservice-mueller-berlin.edan.io
+    content: |-
+      Autoservice Müller
+      Klärwerkstraße 3, 13597 Bezirk Spandau
+      030 33308790
+      Latest feedback
+      "The repairs were of outstanding quality, and my car runs like new."
+      "I had a full inspection done here, at fair prices."
+      Opening hours: Monday to Thursday 8 am–6 pm, Friday 8 am–5 pm
+      Auto repair shop
+
+finding: null

@@ -1,0 +1,19 @@
+# F18, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F18
+suite: finding
+covers: >-
+  A business directory gives a firm at the object's address that develops and makes measuring
+  systems and plasma etching and coating systems. It builds machines for processes that work
+  with chemicals, and makes no chemicals: production, not a plant. The control for F13.
+date: 2026-10-18  # fixed data: the date the page was retrieved
+
+input:
+  state: f18-machines-not-chemicals.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: production  # it makes machines
+  status: operating  # a current directory entry
+  evidence_id: web-1

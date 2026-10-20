@@ -1,0 +1,19 @@
+# F17, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F17
+suite: finding
+covers: >-
+  A car repair workshop at the object's address, in a directory category that groups petrol
+  stations and car workshops. A category that groups several trades does not show that the
+  business does work of the plant type, such as storing fuel: the site is production, not a
+  plant. The control for F15.
+date: 2026-10-18  # fixed data: the date the pages were retrieved
+
+input:
+  state: f17-grouped-category.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: production  # repairing cars, and no petrol station at the address
+  status: operating  # current listings with opening hours

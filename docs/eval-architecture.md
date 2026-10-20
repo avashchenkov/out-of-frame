@@ -42,11 +42,11 @@ tasks built during the MVP; see [MVP](#mvp).
 | Input loop | component | The input loop, until the input is complete | Written user messages: the first one and a reply to each expected question | replayed | 3 | I1–I3 |
 | Extract | component | One extract call | Written messages and the current input | none | 10 | — |
 | Ask | component | One question | Written messages and what code found missing | none | 4 | — |
-| Triage | component | One triage call, after code routing | One map object | none | 4 | T1–T2 |
+| Triage | component | One triage call, after code routing | One map object | none | 4 | T1, T2, T4 |
 | Injection check | component | The prompt injection check, on one snippet or page | A generated snippet or page | none | 4 | P1–P4 |
 | Search | component | One search or page read | An object, with a written search history or none | none | 5 | — |
 | Enough | component | One decision to stop, search again or read a page | A written search history | none | 6 | N1–N6 |
-| Finding | component | Write the finding | A written search history and its pages | none | 15 | F1, F2, F4–F15 |
+| Finding | component | Write the finding | A written search history and its pages | none | 20 | F1, F2, F4–F20 |
 | Report | component | One report write, or one rewrite after unknown IDs or an object left out | A run state with all findings | none | 5 | R2–R4 |
 | Live investigation | component | The investigation subgraph, as a black box | One object from the end-to-end addresses | live web search | 3 | L1 |
 
@@ -97,7 +97,7 @@ name in its first line.
 | Check each snippet and page for prompt injection | Research, investigation | Injection check | P1–P4 | Code: flagged or not |
 | Search the web or read a page | Research, investigation | Search | S1–S5 | Search relevance judge; code: S4 |
 | Enough? or cap reached | Research, investigation | Enough | N1–N6 | Code: stops or searches again; for N5 and N6, whether it reads the given page |
-| Write the finding | Research, investigation | Finding, live investigation | F1–F15, L1–L3 | Code: outcome, type and status against the label, evidence ID and key facts; support judge |
+| Write the finding | Research, investigation | Finding, live investigation | F1–F20, L1–L3 | Code: outcome, type and status against the label, evidence ID and key facts; support judge |
 | Write the report | Report | Report | R1–R4, R6 | Code: every finding in the report, IDs and distances; support, interpretation and no verdict judges |
 
 The input loop checks only the input state at the end. Whether the agent asks is decided by
@@ -182,7 +182,8 @@ labels.
 - Every label must be reachable: a Tavily search built from what the agent sees of the object
   finds the label's page, or the page's link is in the object's own data, which the agent can
   read directly, or those data settle the label alone; a PDF that a plan's data link does not
-  count, since the agent does not read it. If not, a component task is broken, not hard; in an
+  count, since the agent does not open it, but text that a search returns from a PDF is a page
+  like any other. If not, a component task is broken, not hard; in an
   end-to-end task, the object is marked as left out and is not scored. Reachable means within
   the agent's own search, 5 results at Tavily's basic depth: some pages show up only with more
   results or a deeper search, and some not from the address at all, as the
@@ -425,6 +426,11 @@ the kind of its source.
 | F13 | A company's own website gives chemicals made at the object's address | Identified as a plant, not production, and operating |
 | F14 | A wholesaler's own website gives goods in stock at the object's address | Identified as logistics, not commercial, and operating |
 | F15 | Several businesses at the object's addresses, one of them of the plant type | Identified as a plant, from the page about that business |
+| F16 | A firm's own page gives a showroom at the object's address, with opening hours for trade customers | Identified as commercial, not logistics: the control for F14 |
+| F17 | A car repair workshop at the object's address, in a directory category of petrol stations and car workshops | Identified as production, not a plant: the control for F15 |
+| F18 | A directory gives a firm at the object's address that makes plasma etching and coating systems | Identified as production, not a plant: the control for F13 |
+| F19 | A B-Plan whose map data name a housing area and a mixed area, and a page about it that also names workshops | Identified as other, with status `null`: the type comes from the uses in the map data |
+| F20 | A B-Plan whose map data name a core area, a business area and land for two heat and power plants, and no page about it | Identified as a plant, with status `null` |
 
 In every finding task, code also checks that the evidence ID exists, that each key fact appears
 word for word in the cited page or the object's map data, and that a cited page gives one of

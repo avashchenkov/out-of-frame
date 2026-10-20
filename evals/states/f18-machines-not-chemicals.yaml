@@ -1,0 +1,46 @@
+# An investigation state with one search whose page is the entry of a firm that makes measuring
+# systems and plasma etching and coating systems, in the business directory of the Adlershof
+# technology park. The object, OSM way 377345893, is tagged man_made=works at Schwarzschildstraße
+# 2, 716 m from Am Bruchland 22, 12524 Berlin, the E5 address. Its product=machinery tag is left
+# out, so that only the page shows what is made there. The page is real, from the full run of
+# 2026-10-18, and is rewritten in new words, with names, places and figures kept as found, and
+# the facts that the task needs word for word.
+map_object:
+  id: osm-way-377345893
+  name: Sentech
+  details:
+    category: industry
+    man_made: works
+    operator: Sentech Instruments GmbH
+  addresses:
+    - Schwarzschildstraße 2, 12489 Berlin
+  coordinates: {lat: 52.430863200000005, lon: 13.523129650000001}
+  distance_from_property_m: 716
+  source_id: overpass-1  # the map source of the task
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: "Sentech Instruments GmbH Schwarzschildstraße 2 Berlin Adlershof"}
+  - {role: tool, pages: [web-1]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: Sentech Instruments GmbH Schwarzschildstraße 2 Berlin Adlershof
+    url: https://www.adlershof.de/firmensuche-institute/adressverzeichnis/firma/detail/sentech-instruments-gmbh
+    content: |-
+      SENTECH Instruments GmbH - Technologiepark Adlershof
+      Address directory
+      SENTECH Instruments GmbH
+      Schwarzschildstraße 2, 12489 Berlin
+      +49 30 6392-5520
+      www.sentech.de
+      Schwerpunkte
+      Entwicklung, Produktion und weltweiter Vertrieb von Dünnschicht-Messsystemen (Reflektometer, Ellipsometer, spektroskopische Ellipsometer) sowie von Plasma-Prozess-Anlagen (Plasma-Ätzer, Plasma-Beschichtungssysteme) sowie von kundenspezifischen Lösungen
+      Branchen
+      Mikrosysteme / Materialien
+      Photonik / Optik
+      Messtechnik
+      Spektroskopie / Spektrometrie
+
+finding: null

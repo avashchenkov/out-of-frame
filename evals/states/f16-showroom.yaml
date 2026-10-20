@@ -1,0 +1,48 @@
+# An investigation state with one search whose page is a flooring firm's page about its branch
+# at the object's address, a showroom. The object, OSM way 334170247, is tagged man_made=works at
+# Ernst-Ruska-Ufer 2, 818 m from Teutonenstraße 10, 12524 Berlin, the E4 address. The page is
+# real, from a run of 2026-10-16, and is rewritten in new words, with names, places and figures
+# kept as found, and the facts that the task needs word for word; its list of the goods at the
+# branch is left out. The real branch also stores goods and ships them, as other pages show: the
+# task follows this page, not the real site, and checks only that a showroom is commercial.
+map_object:
+  id: osm-way-334170247
+  name: W. & L. Jordan GmbH NL Berlin-Adlershof
+  details:
+    category: industry
+    man_made: works
+    website: https://www.jordanshop.de/jordan-berlin-adlersholf
+  addresses:
+    - Am Studio 10, 12489 Berlin
+    - Ernst-Ruska-Ufer 2, 12489 Berlin
+  coordinates: {lat: 52.42626785, lon: 13.54449675}
+  distance_from_property_m: 818
+  source_id: overpass-1  # the map source of the task
+source_kind: map  # the kind of the map object's source
+
+history:
+  - {role: model, tool: search, query: "W. & L. Jordan GmbH NL Berlin-Adlershof Ernst-Ruska-Ufer 2"}
+  - {role: tool, pages: [web-1]}
+
+pages:
+  - id: web-1
+    kind: web search
+    request: W. & L. Jordan GmbH NL Berlin-Adlershof Ernst-Ruska-Ufer 2
+    url: https://www.jordanshop.de/de-DE/stores/7
+    content: |-
+      W. & L. Jordan GmbH NL Berlin-Adlershof | Jordan Onlineshop - für Profis aus Handwerk und Fachhandel
+      Ernst-Ruska-Ufer 2
+      12489 Berlin
+      Telefon: 030 6779820-10
+      Öffnungszeiten
+      Für gewerbliche Kunden
+      Mo. - Do. 06:30-17:00
+      Fr. 06:30-15:00
+      Ausstellung für Endkunden
+      Mo. - Fr. 09:30-18:00
+      Make an appointment for advice.
+      Welcome to the JOKA Showroom Berlin-Adlershof, 285 m² in size.
+      It shows parquet, laminate and design floors, wallpaper, doors and acoustic panels.
+      Our team advises end customers, architects, planners and house builders.
+
+finding: null

@@ -1,0 +1,20 @@
+# F20, finding: one call writes the finding from a written search history.
+# See docs/eval-architecture.md#finding.
+id: F20
+suite: finding
+covers: >-
+  A plan whose WFS data name a core area, a special area for research, a business area with no
+  use, roads and land for two heat and power plants, and no page about it. Of the uses it
+  allows, the plants can affect people nearby the most, and a business area has a type when a
+  use that the plan names is a plant: the type is plant. The control for F10 and F11.
+date: 2026-10-16  # fixed data: the date the map data were retrieved
+
+input:
+  state: f20-plant-among-uses.yaml  # in evals/states/
+
+# Read only by the graders. Follows the written state, not the real site.
+expected:
+  outcome: identified
+  identified_type: plant  # Flächen für Versorgungsanlagen (Heizkraftwerk I, Heizkraftwerk II)
+  status: null  # the map data do not say whether building has started
+  evidence_id: bplan-wfs-1  # the map data alone

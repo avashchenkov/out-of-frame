@@ -1,0 +1,50 @@
+# An investigation state of a plan whose WFS data name a core area, a special area for research,
+# a business area and land for two heat and power plants: the finding rests on its map data
+# alone. The plan is XV-51h, 140 m from Am Bruchland 22, 12524 Berlin, the E5 address; its fields
+# are as the WFS gave them on 2026-10-16, when evals/label.py recorded them. One search by its
+# number found no page about it, so that only the map data speak.
+map_object:
+  id: bplan-0915051h
+  name: Bebauungsplan XV-51h
+  details:
+    gisid: 11009009_BP_0915051h
+    planid: 0915051h
+    planname: XV-51h
+    planartname: Qualifizierter B-Plan
+    verfahrensart: Normal
+    bereich: für das Gelände südwestlich der Magnusstraße, nordwestlich der Albert-Einstein-Straße und
+      nördlich des Ernst-Ruska-Ufers, östlich der Wegedornstraße und südöstlich der Rudower Chaussee sowie
+      für die Magnusstraße zwischen Rudower Chaussee und Albert-Einstein-Straße im Bezirk Treptow-Köpenick,
+      Ortsteil Adlershof
+    bezirk: 09 - Treptow-Köpenick
+    bp_rechtsstand: In Kraft getreten
+    afs_behoer: Senat
+    afs_beschl: '1995-12-11'
+    afs_l_aend: '1999-06-30'
+    aul_anfang: '2000-01-25'
+    aul_ende: '2000-03-03'
+    festsg_von: Senat
+    festsg_am: '2006-01-25'
+    fsg_gvbl_n: '6'
+    fsg_gvbl_s: '156'
+    fsg_gvbl_d: '2006-02-22'
+    scan_www: https://tk.gis-broker.de/metadata/bplan/pdf/XV-51h.pdf
+    grund_www: https://fbinter.stadt-berlin.de//ScansBPlan/Begruendungen/0915051h_XV-51h.pdf
+    inhalt: Kerngebiet, sonstiges Sondergebiet (Forschung), Gewerbegebiet, Straßenverkehrsfläche, Flächen
+      für Versorgungsanlagen (Heizkraftwerk I, Heizkraftwerk II)
+    category: planned_objects
+  addresses: []
+  coordinates:
+    lat: 52.42827624
+    lon: 13.529741905
+  distance_from_property_m: 140
+  source_id: bplan-wfs-1  # the plans source of the task
+source_kind: plans  # the kind of the map object's source
+history:
+- role: model
+  tool: search
+  query: Bebauungsplan XV-51h
+- role: tool
+  pages: []
+pages: []
+finding: null
