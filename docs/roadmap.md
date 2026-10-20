@@ -341,7 +341,12 @@ calibration.
        N1–N6: the finding suite starts from fixed pages, so it cannot show a search that stops
        before reading a page whose snippet lacks the facts. Then the finding and Enough suites
        at the default effort, high and extra-high, and the effort that they show best; the
-       cost and the time of a run are counted with it.
+       cost and the time of a run are counted with it. At each effort, also replay fixed
+       report inputs from saved runs, with passing reports as controls: check distances,
+       inside/outside claims and legal status. If factual distortions remain at the selected
+       effort, clarify only the report prompt as needed and replay the same inputs. Accept
+       equivalent plain-language wording; inspect flags for actual changes of fact. Do not
+       add coded rendering or new report validators for this fix.
     10. A classification funnel: the type of an object or a plan settled by questions in a
        fixed order, from what can affect people nearby the most to the least, in place of the
        special rules added one by one. Before any code: where the type is decided
