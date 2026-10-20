@@ -182,12 +182,15 @@ expected:
     # railway: its reasons say the railway embankment is only copied in from railway law
     # ("nachrichtlich als Bahnanlage in den Bebauungsplan übernommen"). What it allows is housing,
     # a mixed area, a park and roads, which have no listed type, so other. Status null, as for
-    # V-13. The page is linked in its WFS fields (grund_www). On 2026-10-19 the person left it
-    # out: the agent reads none of the PDFs that a plan's WFS fields link, and only these
-    # reasons show that the railway is copied in.
+    # V-13. The page is linked in its WFS fields (grund_www). Since 2026-10-21 land for railways
+    # in a plan gives no type, by the person's decision, so its WFS data alone settle other; it
+    # stays left out because the support judge, calibrated before that rule, reads its
+    # Bahnanlage as a railway.
     - id: plan-v-18
       object_id: bplan-0205018
       category: planned_objects
       coordinates: {lat: 52.49497633, lon: 13.468116765000001}
       distance_tolerance_m: 50
-      left_out: Only its reasons, a PDF that its WFS fields link, show that the railway is copied in.
+      left_out: >-
+        Its WFS data settle other, since land for railways in a plan gives no type, but the
+        support judge, calibrated before that rule, reads its Bahnanlage as a railway.

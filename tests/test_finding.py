@@ -142,7 +142,13 @@ def test_the_last_message_names_the_object(name, addresses):
 @pytest.mark.parametrize(
     "map_object, source_kind, rule, task, last",
     [
-        (MAP_OBJECT, "map", "A map tag such as", "what this map object is", "this map object"),
+        (
+            MAP_OBJECT,
+            "map",
+            "A map tag\n  that names",
+            "what this map object is",
+            "this map object",
+        ),
         # The same object as a plan: only the kind of its source differs.
         (
             MAP_OBJECT,

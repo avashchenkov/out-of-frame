@@ -31,47 +31,76 @@ Rules:
 - Use only the map data and the sources in the messages, never what you know, except what the
   words of German planning law mean, such as Gewerbegebiet.
 - The plan's own map data is about it. Any other source is about this plan only if it names
-  the plan's number, in any spelling, such as "5-1VE" or "5-1 VE". A source about another plan,
-  even next to it, is not about this plan, and nothing it says is a fact about this plan.
+  the plan's number, in any spelling, such as "7-12VE" or "7-12 VE". A source about another
+  plan, even next to it, is not about this plan, and nothing it says is a fact about this plan.
 - The type is what the plan allows on its land, by the uses that its map data name in inhalt,
-  not every use that the law would also permit there; only where they name none, by the uses
-  that a page about it names. It is the listed type that fits, or other if nothing that it
-  allows fits a listed type, such as homes or a park. A housing area (Wohngebiet) and a mixed
-  area (Mischgebiet) are other: a mixed area allows only businesses that do not much disturb
-  homes. A core area (Kerngebiet) is commercial: it is mainly for shops, offices and
-  administration. If it allows several, such as factories and offices, the type is the one
-  that can affect people nearby the most. It is other only if none of them fits a listed type:
-  any listed type, even one with no effect such as commercial, comes before other.
+  not every use that the law would also permit there; only where inhalt names none, by the
+  uses that a page about it names. Ask the questions below of those uses, in this order: the
+  type is the first one that a use answers yes.
+  1. plant: is a use for making, burning, treating or storing power, heat, waste, chemicals or
+     fuel, other than wastewater, such as land for a tank farm?
+  2. wastewater plant: is a use for treating sewage?
+  3. airport: is a use for an airfield for aircraft?
+  4. production: is a use for making or repairing things?
+  5. logistics: is a use for storing or moving goods?
+  6. commercial: is a use for shops and offices? A core area (Kerngebiet) is: it is mainly
+     for shops, offices and administration.
+  These answer no question: a housing area (Wohngebiet); a mixed area (Mischgebiet), which
+  allows only businesses that do not much disturb homes; land for public needs
+  (Gemeinbedarf); streets (Straßenverkehrsfläche); and land for railways (Bahnanlage).
   An area for businesses of any kind, such as a Gewerbegebiet or an Industriegebiet, with no
-  use named, allows production, storage, offices and plants alike: a plan with one has no
-  type, and is unidentified, unless a use that the plan names is a plant.
+  use named, allows production, storage, offices and plants alike: it answers none of the
+  questions and leaves the first one open, so the type is plant if another use answers it
+  yes, and otherwise the plan has no type and is unidentified.
+  If the plan's uses are known, none answers yes and none leaves a question open, the type is
+  other, as for homes or a park; if neither inhalt nor a page about it names a use, the plan
+  is unidentified.
 {% else %}
 - Use only the map data and the sources in the messages, never what you know.
 - The object's own map data is about it. Any other source is about this object only if it names
   one of the object's addresses, or a range of house numbers on the same street that includes
   one, or the object's name for a site at this place: a name that points at this one site, such
-  as Klärwerk Ruhleben, counts without an address, while a company's name with the city alone,
-  such as "the Berlin plant of Philip Morris", does not, since a company can have several sites
-  in the city. Spellings such as "Str." and "Straße", or "1a" and "1 a", are the same address. A
+  as Gaswerk Nordhafen, counts without an address, while a company's name with the city alone,
+  such as "the Berlin plant of Muster AG", does not, since a company can have several sites in
+  the city. Spellings such as "Str." and "Straße", or "1a" and "1 a", are the same address. A
   source about another address, even next door, or about a site of the same name elsewhere, is
   not about this object, and nothing it says is a fact about this object.
-- A map tag such as landuse=industrial says only that the land is industrial: on its own, it
-  does not settle the type.
-- An offer of a site, or of space in it, for rent or sale does not on its own show what the
-  site is used for; what such a page says about the businesses there now does.
-- A site that makes chemicals, in any amount, is a plant, not production. A wholesaler whose
-  page shows goods kept in stock or shipped from the site is logistics, not commercial; a shop
-  or a showroom, even one that sells only to businesses, is commercial. If a page about this
-  object shows that a business at one of its addresses does work of the plant type there, such
-  as a fuel depot, the site is a plant, whatever else shares it; a directory's category that
-  groups several trades does not show it.
+- The type comes from the work that is or was done at the site, by the questions below, asked
+  in this order of every page about this object and of its map data: the type is the first
+  one that any of them answers yes. Whether the work still goes on is the status, not the
+  type. A yes needs a fact that the object, or a business at one of its addresses, does or did
+  that work there; a site that several businesses share takes the first yes of any of them.
+  Question 3 is the exception: an airfield, a road or a railway answers it by what it is, also
+  while it is being built or only planned. A use that a newer page shows was replaced by
+  another at the site no longer counts; a use that only ended is still the type. A map tag
+  that names a kind of site answers its question unless a page about this object shows other
+  work done at the site, by the business that the tag names or by the site as a whole; what
+  another business at the same addresses does leaves the tag standing. These show no work on
+  their own: a map tag such as landuse=industrial, which says only that the land is
+  industrial; an offer of a site, or of space in it, for rent or sale, even one that names
+  what the space is for, though what such a page says about the businesses there now does;
+  and a directory's category that groups several trades.
+  1. plant: does it make, burn, treat or store power, heat, waste, chemicals or fuel, other
+     than wastewater, such as a tank farm or a battery recycler? Making a chemical counts in
+     any amount; making machines or devices that work with chemicals, or using chemicals,
+     does not.
+  2. wastewater plant: does it treat sewage?
+  3. airport, major road or railway: is it an airfield for aircraft, a motorway or a trunk
+     road, or a railway line or its tracks, built, being built or planned?
+  4. production: does it make or repair things?
+  5. logistics: does it store or move goods? A wholesaler whose page shows goods kept in
+     stock or shipped from the site does; a shop or a showroom, even one that sells only to
+     businesses, does not.
+  6. commercial: does it work as offices, shops or services?
+  If the evidence shows the work done at the site, or for question 3 what the object is, and
+  none of these fits, the type is other; otherwise the outcome is unidentified.
 {% endif %}
 - The finding rests on one page and on the map data. A search snippet and the full text of
   the same page, with the same URL, are one page. Choose it among the pages about this object
-  that, with the map data, settle what it is: the one that best settles whether it is in use
-  today. If such pages disagree, choose the newest, by a date that the page itself gives. Cite
-  the map's source ID instead of a page only if no page about this object adds a key fact
-  that the finding needs.
+  that, with the map data, give its type, the first yes above: the one that best settles
+  whether it is in use today. If such pages disagree, choose the newest, by a date that the
+  page itself gives. Cite the map's source ID instead of a page only if no page about this
+  object adds a key fact that the finding needs.
 - The type and the status come only from the chosen page and the map data, never from a
   second page: if only another page settles the status, the status is null. If neither a page
   about this object with the map data, nor the map data alone, settles the type, the outcome is

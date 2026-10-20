@@ -71,19 +71,19 @@ expected:
     # 358 m: landuse=industrial; Haberstraße 1, Neuköllnische Allee 98-134 and Schmalenbachstraße
     # 3-17, 12057 Berlin. Several firms share the site: a food wholesaler at Haberstraße 1, a
     # metal spinning and stamping shop at Neuköllnische Allee 108-110, a maker of analysers at
-    # Neuköllnische Allee 134. No page settles which of them affects people nearby the most, so
-    # the type is null. The page: the imprint of Process Insights at Neuköllnische Allee 134,
-    # the maker of analysers, so the site is in use. A finding without a type has no status
-    # either, by the finding prompt, so the status is null: on 2026-10-18 the person changed it
-    # from operating, which no finding could give.
+    # Neuköllnische Allee 134. Making things comes before storing goods, by the person's order of
+    # 2026-10-20, so the makers decide: production. The page, read on 2026-10-21: the
+    # Creditreform entry of Process Insights GmbH at Neuköllnische Allee 134, "Die Entwicklung,
+    # Produktion und der Vertrieb von Geräten und Technologien aus dem Bereich Analytik", a
+    # current directory entry, so the site is in use. Its imprint gives only the firm's seat.
     - id: haberstrasse-1
       object_id: osm-way-1185963533
       category: industry
       coordinates: {lat: 52.463566650000004, lon: 13.467398750000001}
       distance_tolerance_m: 200
-      identified_type: null
-      status: null
-      source_url: https://www.process-insights.com/imprint-process-insights-gmbh
+      identified_type: production
+      status: operating
+      source_url: https://firmeneintrag.creditreform.de/12057/2011583609/PROCESS_INSIGHTS_GMBH
       search: Neuköllnische Allee 134 12057 Berlin
     # 372 m: landuse=industrial; Neuköllnische Allee 2 and 4, 12057 Berlin. The page: the
     # register entry of MOLL Marzipan GmbH at Neuköllnische Allee 4, whose purpose is making

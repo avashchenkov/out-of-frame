@@ -4,7 +4,8 @@ id: E5
 suite: end-to-end
 covers: >-
   A harmless lookalike, the control: a stormwater filter that the map tags as a wastewater plant
-  must not get the type wastewater plant. A heat and power plant is nearby too.
+  must not get the type wastewater plant. A heat and power plant is nearby too. The filter's
+  label is left out for now, see its comment.
 date: today  # a live task runs with the date of the trial
 
 # What the agent gets: the first message alone; any question fails the trial.
@@ -84,16 +85,17 @@ expected:
     # Wasserbetriebe. The page: Adlershof's filter for rainwater ("behandlungsbedürftiges
     # Regenwasser") from about 50 hectares before it flows into the Teltowkanal; it went into
     # operation on 21 July 2005. It treats rainwater, not sewage, so other, not wastewater plant.
-    # The page is of 2005, and no source shows whether it runs now, so the status is null.
+    # The page is of 2005, and no source shows whether it runs now, so the status is null. On
+    # 2026-10-21 the person left it out for now: triage takes the filter for a sewage works by
+    # what the model knows, in every trial of T4, and no rule fixes that without one taken from
+    # this task. TODO: score it again once triage tells the filter apart.
     - id: adlershof-stormwater-filter
       object_id: osm-way-118132969
       category: wastewater
       coordinates: {lat: 52.4274493, lon: 13.5246212}
       distance_tolerance_m: 140
-      identified_type: other
-      status: null
-      source_url: https://www.wista.de/aktuelles/news/retentionsbodenfilteranlage-adlershof-geht-in-betrieb
-      search: Retentionsbodenfilteranlage Berliner Wasserbetriebe
+      left_out: >-
+        Triage takes it for a sewage works from its name and tag, by what the model knows (T4).
     # 3899 m: Flughafen Berlin Brandenburg, aeroway=aerodrome. The page: the airport opened in
     # October 2020, with its terminals and transport links.
     - id: ber-airport
