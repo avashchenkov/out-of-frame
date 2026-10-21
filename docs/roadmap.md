@@ -366,7 +366,7 @@ calibration.
        only if needed. Separate subject/area/time fields for each fact and a new
        Finding/report consistency checker are rejected for the MVP: the extra state and
        validation work have no demonstrated need. Keep the existing architecture.
-    10. A classification funnel: the type of an object or a plan settled by questions in a
+    10. ✅ A classification funnel: the type of an object or a plan settled by questions in a
        fixed order, from what can affect people nearby the most to the least, in place of the
        special rules added one by one. The status decision stays separate from this type
        funnel. Before any code: where the type is decided
