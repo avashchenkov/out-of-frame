@@ -488,7 +488,9 @@ so that they can be scored again later. The person left these out on 2026-10-21:
   snippet lacks the facts: wiesendamm-15 (E1), grenzallee-9-11, bergiusstrasse-21,
   haberstrasse-1, neukoellnische-allee-2-4 (E2) and curve-campus (E4). A deeper search, more
   results or a stronger model may pass them, at a cost that the MVP does not pay; the step
-  that would have made the page read explicit was dropped with them.
+  that would have made the page read explicit was dropped with them. The full run of
+  2026-10-21 added klaerwerkstrasse-3 (E1) and zpo-4 (E5), whose pages the search reached in
+  one trial of three and in none; F17 and F13 still check their rules from fixed pages.
 - **The status of railways.** No page that the agent can search shows reliably whether trains
   run on a line now, so code gives every railway the type railway and an unknown status, with
   no model. The lines whose page shows trains running are left out: line-6109, line-6100
@@ -497,7 +499,8 @@ so that they can be scored again later. The person left these out on 2026-10-21:
 - **Cases that the rules do not settle.** plan-5-1ve (E1): the agent searches a plan by its
   number, and only a page found by an address shows that it is built. plan-xv-51j (E5): only a
   page shows that a newer plan replaced its business area. nlnd-campus (E2): no page settles
-  which use of the campus affects people nearby the most.
+  which use of the campus affects people nearby the most. plan-xv-25-1 (E4), left out after
+  the full run of 2026-10-21: the page shows the state of one of the plan's three plots only.
 - **Earlier.** jordan-adlershof (E4): no search reaches a page that shows its storage.
   plan-v-18 (E3): the support judge, calibrated before land for railways in a plan gave no
   type, reads it as a railway. adlershof-stormwater-filter (E5): triage takes it for a sewage

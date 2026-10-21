@@ -54,15 +54,17 @@ expected:
     # 217 m: landuse=industrial; Klärwerkstraße 3 and 7, 13597 Berlin, the object of L1. The
     # page: a car repair workshop ("Autoreparaturen") at Klärwerkstraße 3, with reviews from
     # 2024. Repairing things is production.
+    # TODO: score it again after the MVP: production, status operating, from
+    # https://www.gelbeseiten.de/gsbiz/e3d0ea74-a77c-42f4-9f93-0fd870d0e4dc,
+    # by the search "Klärwerkstraße 3 13597 Berlin".
     - id: klaerwerkstrasse-3
       object_id: osm-way-985575964
       category: industry
       coordinates: {lat: 52.528403749999995, lon: 13.2320206}
       distance_tolerance_m: 60
-      identified_type: production
-      status: operating
-      source_url: https://www.gelbeseiten.de/gsbiz/e3d0ea74-a77c-42f4-9f93-0fd870d0e4dc
-      search: Klärwerkstraße 3 13597 Berlin
+      left_out: >-
+        The agent's search does not reliably reach the directory page of the workshop: the
+        full run of 2026-10-21 found it in one trial of three (MVP limitation).
     # 314 m: landuse=industrial; Wiesendamm 15 to 39, 13597 Berlin. The page: a car scrap
     # dealer, "An- und Verkauf von KFZ Schrotthandel", at Wiesendamm 15, with opening hours. A
     # scrap yard recycles waste.

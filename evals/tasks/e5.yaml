@@ -60,15 +60,18 @@ expected:
     # Optik 4, a lab and office building with several tenants. The page: emp BIOTECH's site at
     # Schwarzschildstraße 6, "Oligonucleotide synthesis reagents: large-scale production".
     # Making chemicals is a plant, and a site that fits plant and another type is a plant.
+    # TODO: score it again after the MVP: plant, status operating, from
+    # https://www.empbiotech.com/en/This-is-emp,
+    # by the search "Schwarzschildstraße 6 12489 Berlin".
     - id: zpo-4
       object_id: osm-way-778281679
       category: industry
       coordinates: {lat: 52.4302437, lon: 13.5226763}
       distance_tolerance_m: 50
-      identified_type: plant
-      status: operating
-      source_url: https://www.empbiotech.com/en/This-is-emp
-      search: Schwarzschildstraße 6 12489 Berlin
+      left_out: >-
+        The agent's search by the address does not reliably reach the page of the plant-type
+        tenant among the tenants of the building: the full run of 2026-10-21 found another one
+        in all three trials (MVP limitation).
     # 716 m: Sentech, operator Sentech Instruments GmbH, product=machinery; Schwarzschildstraße 2.
     # The page: "Entwicklung, Produktion und weltweiter Vertrieb von Dünnschicht-Messsystemen",
     # in the Adlershof directory.

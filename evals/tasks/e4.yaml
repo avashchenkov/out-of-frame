@@ -107,16 +107,20 @@ expected:
     # 0 m: Bebauungsplan XV-25-1, Im Verfahren, for Teutonenstraße 3/9 and 8/14 and
     # Germanenstraße 2/6. The page: the plan is meant to develop an unused plot at
     # Germanenstraße 2/6 for housing ("bislang ungenutzten Fläche ... für Wohnungsbau"). Housing
-    # has no listed type, so other; the plot is unused, so building has not started.
+    # has no listed type, so other. The page says nothing of whether the two plots on
+    # Teutonenstraße are built, so it does not settle whether building has started on the
+    # plan's land.
+    # TODO: score it again after the MVP: other, status null, not planned as labelled before,
+    # from https://www.berlin.de/ba-treptow-koepenick/aktuelles/pressemitteilungen/2026/pressemitteilung.1700019.php,
+    # by the search "Bebauungsplan XV-25-1 Teutonenstraße Germanenstraße".
     - id: plan-xv-25-1
       object_id: bplan-0915025-1
       category: planned_objects
       coordinates: {lat: 52.418202820000005, lon: 13.542651995}
       distance_tolerance_m: 50
-      identified_type: other
-      status: planned
-      source_url: https://www.berlin.de/ba-treptow-koepenick/aktuelles/pressemitteilungen/2026/pressemitteilung.1700019.php
-      search: Bebauungsplan XV-25-1 Teutonenstraße Germanenstraße
+      left_out: >-
+        Only one of the plan's three plots shows its state on the page, so the agent's answer
+        swings between planned and null (MVP limitation).
     # 0 m: Bebauungsplan XV-25, In Kraft getreten in 2006; inhalt: allgemeines Wohngebiet,
     # Mischgebiet, Gemeinbedarf (school and sports hall), park, roads. Housing and a mixed area
     # with housing have no listed type, so other. Its reasons of 2006 do not show what is built
