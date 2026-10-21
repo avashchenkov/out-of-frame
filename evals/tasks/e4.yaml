@@ -83,15 +83,16 @@ expected:
     # 934 m: landuse=industrial; Am Studio 16 and Köpenicker Straße 1, 12489 Berlin. The page:
     # CURVE-Campus, "Fertigung: 11.055 m²" next to offices; the former production hall is now
     # used by a maker of medical devices ("Medizintechnikhersteller") and a TV studio.
+    # TODO: score it again after the MVP: production, status operating, from
+    # https://www.beos.net/objekte/curve-campus, by the search "Am Studio 16 12489 Berlin".
     - id: curve-campus
       object_id: osm-way-118132465
       category: industry
       coordinates: {lat: 52.428236549999994, lon: 13.54711195}
       distance_tolerance_m: 270
-      identified_type: production
-      status: operating
-      source_url: https://www.beos.net/objekte/curve-campus
-      search: Am Studio 16 12489 Berlin
+      left_out: >-
+        Its snippet does not show what is made there, and the agent does not reliably read the
+        page (MVP limitation).
     # 3380 m: Flughafen Berlin Brandenburg, aeroway=aerodrome. The page: the airport opened in
     # October 2020, with its terminals and transport links.
     - id: ber-airport

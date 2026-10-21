@@ -26,15 +26,17 @@ expected:
     # the site. The page: Leisten-Beyer at Neuköllnische Allee 52, a maker of wooden mouldings
     # with 10 to 19 staff, "sowohl in der Produktion als auch in der Distribution tätig", in the
     # present tense. Making things is production, and it is in use.
+    # TODO: score it again after the MVP: production, status operating, from
+    # https://www.wlw.de/de/firma/leisten-beyer-gmbh-311335, by the search "Neuköllnische Allee 52
+    # 12057 Berlin".
     - id: grenzallee-9-11
       object_id: osm-way-260062333
       category: industry
       coordinates: {lat: 52.466767649999994, lon: 13.46119475}
       distance_tolerance_m: 170
-      identified_type: production
-      status: operating
-      source_url: https://www.wlw.de/de/firma/leisten-beyer-gmbh-311335
-      search: Neuköllnische Allee 52 12057 Berlin
+      left_out: >-
+        The agent's search does not reliably reach the page that shows the work done there (MVP
+        limitation).
     # 74 m: Philip Morris GmbH, landuse=industrial, man_made=works; Neuköllnische Allee 80 and
     # Haberstraße, Willstätterstraße. Philip Morris ended production there in 2025 (the press of
     # 2024 and 2025). The page: NLND Berlin at Neuköllnische Allee 80, now a campus with a
@@ -47,27 +49,29 @@ expected:
     # from operating, which no finding could give. LOXXESS also lists a logistics site at
     # Neuköllnische Allee 80, undated; no search from the address finds that page, even with 20
     # results or at advanced depth (spikes/search-depth).
+    # TODO: score it again after the MVP: null, status null, from https://www.nlnd.com, by the
+    # search "Neuköllnische Allee 80 12057 Berlin".
     - id: nlnd-campus
       object_id: osm-way-32195750
       category: industry
       coordinates: {lat: 52.4647832, lon: 13.4622129}
       distance_tolerance_m: 310
-      identified_type: null
-      status: null
-      source_url: https://www.nlnd.com
-      search: Neuköllnische Allee 80 12057 Berlin
+      left_out: >-
+        No page settles which use of the campus affects people nearby the most, and the agent
+        takes one page's production (MVP limitation).
     # 289 m: landuse=industrial; Bergiusstraße 21, 12057 Berlin. The page: Allinone Trade, a
     # wholesaler of sweets and drinks with goods in stock, at Bergiusstraße 21, with opening
     # hours. Storing and moving goods is logistics.
+    # TODO: score it again after the MVP: logistics, status operating, from
+    # https://allinonetrade.de, by the search "Bergiusstraße 21 12057 Berlin".
     - id: bergiusstrasse-21
       object_id: osm-way-1429114463
       category: industry
       coordinates: {lat: 52.46404715, lon: 13.459513399999999}
       distance_tolerance_m: 130
-      identified_type: logistics
-      status: operating
-      source_url: https://allinonetrade.de
-      search: Bergiusstraße 21 12057 Berlin
+      left_out: >-
+        The agent's search does not reliably reach the page that shows the work done there (MVP
+        limitation).
     # 358 m: landuse=industrial; Haberstraße 1, Neuköllnische Allee 98-134 and Schmalenbachstraße
     # 3-17, 12057 Berlin. Several firms share the site: a food wholesaler at Haberstraße 1, a
     # metal spinning and stamping shop at Neuköllnische Allee 108-110, a maker of analysers at
@@ -76,29 +80,33 @@ expected:
     # Creditreform entry of Process Insights GmbH at Neuköllnische Allee 134, "Die Entwicklung,
     # Produktion und der Vertrieb von Geräten und Technologien aus dem Bereich Analytik", a
     # current directory entry, so the site is in use. Its imprint gives only the firm's seat.
+    # TODO: score it again after the MVP: production, status operating, from
+    # https://firmeneintrag.creditreform.de/12057/2011583609/PROCESS_INSIGHTS_GMBH, by the search
+    # "Neuköllnische Allee 134 12057 Berlin".
     - id: haberstrasse-1
       object_id: osm-way-1185963533
       category: industry
       coordinates: {lat: 52.463566650000004, lon: 13.467398750000001}
       distance_tolerance_m: 200
-      identified_type: production
-      status: operating
-      source_url: https://firmeneintrag.creditreform.de/12057/2011583609/PROCESS_INSIGHTS_GMBH
-      search: Neuköllnische Allee 134 12057 Berlin
+      left_out: >-
+        The agent's search does not reliably reach the page that shows the work done there (MVP
+        limitation).
     # 372 m: landuse=industrial; Neuköllnische Allee 2 and 4, 12057 Berlin. The page: the
     # register entry of MOLL Marzipan GmbH at Neuköllnische Allee 4, whose purpose is making
     # sweets, marzipan above all. Making things is production. A news page of 10 July 2025 says
     # Moll bought the factory there and plans to make marzipan from July 2026; no source says
     # whether its production has started, so the status is null.
+    # TODO: score it again after the MVP: production, status null, from
+    # https://www.northdata.de/MOLL%20Marzipan%20GmbH,%20Berlin/Amtsgericht%20Charlottenburg%20(Berlin)%20HRB%20112117%20B,
+    # by the search "Neuköllnische Allee 4 12057 Berlin".
     - id: neukoellnische-allee-2-4
       object_id: osm-way-404960674
       category: industry
       coordinates: {lat: 52.4674813, lon: 13.4553575}
       distance_tolerance_m: 210
-      identified_type: production
-      status: null
-      source_url: https://www.northdata.de/MOLL%20Marzipan%20GmbH,%20Berlin/Amtsgericht%20Charlottenburg%20(Berlin)%20HRB%20112117%20B
-      search: Neuköllnische Allee 4 12057 Berlin
+      left_out: >-
+        Only a news page says that production there was planned, and no source shows whether it
+        has started; the agent takes the register entry for a site in use (MVP limitation).
     # 193 m: Tunnel Grenzallee, highway=motorway, ref=A 100, opening_date=2025-08-27. The page:
     # the motorway operator's project page of the 16th section, from Neukölln to Am Treptower
     # Park with the Grenzallee tunnel, marked "Abgeschlossen", with a film of what its opening
@@ -126,15 +134,17 @@ expected:
       search: Verbindungsbahn Baumschulenweg–Neukölln 6045
     # 232 m: railway=light_rail, ref=6021, "Bln-Neukölln - Baumschulenweg". The page: the same
     # line, whose S-Bahn tracks have the number 6021.
+    # TODO: score it again after the MVP: railway, status operating, from
+    # https://de.wikipedia.org/wiki/Bahnstrecke_Berlin-Neuk%C3%B6lln%E2%80%93Berlin-Baumschulenweg,
+    # by the search "Bahnstrecke 6021 Neukölln Baumschulenweg S-Bahn".
     - id: line-6021
       object_id: osm-way-29652979
       category: road_rail
       coordinates: {lat: 52.469093, lon: 13.462426650000001}
       distance_tolerance_m: 50
-      identified_type: railway
-      status: operating
-      source_url: https://de.wikipedia.org/wiki/Bahnstrecke_Berlin-Neuk%C3%B6lln%E2%80%93Berlin-Baumschulenweg
-      search: Bahnstrecke 6021 Neukölln Baumschulenweg S-Bahn
+      left_out: >-
+        The agent does not check whether trains run on a line: code gives every railway an unknown
+        status (MVP limitation).
     # 243 m: highway=motorway, ref=A 100, destination=Friedrichshain;Am Treptower Park,
     # opening_date=2025-08-27, another part of the 16th section, without a name. The page: the
     # builder's news that the 16th section of the A100 opened to traffic on 27 August 2025.

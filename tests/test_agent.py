@@ -20,6 +20,7 @@ from out_of_frame import (
     prompt_injection,
     report,
     transit,
+    triage,
 )
 from out_of_frame.agent import UnansweredQuestionError
 from out_of_frame.config import BPLAN_WFS_URL, NOMINATIM_URL, OVERPASS_URL
@@ -46,9 +47,9 @@ from tests.test_triage import stub_the_triage
 
 TRIAGE_CLEAR = {
     "clear": True,
-    "identified_type": "railway",
+    "identified_type": "wastewater plant",
     "status": "operating",
-    "key_facts": ["railway=rail"],
+    "key_facts": ["man_made=wastewater_plant"],
 }
 
 DATE = dt.date(2026, 10, 10)
@@ -204,17 +205,20 @@ def test_an_object_that_triage_cannot_settle_is_investigated(monkeypatch):
     stub_the_sources(monkeypatch, overpass=[objects, addresses])
     stub_the_models(monkeypatch, TRIAGE_UNCLEAR)
     state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
-    assert len(state.findings) == 11
-    assert all(found.evidence_id == f"{found.map_object_id}/web-1" for found in state.findings)
+    railways = {o.id for o in state.map_objects if triage.is_railway(o)}
+    assert len(state.findings) == 11 and railways
+    for found in state.findings:  # code settles the railways from the map
+        web = f"{found.map_object_id}/web-1"
+        assert found.evidence_id == ("overpass-1" if found.map_object_id in railways else web)
 
 
-def test_code_sends_industry_and_anything_proposed_to_investigation():
+def test_code_sends_industry_and_anything_proposed_but_a_railway_to_investigation():
     def sent(**tags):
         return agent.is_sent_by_code(build_object(tags), "map")
 
     assert sent(category="industry", name="A plant", power="plant")  # T3
     assert sent(category="road_rail", highway="proposed", proposed="motorway")
-    assert sent(category="road_rail", railway="construction", construction="rail")
+    assert not sent(category="road_rail", railway="construction", construction="rail")
     assert not sent(category="road_rail", railway="rail", ref="6107")
     assert not sent(category="wastewater", man_made="wastewater_plant")
     rail = build_object({"category": "road_rail", "railway": "rail", "ref": "6107"})
@@ -431,7 +435,7 @@ def test_every_plan_is_investigated_without_triage_or_addresses(monkeypatch):
 
     monkeypatch.setattr(investigation, "investigate", keep_the_kind)
     state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
-    assert len(triaged) == 6  # the map objects that are not industry, as without plans
+    assert len(triaged) == 1  # the Klärwerk: code settles the railways, as without plans
     assert {id: kind for id, kind in kinds.items() if kind == "plans"} == dict.fromkeys(
         PLANS, "plans"
     )  # the map objects are given "map"

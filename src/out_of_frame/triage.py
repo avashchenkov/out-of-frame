@@ -18,12 +18,29 @@ from out_of_frame.state import Finding, MapObject
 log = logging.getLogger(__name__)
 
 # The types that triage can give: one for each category that reaches it. Code sends every
-# industrial object to investigation, so any other type would mean that the model disagrees
-# with the tags, a conflict that leaves the object unclear.
-TYPES = ("wastewater plant", "airport", "major road", "railway")
+# industrial object to investigation and settles every railway itself, so any other type would
+# mean that the model disagrees with the tags, a conflict that leaves the object unclear.
+TYPES = ("wastewater plant", "airport", "major road")
 # The statuses that triage can give. Code sends an object under construction or proposed to
 # investigation, so a tag that says so, but that code missed, leaves the object unclear.
 STATUSES = ("operating", "closed")
+
+
+def is_railway(map_object: MapObject) -> bool:
+    return map_object.details["category"] == "road_rail" and "railway" in map_object.details
+
+
+def settle_railway(map_object: MapObject) -> Finding:
+    """A railway's finding from its map data alone, with no model: its type, and no status,
+    since no page that the agent can search shows whether trains run on a line now."""
+    return Finding(
+        map_object_id=map_object.id,
+        outcome="identified",
+        evidence_id=map_object.source_id,
+        identified_type="railway",
+        status=None,
+        key_facts=[f"railway={map_object.details['railway']}"],
+    )
 
 
 def triage(map_object: MapObject) -> Finding | None:

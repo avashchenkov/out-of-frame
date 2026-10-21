@@ -218,7 +218,9 @@ predicted percentage gain.
 | 7 | Step 10.9: try effort first for report fact distortions and missing citations; if they remain, clarify only the report prompt as needed | Small scope, targets report errors while keeping the architecture; benefit is unmeasured | At each effort, replay fixed saved report inputs with passing controls. If errors remain at the selected effort, refine the prompt with general rules and replay the same inputs. Preserve distances, inside/outside meaning, legal status and the scope of supplied facts; check citation placement, including uncited introductions. Plain-language paraphrases are acceptable. No coded rendering or new report validators for this fix |
 
 Rows 1–2 and the report effort/prompt sequence in row 7 are represented by 10.9–10.10, and
-row 4 by 10.10, since the Enough read case still failed at the effort selected in 10.9.
+row 4 by 10.10, since the Enough read case still failed at the effort selected in 10.9. On
+2026-10-21 row 4 was dropped for the MVP, and the labels that need it, a deeper search or a
+check of railway status are left out (see the eval architecture).
 The separate status-policy review in row 6 is broader than ordering the existing
 classification rules. Rows 3, 5 and 6 remain candidates beyond those roadmap steps, not reasons
 to delay the next code change. The recommended next action

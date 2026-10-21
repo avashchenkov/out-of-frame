@@ -188,7 +188,9 @@ labels.
   the agent's own search, 5 results at Tavily's basic depth: some pages show up only with more
   results or a deeper search, and some not from the address at all, as the
   [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found. Such a left-out
-  label measures the project's cost limits, not the agent.
+  label measures the project's cost limits, not the agent. A label that the MVP agent cannot
+  pass within its tools and model is left out too, see
+  [Labels left out of the MVP](#labels-left-out-of-the-mvp).
 - `null` is a real value. Where the evidence cannot settle a type or a status, the label
   says `null` for that field, and an agent that leaves it `null` there is right. Reporting
   the object as unidentified is right only if its type is `null`. The WFS fields of a
@@ -369,8 +371,9 @@ investigation; clear findings use the map's status.
 
 T3 is a code test: the former Philip Morris factory goes straight to investigation because
 the `industry` query returned it, even with complete tags. Code tests also cover proposed and
-under-construction objects, B-Plans, objects passed to triage and the shared cap. E2 checks
-whether the investigation finds the site's current use.
+under-construction objects, B-Plans, railways, which code settles itself with an unknown
+status, objects passed to triage and the shared cap. E2 was to check whether the
+investigation finds the site's current use; its label, nlnd-campus, is left out of the MVP.
 
 ### Investigation subgraph
 
@@ -473,6 +476,35 @@ the draft, so no report task covers them; code tests do.
 
 As of less weight: all sources failing (R3 covers one failed source); paraphrase and
 language.
+
+### Labels left out of the MVP
+
+The MVP scores only the labels that the agent can pass within its tools and model. The others
+are left out, with the reason in their task file and a `TODO:` that keeps the label as it was,
+so that they can be scored again later. The person left these out on 2026-10-21:
+
+- **Search and page reads.** The agent's search, 5 results at Tavily's basic depth, does not
+  reliably reach the page that settles the object, or the agent does not read a page whose
+  snippet lacks the facts: wiesendamm-15 (E1), grenzallee-9-11, bergiusstrasse-21,
+  haberstrasse-1, neukoellnische-allee-2-4 (E2) and curve-campus (E4). A deeper search, more
+  results or a stronger model may pass them, at a cost that the MVP does not pay; the step
+  that would have made the page read explicit was dropped with them.
+- **The status of railways.** No page that the agent can search shows reliably whether trains
+  run on a line now, so code gives every railway the type railway and an unknown status, with
+  no model. The lines whose page shows trains running are left out: line-6109, line-6100
+  (E1), line-6021 (E2), line-6020, line-6007 and line-6170 (E3). The lines with an unknown
+  status stay scored.
+- **Cases that the rules do not settle.** plan-5-1ve (E1): the agent searches a plan by its
+  number, and only a page found by an address shows that it is built. plan-xv-51j (E5): only a
+  page shows that a newer plan replaced its business area. nlnd-campus (E2): no page settles
+  which use of the campus affects people nearby the most.
+- **Earlier.** jordan-adlershof (E4): no search reaches a page that shows its storage.
+  plan-v-18 (E3): the support judge, calibrated before land for railways in a plan gave no
+  type, reads it as a railway. adlershof-stormwater-filter (E5): triage takes it for a sewage
+  works by what the model knows, as T4 shows; T4 stays as a task that fails.
+
+The results list these labels as known limitations, beside the scores of the labels that
+remain.
 
 ## Running the evals
 

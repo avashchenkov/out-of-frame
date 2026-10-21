@@ -37,6 +37,7 @@ flowchart TD
             OV["Get map objects in the radius<br/>nearest N per category"]:::code
             OVP[["Overpass API<br/>OpenStreetMap data"]]:::ext
             T["Triage<br/>check the remaining objects"]:::model
+            RW["Settle each railway<br/>type railway, status unknown"]:::code
             AD["Get the addresses<br/>of the objects to investigate<br/>one query"]:::code
         end
         subgraph PLN["Branch: planned objects"]
@@ -60,6 +61,7 @@ flowchart TD
         J --> PL
         J --> TR
         OV -.->|"the other objects"| T
+        OV -.->|"railways"| RW
         OV -.->|"industry, proposed or under construction"| AD
         OV --- OVP
         T -.->|"unclear objects"| AD
@@ -75,6 +77,7 @@ flowchart TD
         F --> GC
         GC -.->|"no: unidentified"| JN
         T --> JN
+        RW --> JN
         PL --> JN
         GC -.->|"yes"| JN
         TR --> JN
@@ -174,8 +177,10 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
      such as service tracks; any other element without a name is an object of its own. An
      object keeps the ID, details and coordinates of its nearest element, and that element's
      distance; its addresses come from that element's area. Code sends every
-     `industry` object and any object tagged as proposed or under construction to
-     investigation, within the cap.
+     `industry` object and any other object tagged as proposed or under construction to
+     investigation, within the cap, but not a railway: code gives every railway the type
+     railway and an unknown status, since no page that the agent can search shows reliably
+     whether trains run on a line now.
      The model triages only the rest, one per call, from the name, tags and what it knows.
      If these are enough to fill the finding without conflicts, it writes it with the map's
      status; otherwise it sends the object to investigation. These findings use the map

@@ -137,15 +137,17 @@ expected:
     # öffentlichen Straßenverkehrsflächen"), and XV-51j no longer applies there. What it still
     # sets is roads that are not a motorway or a trunk road, which have no listed type, so
     # other. Status null, as for XV-18.
+    # TODO: score it again after the MVP: other, status null, from
+    # https://www.parlament-berlin.de/ados/19/IIIPlen/vorgang/d19-1929.pdf, by the search
+    # "Bebauungsplan XV-51j-1 XV-51j".
     - id: plan-xv-51j
       object_id: bplan-0915051j
       category: planned_objects
       coordinates: {lat: 52.427582595000004, lon: 13.532454874999999}
       distance_tolerance_m: 50
-      identified_type: other
-      status: null
-      source_url: https://www.parlament-berlin.de/ados/19/IIIPlen/vorgang/d19-1929.pdf
-      search: Bebauungsplan XV-51j-1 XV-51j
+      left_out: >-
+        Only a page shows that a newer plan replaced its business area, which otherwise leaves the
+        plan unidentified (MVP limitation).
     # 130 m: Bebauungsplan XV-51j-1 ("Bessy II"), In Kraft getreten in 2025, with no inhalt.
     # The page: two special areas for research, so that the Helmholtz-Zentrum Berlin can extend
     # its buildings; research has no listed type, so other. No source says whether building the

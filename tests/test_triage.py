@@ -82,6 +82,28 @@ def test_triage_offers_only_the_types_of_its_categories_from_the_research_scope(
     assert set(triage.STATUSES) <= set(scope.finding_statuses)
     schema = triage.build_answer_schema().model_json_schema()
     types = schema["properties"]["identified_type"]["anyOf"][0]["enum"]
-    assert types == ["wastewater plant", "airport", "major road", "railway"]
+    assert types == ["wastewater plant", "airport", "major road"]
     assert schema["properties"]["status"]["anyOf"][0]["enum"] == ["operating", "closed"]
     assert list(schema["properties"])[-1] == "clear"  # decided after the rest
+
+
+@pytest.mark.parametrize("stage", ["rail", "construction", "proposed"])
+def test_code_settles_a_railway_with_no_status(stage):
+    rail = MapObject(
+        id="osm-way-1",
+        name=None,
+        details={"category": "road_rail", "railway": stage, "ref": "6107"},
+        addresses=[],
+        coordinates=Coordinates(lat=52.5, lon=13.2),
+        distance_from_property_m=100,
+        source_id="overpass-1",
+    )
+    assert triage.is_railway(rail) and not triage.is_railway(AIRPORT)
+    assert triage.settle_railway(rail) == Finding(
+        map_object_id="osm-way-1",
+        outcome="identified",
+        evidence_id="overpass-1",
+        identified_type="railway",
+        status=None,
+        key_facts=[f"railway={stage}"],
+    )

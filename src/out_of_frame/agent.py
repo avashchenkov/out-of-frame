@@ -220,9 +220,9 @@ def plan_journeys(state: RunState, runtime: Runtime[Context]) -> dict:
 
 def triage_objects(state: RunState) -> dict:
     """Triage of each object that code does not send to investigation, one at a time: a clear
-    one gets its finding, and any other goes to investigation."""
+    one gets its finding, and any other goes to investigation. Code settles a railway itself."""
     checked = [
-        triage.triage(o)
+        triage.settle_railway(o) if triage.is_railway(o) else triage.triage(o)
         for o in state.map_objects
         if not is_sent_by_code(o, state.find_source_kind(o))
     ]
@@ -256,12 +256,12 @@ def choose_objects_to_investigate(state: RunState) -> list[MapObject]:
 
 def is_sent_by_code(map_object: MapObject, source_kind: ObjectSourceKind) -> bool:
     """Every plan and every industrial object goes to investigation, even with a name and
-    complete data, and so does any object that is proposed or under construction; triage
-    checks the others."""
+    complete data, and so does any other object that is proposed or under construction, but a
+    railway, which code settles itself; triage checks the others."""
     tags = map_object.details
     if source_kind == "plans" or tags["category"] == "industry":
         return True
-    return map_objects.find_stage(tags) != "built"
+    return not triage.is_railway(map_object) and map_objects.find_stage(tags) != "built"
 
 
 def send_each_object_to_investigation(state: RunState) -> list[Send] | str:

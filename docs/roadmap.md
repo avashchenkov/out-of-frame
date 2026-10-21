@@ -377,13 +377,12 @@ calibration.
        Claude and Codex review several times, each
        without the other's answer, until no real point is left; the person settles it. If
        the types and their lines can stay, the judges' calibration stays. Examples are made
-       up, never taken from a task. The finding suite checks it. In the same step, since the
-       Enough suite showed that effort does not settle the read of a page whose snippet lacks
-       the facts, the investigation prompt makes that next step explicit: a result that may be
-       read and looks relevant, but whose snippet lacks the facts needed, is read. The Enough
-       suite checks it, with the tasks that must stop or must not read as controls against
-       forced reads; then the live investigation suite and a live investigation of the CURVE
-       campus show whether the page read helps the finding. An answer without the Finding
+       up, never taken from a task. The finding suite checks it. An explicit read of a page
+       whose snippet lacks the facts was planned in the same step and dropped for the MVP:
+       what it and a deeper search would need is left to the model and the search's limits.
+       Code gives every railway the type railway and an unknown status, since no page that
+       the agent can search shows reliably whether trains run; the labels that the MVP agent
+       cannot pass are left out, as the eval architecture says. An answer without the Finding
        tool, seen at the selected effort too, makes the object unidentified instead of
        stopping the whole run. Then one full run of E1–E5 measures 8 to 10 against the full
        run of 7. Trace each remaining fail to the first
@@ -397,8 +396,9 @@ calibration.
     12. The results in docs/results.md: each suite's scores before and after the fixes of 8 to 10,
        its failures, the wrong claims apart from the objects left unidentified, the known
        limitations above, the labels left out because of the search limits that the
-       [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found, and the cost
-       of the one-page rule in the end-to-end scores. The
+       [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found, the
+       [labels left out of the MVP](eval-architecture.md#labels-left-out-of-the-mvp), and the
+       cost of the one-page rule in the end-to-end scores. The
        README says what the agent does, how to run the CLI and the evals, and links the results.
 
 The MVP ends the eval work. Other tasks designed in the eval architecture are available if an
