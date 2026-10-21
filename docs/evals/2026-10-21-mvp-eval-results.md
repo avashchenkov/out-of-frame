@@ -1,9 +1,9 @@
-# Results
+# MVP eval results
 
 The MVP's eval results on 2026-10-21, before and after the fixes of roadmap steps 8 to 10:
 one page per finding and the plan rules (8), the agent's effort (9), and the classification
 funnel, railways in code and one more try for a rejected finding (10). How each suite is built
-and graded is in the [eval architecture](eval-architecture.md).
+and graded is in the [eval architecture](../eval-architecture.md).
 
 | | Before | After |
 |---|---|---|
@@ -100,10 +100,10 @@ The failures after:
 - **No page within the agent's reach, 14.** No page about the object, none that a search of
   5 results at Tavily's basic depth finds by what the agent sees, or only a plan's PDF:
   Klärwerkstraße 1 (E1), AMR Dachbaustoffe (E4), line 6107 (E1) and plan 8-81B (E2) among
-  them. The [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found that
+  them. The [search-depth spike](../../spikes/search-depth/findings-2026-10-16.md) found that
   some of these pages are within Tavily's reach at a higher cost, and some need other words.
 - **Left out of the MVP, 22.** Listed with their reasons in
-  [Labels left out of the MVP](eval-architecture.md#labels-left-out-of-the-mvp): 8 whose page
+  [Labels left out of the MVP](../eval-architecture.md#labels-left-out-of-the-mvp): 8 whose page
   the search does not reliably reach, 6 railways whose page shows trains running, 5 that the
   rules do not settle, and 3 left out earlier.
 

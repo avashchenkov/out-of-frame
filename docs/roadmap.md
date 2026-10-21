@@ -397,8 +397,9 @@ calibration.
        the reason before the object is unidentified.
     11. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
-    12. The results in docs/results.md: each suite's scores before and after the fixes of 8 to 10,
-       its failures, the wrong claims apart from the objects left unidentified, the known
+    12. The [MVP eval results](evals/2026-10-21-mvp-eval-results.md): each suite's scores
+       before and after the fixes of 8 to 10, its failures, the wrong claims apart from the
+       objects left unidentified, the known
        limitations above, the labels left out because of the search limits that the
        [search-depth spike](../spikes/search-depth/findings-2026-10-16.md) found, the
        [labels left out of the MVP](eval-architecture.md#labels-left-out-of-the-mvp), and the
