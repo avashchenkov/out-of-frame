@@ -414,26 +414,52 @@ observed failure needs them; they are not a planned phase after the MVP.
 A live demo that a reviewer can try without signing up. Most items come from the person's
 reading of the five reports of step 10.4.
 
-1. **The report in Markdown, in sections,** such as the identified objects, the objects that
-   could not be identified and the journeys, with the sources and licences at the end. The CLI
-   stays a technical mode and prints the report as it does now.
-2. **Sources as named links, not numbers:** a page by its site's name, a map object by its
+1. **A held-out check, before any change of the report.** The fixes of steps 8 to 10 were made
+   on E1–E5, so their results do not show how the agent does at addresses it was not tuned on.
+   Two new Berlin addresses, E6 and E7, are chosen so that each rule of steps 8 to 10 applies at
+   least once: a railway, a plant against production, a housing or mixed plan, and one more try
+   for a rejected finding. Their labels follow the rules of the eval architecture; one model
+   drafts them, another checks them, and the person settles where they disagree. One end-to-end
+   run at k=3, with nothing tuned after it; its results are added to the
+   [MVP eval results](evals/2026-10-21-mvp-eval-results.md) as a table of their own.
+2. **The report in Markdown, in sections,** such as the identified objects, the objects that
+   could not be identified and the journeys, with the sources and licences at the end, and a
+   line from code that a language model wrote the report and its facts should be checked against
+   the sources. The CLI stays a technical mode and prints the report as it does now.
+3. **Sources as named links, not numbers:** a page by its site's name, a map object by its
    OpenStreetMap page, a plan by its document where the B-Plan WFS links one.
-3. **Answers in the user's language,** such as English, German or Russian: the questions and
+4. **Answers in the user's language,** such as English, German or Russian: the questions and
    the report alike. This changes the architecture: code writes parts of the report, such as
    the journeys and the credits, in English, and the judges' rubrics are written for English
    drafts.
-4. **The agent as a service on Aegra,** the open-source server for LangGraph agents over the
+5. **The agent as a service on Aegra,** the open-source server for LangGraph agents over the
    Agent Protocol. It keeps the conversation's state between messages in PostgreSQL, where
    step 7, the input conversation, keeps it in memory only.
-5. **A web page as a separate service,** on a ready UI framework such as Chainlit, chosen at
+6. **A web page as a separate service,** on a ready UI framework such as Chainlit, chosen at
    this step, that talks to the agent over the Agent Protocol: the conversation and the
    report as Markdown, without signing up, at most 5 runs a day in total.
-6. **Deployment on one VPS:** the two services apart, with only the web page open to the
+7. **Deployment on one VPS:** the two services apart, with only the web page open to the
    internet and the agent reachable from the web page alone. Each runs in Docker: the web
    page, Aegra with the agent installed in its image, and PostgreSQL. The keys are passed at
    run time, never built into an image, and a .dockerignore keeps .env and evals/results/
    out.
+8. **The README in its final form:** a CI badge and a link to the demo; the design choices,
+   one line each; what is out of scope; the legal frame and a link to the data sources and
+   their rights in [sources.md](sources.md); and how it was built, one paragraph on the agents
+   used and the author's role.
+   - Two new ADRs, dated when written, each saying that it records a decision made on
+     2026-09-21 and implemented before the ADR: **why an agent**, not a fixed pipeline; and
+     **live sources instead of an own index**. The agent's rules are a few dozen entries that
+     fit in the prompt, and a search over them could only miss one. The facts about an
+     address come from queries by location: the map, the plans and the journeys. What a
+     business does and whether it still runs is spread over the web and changes, so an own
+     index would need crawling and would go stale, the failure that E2 tests; a live page is
+     also what the grounding check quotes. A plan's PDFs, which the agent does not read, are
+     where an index would pay off first.
+   - No MCP and no baseline: one line each, without an ADR.
+   - The legal frame: publishing the code is not publishing statements; the README names no
+     report about real businesses or buildings; the report says that a language model wrote
+     it.
 
 A change of the report reaches the judges: their rubrics and calibration sets are checked
 against it before results are quoted again.

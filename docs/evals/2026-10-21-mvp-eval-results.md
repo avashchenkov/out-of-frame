@@ -11,6 +11,9 @@ and graded is in the [eval architecture](../eval-architecture.md).
 | Agent | Claude Haiku 5.5, default effort (medium) | Claude Haiku 5.5, high effort |
 | Judges | Claude Haiku 5.5, extra-high effort, calibrated | the same |
 
+The fixes were made on these same tasks, so the "after" column shows that they work here, not
+how the agent does at addresses it was not tuned on.
+
 ## End-to-end
 
 Five Berlin addresses, E1–E5, three trials each, live: map, plans, transit and web search as
@@ -56,7 +59,7 @@ The two unstable labels, each wrong in one trial of three:
 - **jenoptik-diode-lab (E5), an unknown status.** The search found the firm's ISO certificate,
   not its directory entry, and a certificate does not show the site in use today.
 
-One more try for a rejected finding ran 4 times in the 15 trials and saved 3 findings.
+One more try for a rejected finding ran 5 times in the 15 trials and saved 3 findings.
 
 **Conclusion.** Every scored label passes, and wrong claims fell from 9 to 1. Two labels are
 unstable: a search that found another page, and a plan rule that the model applied wrongly

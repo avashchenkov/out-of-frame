@@ -29,7 +29,7 @@ from evals import judge
 from evals.calibrate import check_calibrated
 from evals.graders.judges import RESEARCH_SCOPE
 from evals.graders.report import grade_citations, grade_distances
-from evals.run import add_up_judges, describe_judges, sum_up_judges
+from evals.run import add_up_judges, describe_code, describe_judges, sum_up_judges
 from out_of_frame import prices, report
 from out_of_frame.config import (
     EFFORT,
@@ -200,6 +200,7 @@ def replay(runs: dict[Path, dict], k: int, out: Path) -> dict[str, dict]:
                 "k": k,
                 "started": dt.datetime.now(dt.UTC).isoformat(),
                 "prices_as_of": prices.load().as_of.isoformat(),
+                **describe_code(),
                 "model": MODEL,
                 "effort": EFFORT,
                 "max_tokens": MAX_TOKENS,

@@ -5,6 +5,8 @@ the agent is for: [vision.md](vision.md). Each data source: [sources.md](sources
 
 The agent is built on LangGraph ([ADR 1](adr/0001-langgraph.md)), so the flow and the state
 follow its model: one shared state, steps as nodes, parallel branches and pauses for the user.
+The graphs exactly as the code compiles them, nodes and edges only, are in
+[compiled-graph.md](compiled-graph.md).
 
 ## One run
 

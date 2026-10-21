@@ -782,6 +782,7 @@ def test_the_judges_grade_a_report_task_after_the_part_at_their_own_cost(monkeyp
     assert header["judge_model"] == judge_model and header["judge_effort"]
     assert header["judge_max_tokens"] == JUDGE_MAX_TOKENS
     assert (header["model"], header["effort"], header["max_tokens"]) == (MODEL, EFFORT, MAX_TOKENS)
+    assert len(header["commit"]) == 40 and isinstance(header["uncommitted"], bool)
     injection = (INJECTION_MODEL, INJECTION_EFFORT, INJECTION_MAX_TOKENS)
     assert (
         tuple(header[f"injection_{key}"] for key in ("model", "effort", "max_tokens")) == injection

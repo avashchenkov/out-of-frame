@@ -19,6 +19,14 @@ and ask. Continue only if the user approves.
 When a step is committed, mark it done in the roadmap with ✅. If the plan changes, propose
 an update to the roadmap.
 
+## Talking to the user
+
+Keep answers short: the big picture first, and keep it short. User will ask you for the details if needed.
+
+Say so, unasked, when more effort on a part stops paying off: name what is already good
+enough and the next useful step instead. "Good enough, keep moving" is the right error to
+make.
+
 ## Git
 
 Never commit or push without a direct request from the user. When a change is ready, list the
@@ -40,3 +48,10 @@ co-author trailers.
 ## Development
 
 Python 3.14 with uv. Add dependencies with `uv add` and run commands with `uv run`. Do not use pip.
+
+- Never open, print or read `.env`; `.env.example` is fine. Tests and code graders run without
+  keys.
+- Ask before any run that calls a paid API, the model or web search, with a cost estimate.
+- Settings live in `src/out_of_frame/config.py` and the environment; never hard-code them.
+- Hand work to another agent or model, such as Codex or Grok, only when the user asks. It works
+  read-only and does not hand the work on.

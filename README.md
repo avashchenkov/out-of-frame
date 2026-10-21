@@ -22,6 +22,9 @@ runs next, except when the model stops searching for one object, checks that eve
 from a web search quotes its page word for word, and fills in the references. See the
 [vision](docs/vision.md) and the [architecture](docs/architecture.md).
 
+A language model writes the report, and it can be wrong: check what matters to you against
+the sources it cites.
+
 ## Run it
 
 You need [uv](https://docs.astral.sh/uv/) and your own API keys for

@@ -9,6 +9,7 @@ import copy
 import datetime as dt
 import json
 import statistics
+import subprocess
 import traceback
 from collections import Counter
 from collections.abc import Callable, Iterable
@@ -577,6 +578,7 @@ def run(
                 "k": k,
                 "started": dt.datetime.now(dt.UTC).isoformat(),
                 "prices_as_of": prices.load().as_of.isoformat(),  # so that stale prices show
+                **describe_code(),
                 "model": MODEL,
                 "effort": EFFORT,
                 "max_tokens": MAX_TOKENS,
@@ -604,6 +606,22 @@ def run(
             suites = summarise_suites(tasks, summaries)
             record({"complete": complete, "summaries": summaries, "suites": suites})
     return summaries
+
+
+def describe_code() -> dict:
+    """The commit that the run's code, prompts and tasks are at, and whether any file differs
+    from it. Both are None outside a git checkout."""
+
+    def git(*args: str) -> str | None:
+        try:
+            done = subprocess.run(["git", *args], cwd=EVALS, capture_output=True, text=True)
+        except OSError:
+            return None
+        return done.stdout.strip() if done.returncode == 0 else None
+
+    status = git("status", "--porcelain")
+    uncommitted = None if status is None else bool(status)
+    return {"commit": git("rev-parse", "HEAD"), "uncommitted": uncommitted}
 
 
 def select_tasks(part: str, paths: list[Path]) -> list[Task]:
