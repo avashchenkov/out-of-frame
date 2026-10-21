@@ -137,7 +137,7 @@ calibration.
       direction and duration, or why it has none, and the link to the Transitous sources if
       there are journeys; the model no longer reads transit in `failures`. Code tests; live
       runs with one and two destinations, and the person reads one report.
-10. **Judge calibration and MVP results.** Calibrate the three MVP judges against human grades
+10. ✅ **Judge calibration and MVP results.** Calibrate the three MVP judges against human grades
     of the first real outputs and deliberately faulty examples. Complete and run every
     [MVP task](eval-architecture.md#mvp), several trials each; check that the labels cover
     every category. Publish results with failures and limitations.
@@ -397,7 +397,7 @@ calibration.
     11. Dropped: a Docker image for the CLI. Anyone who runs the CLI needs their own keys,
        with which `uv run` is no harder than a container; Docker comes with the deployment,
        after the MVP.
-    12. The [MVP eval results](evals/2026-10-21-mvp-eval-results.md): each suite's scores
+    12. ✅ The [MVP eval results](evals/2026-10-21-mvp-eval-results.md): each suite's scores
        before and after the fixes of 8 to 10, its failures, the wrong claims apart from the
        objects left unidentified, the known
        limitations above, the labels left out because of the search limits that the
