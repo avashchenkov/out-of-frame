@@ -140,8 +140,7 @@ calibration.
 10. **Judge calibration and MVP results.** Calibrate the three MVP judges against human grades
     of the first real outputs and deliberately faulty examples. Complete and run every
     [MVP task](eval-architecture.md#mvp), several trials each; check that the labels cover
-    every category. Publish results with failures and limitations. Add one Docker
-    image for the CLI; the keys are passed at run time, never built into the image.
+    every category. Publish results with failures and limitations.
     From the first hand grades: the support rubric counts an effect on a resident, such as
     traffic, as backed only when the type's line or the cited page gives it, and the
     interpretation rubric only when the type's line gives its kind; the person checks the
@@ -395,8 +394,9 @@ calibration.
        label, are left out too; and, as row 3 of the audit proposes, a finding that the
        grounding check rejects, or an answer without the Finding tool, gets one more try with
        the reason before the object is unidentified.
-    11. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
-       and CI builds it.
+    11. Dropped: a Docker image for the CLI. Anyone who runs the CLI needs their own keys,
+       with which `uv run` is no harder than a container; Docker comes with the deployment,
+       after the MVP.
     12. The [MVP eval results](evals/2026-10-21-mvp-eval-results.md): each suite's scores
        before and after the fixes of 8 to 10, its failures, the wrong claims apart from the
        objects left unidentified, the known
@@ -430,7 +430,10 @@ reading of the five reports of step 10.4.
    this step, that talks to the agent over the Agent Protocol: the conversation and the
    report as Markdown, without signing up, at most 5 runs a day in total.
 6. **Deployment on one VPS:** the two services apart, with only the web page open to the
-   internet and the agent reachable from the web page alone.
+   internet and the agent reachable from the web page alone. Each runs in Docker: the web
+   page, Aegra with the agent installed in its image, and PostgreSQL. The keys are passed at
+   run time, never built into an image, and a .dockerignore keeps .env and evals/results/
+   out.
 
 A change of the report reaches the judges: their rubrics and calibration sets are checked
 against it before results are quoted again.
