@@ -390,7 +390,11 @@ calibration.
        separate report fix. The other unselected
        candidates in the [quality audit](evals/2026-10-19-agent-quality-audit.md) are weighed
        only against the failures that this run still shows; they are not scheduled work.
-       Rejected MVP changes stay excluded.
+       Rejected MVP changes stay excluded. After the run, the labels whose fails it traced to
+       a search that does not reliably reach the page, or to pages that do not settle the
+       label, are left out too; and, as row 3 of the audit proposes, a finding that the
+       grounding check rejects, or an answer without the Finding tool, gets one more try with
+       the reason before the object is unidentified.
     11. One Docker image for the CLI. A .dockerignore keeps .env and evals/results/ out of it,
        and CI builds it.
     12. The results in docs/results.md: each suite's scores before and after the fixes of 8 to 10,

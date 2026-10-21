@@ -75,7 +75,8 @@ flowchart TD
         D -.->|"search again"| S
         D -.->|"stop"| F
         F --> GC
-        GC -.->|"no: unidentified"| JN
+        GC -.->|"no, the first time:<br/>once more, with the reason"| F
+        GC -.->|"no again: unidentified"| JN
         T --> JN
         RW --> JN
         PL --> JN
@@ -382,16 +383,17 @@ snippet and page for prompt injection before it is stored, and code drops what i
 | `source_kind` | map or plans | The kind of the source that the object comes from: a plan gets its own prompts | Replace |
 | `history` | list of messages | The model's tool calls and the results it was shown | Append |
 | `pages` | list of Source | Snippets and pages that passed the check, each with an ID | Append |
-| `finding` | Finding, or null | The finding; a rejected one is replaced with an unidentified one | Replace |
+| `finding` | Finding, or null | The finding; a rejected one is written once more, and replaced with an unidentified one if rejected again | Replace |
 | `web_search_failed` | bool | Whether web search failed; the finding is then unidentified | Replace |
+| `rejection` | text, or null | Why the first finding was rejected, for the model's second try | Replace |
 
 | Step | Who | Reads | Writes |
 |---|---|---|---|
 | Search the web or read a page | model + code | `map_object`, `source_kind`, `history`, `pages` | `history`: the tool call, which code runs; if web search fails, `web_search_failed` and `finding` as unidentified |
 | Check each snippet and page for prompt injection | model + code | each snippet and page the tool returned | `history` and `pages`: only what passes (code) |
 | Enough? or cap reached | model + code | `map_object`, `source_kind`, `history`, `pages`; code counts the tool calls | nothing |
-| Write the finding | model + code | `map_object`, `source_kind`, `history`, `pages` | `finding`; code sets `map_object_id` |
-| Finding grounded? | code | `finding`, `map_object.name`, `map_object.details`, `map_object.addresses`, `map_object.source_id`, `pages` | if not, `finding` as unidentified; at the end, the three run-state fields |
+| Write the finding | model + code | `map_object`, `source_kind`, `history`, `pages`, `rejection` | `finding`, unset if the answer has no Finding tool call; code sets `map_object_id` |
+| Finding grounded? | code | `finding`, `map_object.name`, `map_object.details`, `map_object.addresses`, `map_object.source_id`, `pages`, `rejection` | if not, the first time `rejection`, and the finding is written once more; the second time `finding` as unidentified; at the end, the three run-state fields |
 
 ## Who decides
 
@@ -423,9 +425,11 @@ that an unidentified finding cites no page, that a cited page gives at least one
 that each fact's words, numbers and symbols appear in the stored text in the same order,
 whatever the case, spacing and punctuation between them; for the object's own map or plan
 data, that text is the object's name, details without the category, and addresses. If not,
-the finding is rejected, and the object is marked unidentified. The check runs inside the
-investigation, so only a finding that passes it, or an unidentified one after a rejection, an
-answer without the Finding tool or a web search failure, goes into `findings`. Triage findings
+or if the answer has no Finding tool call, the finding is rejected, and the model writes it
+once more, told why; a second rejection marks the object unidentified, so that it does not
+stop the run. The check runs inside the investigation, so only a finding that passes it, or an
+unidentified one after a second rejection or a web search failure, goes into `findings`.
+Triage findings
 are not checked: in triage the model
 may use what it knows to say what a mapped object is.
 

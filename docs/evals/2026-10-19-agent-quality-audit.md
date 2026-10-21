@@ -220,9 +220,11 @@ predicted percentage gain.
 Rows 1–2 and the report effort/prompt sequence in row 7 are represented by 10.9–10.10, and
 row 4 by 10.10, since the Enough read case still failed at the effort selected in 10.9. On
 2026-10-21 row 4 was dropped for the MVP, and the labels that need it, a deeper search or a
-check of railway status are left out (see the eval architecture).
+check of railway status are left out (see the eval architecture). Row 3 joined 10.10 after
+its full run of 2026-10-21, where a key fact with a changed word ending was rejected, and the
+retry covers an answer without the Finding tool too.
 The separate status-policy review in row 6 is broader than ordering the existing
-classification rules. Rows 3, 5 and 6 remain candidates beyond those roadmap steps, not reasons
+classification rules. Rows 5 and 6 remain candidates beyond those roadmap steps, not reasons
 to delay the next code change. The recommended next action
 is row 1. Reassess later priorities after rows 1–2 and their planned full run: an error that
 disappears does not need a second fix. Move row 6 ahead of further model spending if the

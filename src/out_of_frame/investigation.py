@@ -8,7 +8,7 @@ from functools import cache
 from typing import Literal
 
 from langchain_core.messages import SystemMessage
-from langgraph.graph import END, START, StateGraph
+from langgraph.graph import START, StateGraph
 from langgraph.runtime import Runtime
 
 from out_of_frame import finding, prompt_injection
@@ -60,7 +60,7 @@ def build_graph():
     builder.add_conditional_edges("search_or_stop", run_tool_unless_stopped)
     builder.add_conditional_edges("run_tool", route_after_the_tool)
     builder.add_edge("write_finding", "check_grounding")
-    builder.add_edge("check_grounding", END)
+    builder.add_conditional_edges("check_grounding", write_again_after_a_rejection)
     return builder.compile()
 
 
@@ -127,24 +127,35 @@ def cut_page(text: str) -> str:
 
 
 def write_finding(state: InvestigationState, runtime: Runtime[Context]) -> dict:
-    """An answer without the Finding tool makes the object unidentified, as a rejected finding
-    does, so that it does not stop the run: the model does not get another try."""
+    """An answer without the Finding tool leaves the finding unset, for check_grounding to
+    reject, so that it does not stop the run."""
     try:
         return {"finding": finding.draft_finding(state, runtime.context.date)}
     except finding.MissingFindingError as error:
-        log.info("%s, so the object is unidentified", error)
-        return {"finding": Finding.unidentified(state.map_object.id)}
+        log.info("%s", error)
+        return {"finding": None}
 
 
 def check_grounding(state: InvestigationState) -> dict:
-    """A finding that fails the grounding check makes the object unidentified: the model does
-    not get another try."""
-    assert state.finding is not None  # write_finding comes first
-    errors = find_grounding_errors(state.finding, state.map_object, state.pages)
+    """A finding that fails the grounding check, or none, gets one more try, with the reason for
+    the model; a second rejection makes the object unidentified."""
+    if state.finding is None:
+        errors = ["the answer did not use the Finding tool"]
+    else:
+        errors = find_grounding_errors(state.finding, state.map_object, state.pages)
     if not errors:
         return {}
-    log.info("finding for %s rejected: %s", state.map_object.id, "; ".join(errors))
+    reason = "; ".join(errors)
+    log.info("finding for %s rejected: %s", state.map_object.id, reason)
+    if state.rejection is None:
+        return {"finding": None, "rejection": reason}
     return {"finding": Finding.unidentified(state.map_object.id)}
+
+
+def write_again_after_a_rejection(state: InvestigationState) -> Literal["write_finding", "__end__"]:
+    """A finding that check_grounding left unset is written once more; otherwise the run ends,
+    at "__end__", LangGraph's END."""
+    return "write_finding" if state.finding is None else "__end__"
 
 
 def search_unless_at_the_cap(

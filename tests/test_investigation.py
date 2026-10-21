@@ -160,22 +160,53 @@ def test_at_the_cap_the_finding_is_written_without_asking_the_model_again(monkey
     assert state.finding.outcome == "identified"
 
 
-def test_a_finding_that_fails_the_grounding_check_makes_the_object_unidentified(monkeypatch):
-    answer = ANSWER | {"key_facts": ["Test GmbH brews beer"]}
-    state, _ = investigate(monkeypatch, FakeSearcher(SEARCH), FakeWebSearch([SNIPPET]), answer)
-    assert state.finding == Finding.unidentified("obj-1")
+class ReplyingModel:
+    """Gives the given replies in turn, a Finding tool call for a dict; keeps every request."""
+
+    def __init__(self, *replies: dict | str):
+        self.replies = list(replies)
+        self.requests = []
+
+    def invoke(self, request):
+        self.requests.append(request)
+        reply = self.replies.pop(0)
+        if isinstance(reply, str):
+            return AIMessage(reply)
+        return AIMessage("", tool_calls=[{"name": "Finding", "args": reply, "id": "call-f"}])
 
 
-def test_an_answer_without_the_finding_tool_makes_the_object_unidentified(monkeypatch):
-    class TalkingModel:
-        def invoke(self, request):
-            return AIMessage("The object is a factory.")
-
+def investigate_with_replies(monkeypatch, *replies: dict | str):
+    """The investigation of MAP_OBJECT after one search, and the finding model."""
+    finder = ReplyingModel(*replies)
     monkeypatch.setattr(investigation, "build_search_model", lambda: FakeSearcher(SEARCH))
-    monkeypatch.setattr(finding, "build_finding_model", lambda: TalkingModel())
+    monkeypatch.setattr(finding, "build_finding_model", lambda: finder)
     monkeypatch.setattr(prompt_injection, "flag_injections", pass_every_text)
-    state = investigation.investigate(MAP_OBJECT, "map", DATE, FakeWebSearch([SNIPPET]))
-    assert state.finding == Finding.unidentified("obj-1")
+    return investigation.investigate(MAP_OBJECT, "map", DATE, FakeWebSearch([SNIPPET])), finder
+
+
+BREWS = ANSWER | {"key_facts": ["Test GmbH brews beer"]}
+
+
+def test_a_rejected_finding_is_written_once_more_with_the_reason(monkeypatch):
+    state, finder = investigate_with_replies(monkeypatch, BREWS, ANSWER)
+    assert state.finding == Finding.model_validate(ANSWER | {"map_object_id": "obj-1"})
+    first, second = (request[-1].content for request in finder.requests)
+    assert "rejected" not in first
+    assert "Your first answer was rejected: key fact not found" in second
+    assert "'Test GmbH brews beer'" in second
+
+
+def test_an_answer_without_the_finding_tool_is_written_once_more(monkeypatch):
+    state, finder = investigate_with_replies(monkeypatch, "The object is a factory.", ANSWER)
+    assert state.finding is not None and state.finding.outcome == "identified"
+    assert "the answer did not use the Finding tool" in finder.requests[1][-1].content
+
+
+def test_a_second_rejection_makes_the_object_unidentified(monkeypatch):
+    for replies in [(BREWS, BREWS), ("A factory.", "A factory."), (BREWS, "A factory.")]:
+        state, finder = investigate_with_replies(monkeypatch, *replies)
+        assert state.finding == Finding.unidentified("obj-1")
+        assert len(finder.requests) == 2
 
 
 def test_a_web_search_failure_ends_the_run_with_the_object_unidentified(monkeypatch):

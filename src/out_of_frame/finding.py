@@ -1,5 +1,5 @@
 """Draft the finding of an investigation: one model call. The grounding check then accepts the
-draft or makes the object unidentified, see docs/architecture.md#the-investigation-subgraph."""
+draft or asks for it once more, see docs/architecture.md#the-investigation-subgraph."""
 
 import datetime as dt
 from functools import cache
@@ -20,7 +20,8 @@ class MissingFindingError(Exception):
 
 
 def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
-    """Ask the model what the investigation found about its map object."""
+    """Ask the model what the investigation found about its map object, and on a second try why
+    its first answer was rejected."""
     map_object, plan = state.map_object, state.source_kind == "plans"
     scope = research_scope.load()
     system = render(
@@ -30,7 +31,9 @@ def draft_finding(state: InvestigationState, date: dt.date) -> Finding:
         statuses=scope.finding_statuses,
         plan=plan,
     )
-    instruction = render("finding_instruction.md.j2", map_object=map_object, plan=plan)
+    instruction = render(
+        "finding_instruction.md.j2", map_object=map_object, plan=plan, rejection=state.rejection
+    )
     request = [SystemMessage(system), *build_chat(state), HumanMessage(instruction)]
     reply = build_finding_model().invoke(request)
     calls = [call for call in reply.tool_calls if call["name"] == "Finding"]

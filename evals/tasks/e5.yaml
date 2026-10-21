@@ -155,15 +155,19 @@ expected:
     # The page: two special areas for research, so that the Helmholtz-Zentrum Berlin can extend
     # its buildings; research has no listed type, so other. No source says whether building the
     # extension has started, so the status is null.
+    # TODO: score it again after the MVP: other, status null, from
+    # https://www.berlin.de/sen/stadtentwicklung/planung/bebauungsplanverfahren/bebauungsplan.1391225.php,
+    # by the search "Bebauungsplan XV-51j-1 Adlershof Ernst-Ruska-Ufer Albert-Einstein-Straße
+    # Magnusstraße".
     - id: plan-xv-51j-1
       object_id: bplan-0915051j-1
       category: planned_objects
       coordinates: {lat: 52.42744315, lon: 13.53258508}
       distance_tolerance_m: 50
-      identified_type: other
-      status: null
-      source_url: https://www.berlin.de/sen/stadtentwicklung/planung/bebauungsplanverfahren/bebauungsplan.1391225.php
-      search: Bebauungsplan XV-51j-1 Adlershof Ernst-Ruska-Ufer Albert-Einstein-Straße Magnusstraße
+      left_out: >-
+        A page that names the research site's workshops makes the plan production by the type
+        rules, and one that does not makes it other, so the agent's type swings with the page
+        it finds (MVP limitation).
     # 138 m: Bebauungsplan XV-19, In Kraft getreten in 2004; inhalt: allgemeines Wohngebiet,
     # Mischgebiet, roads. Other, and status null, as for XV-18. The page is linked in its WFS
     # fields (grund_www).

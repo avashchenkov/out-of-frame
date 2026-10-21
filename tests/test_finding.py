@@ -133,7 +133,9 @@ def test_the_request_has_the_prompt_the_history_and_the_last_instruction(monkeyp
 )
 def test_the_last_message_names_the_object(name, addresses):
     map_object = MAP_OBJECT.model_copy(update={"name": name, "addresses": addresses})
-    text = finding.render("finding_instruction.md.j2", map_object=map_object, plan=False)
+    text = finding.render(
+        "finding_instruction.md.j2", map_object=map_object, plan=False, rejection=None
+    )
     assert all(address in text for address in addresses)
     assert ("Its name: Test GmbH." in text) == (name is not None)
     assert "\n\n" not in text

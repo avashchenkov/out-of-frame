@@ -499,8 +499,10 @@ so that they can be scored again later. The person left these out on 2026-10-21:
 - **Cases that the rules do not settle.** plan-5-1ve (E1): the agent searches a plan by its
   number, and only a page found by an address shows that it is built. plan-xv-51j (E5): only a
   page shows that a newer plan replaced its business area. nlnd-campus (E2): no page settles
-  which use of the campus affects people nearby the most. plan-xv-25-1 (E4), left out after
-  the full run of 2026-10-21: the page shows the state of one of the plan's three plots only.
+  which use of the campus affects people nearby the most. Left out after the full run of
+  2026-10-21: plan-xv-25-1 (E4), whose page shows the state of one of the plan's three plots
+  only, and plan-xv-51j-1 (E5), a research site whose workshops make it production on one page
+  and other on another.
 - **Earlier.** jordan-adlershof (E4): no search reaches a page that shows its storage.
   plan-v-18 (E3): the support judge, calibrated before land for railways in a plan gave no
   type, reads it as a railway. adlershof-stormwater-filter (E5): triage takes it for a sewage

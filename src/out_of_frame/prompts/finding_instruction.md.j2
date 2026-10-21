@@ -5,3 +5,7 @@ Its addresses: {{ map_object.addresses | join("; ") }}.
 {% if map_object.name %}
 Its name: {{ map_object.name }}.
 {% endif %}
+{% if rejection %}
+
+Your first answer was rejected: {{ rejection }}. Answer again with the Finding tool.
+{% endif %}

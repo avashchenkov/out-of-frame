@@ -166,6 +166,7 @@ class InvestigationState(Record):
     pages: Annotated[list[Source], operator.add]
     finding: Finding | None
     web_search_failed: bool = False  # the finding is then unidentified; written states omit it
+    rejection: str | None = None  # why the first finding was rejected; written states omit it
 
     @classmethod
     def start(cls, map_object: MapObject, source_kind: ObjectSourceKind) -> Self:
