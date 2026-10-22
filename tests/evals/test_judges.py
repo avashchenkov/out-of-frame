@@ -268,10 +268,10 @@ def test_the_interpretation_judge_is_told_what_was_not_identified_or_investigate
 
 def test_the_support_judge_is_told_which_object_is_a_plan(monkeypatch):
     prompts = stub_the_judge(monkeypatch, answer(SUPPORTED))
-    statement = Statement("A plan [obj-2] and a site [obj-3].", ("obj-2", "obj-3"))
+    statement = Statement("A plan [bplan-2] and a site [osm-way-3].", ("bplan-2", "osm-way-3"))
     judge_support(statement, with_a_plan(), DATE)
     [prompt] = prompts
-    plan, site = prompt.split('<object id="obj-3">')
+    plan, site = prompt.split('<object id="osm-way-3">')
     site = site.split("</object>")[0]
     assert "A development plan. Distance from the property, computed from its data: 118 m" in plan
     assert "Plan data:\n" in plan and "Map data:" not in plan
@@ -280,10 +280,10 @@ def test_the_support_judge_is_told_which_object_is_a_plan(monkeypatch):
 
 def test_the_interpretation_judge_is_told_which_object_is_a_plan(monkeypatch):
     prompts = stub_the_judge(monkeypatch, answer(INTERPRETED))
-    judge_interpretation("A plan [obj-2] and a site [obj-3].", with_a_plan())
+    judge_interpretation("A plan [bplan-2] and a site [osm-way-3].", with_a_plan())
     [prompt] = prompts
-    assert "- obj-2, 118 m from the property, a development plan: not investigated" in prompt
-    assert "- obj-3, 118 m from the property: not investigated" in prompt
+    assert "- bplan-2, 118 m from the property, a development plan: not investigated" in prompt
+    assert "- osm-way-3, 118 m from the property: not investigated" in prompt
 
 
 def test_the_no_verdict_judge_gets_only_the_draft(monkeypatch):

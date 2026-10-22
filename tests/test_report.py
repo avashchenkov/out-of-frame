@@ -52,6 +52,8 @@ STATE = RunState(
     map_objects=[SITE],
     findings=[FOUND],
 )
+OSM = "https://www.openstreetmap.org/way"
+SITE_LINKS = f"([example.org](https://example.org/test-gmbh), [map]({OSM}/1))"
 
 
 class FakeWriter:
@@ -78,12 +80,12 @@ def write(monkeypatch, state=STATE, *drafts):
 
 
 def with_a_plan() -> RunState:
-    """STATE with a development plan, obj-2, and a map object, obj-3, that have the same data:
-    only their sources tell them apart."""
+    """STATE with a development plan, bplan-2, and a map object, osm-way-3, that have the same
+    data: only their sources tell them apart."""
     plans = Source(id="bplan-wfs-1", kind="plans", request="", url="", content="")
     fields = {"planname": "VIII-B6", "bp_rechtsstand": "In Kraft getreten", "category": "industry"}
-    plan = SITE.model_copy(update={"id": "obj-2", "details": fields, "source_id": plans.id})
-    site = SITE.model_copy(update={"id": "obj-3", "details": fields})
+    plan = SITE.model_copy(update={"id": "bplan-2", "details": fields, "source_id": plans.id})
+    site = SITE.model_copy(update={"id": "osm-way-3", "details": fields})
     return STATE.model_copy(
         update={"sources": [*STATE.sources, plans], "map_objects": [plan, site], "findings": []}
     )
@@ -92,8 +94,10 @@ def with_a_plan() -> RunState:
 def test_a_plan_is_marked_by_its_source_alone(monkeypatch):
     _, writer = write(monkeypatch, with_a_plan())
     system, task = writer.requests[0]
-    assert "[obj-2] An object 118 m from the property, a development plan. Its map" in task.content
-    assert "[obj-3] An object 118 m from the property. Its map" in task.content
+    assert (
+        "[bplan-2] An object 118 m from the property, a development plan. Its map" in task.content
+    )
+    assert "[osm-way-3] An object 118 m from the property. Its map" in task.content
     assert "unknown whether building has started" in system.content
     rules = " ".join(system.content.split())
     assert "for a plan still in the planning procedure, what it is meant to allow" in rules
@@ -122,25 +126,55 @@ def test_the_model_writes_a_draft_that_cites_object_ids(monkeypatch):
     assert write_report(STATE, DATE) == "A site [osm-way-1]."
 
 
-def test_a_citation_becomes_the_numbers_of_its_sources(monkeypatch):
+def test_a_citation_becomes_links_to_the_page_and_to_the_object_on_the_map(monkeypatch):
     text, _ = write(monkeypatch, STATE, "A workshop 118 m away makes parts [osm-way-1].")
     assert text.startswith("# What lies around Freiheit 22, 13597 Berlin\n")
-    assert "makes parts [1, 2]." in text
-    assert "## Sources\n\n1. https://example.org/test-gmbh\n2. OpenStreetMap\n" in text
-    assert text.endswith(report.OSM_CREDIT)
+    assert f"makes parts {SITE_LINKS}." in text
+    assert "Sources" not in text and text.endswith(report.OSM_CREDIT)
+
+
+def test_a_page_is_named_by_its_site_and_its_url_cannot_end_the_link(monkeypatch):
+    page = PAGE.model_copy(update={"url": "https://www.example.org/Test (GmbH)"})
+    text, _ = write(
+        monkeypatch, STATE.model_copy(update={"sources": [MAP, page]}), "A [osm-way-1]."
+    )
+    assert "([example.org](https://www.example.org/Test%20%28GmbH%29), [map]" in text
+
+
+@pytest.mark.parametrize(
+    "fields, links",
+    [
+        (
+            {"scan_www": "https://plans.example/8-1.pdf", "url_www": "https://example.org/8-1"},
+            "([plan document](https://plans.example/8-1.pdf))",
+        ),
+        (
+            {"scan_www": "", "url_www": "https://example.org/8-1"},
+            "([plan document](https://example.org/8-1))",
+        ),
+        ({"scan_www": "not a link"}, "(Berlin B-Plan WFS)"),
+    ],
+    ids=["its drawing", "its procedure", "no document"],
+)
+def test_a_plan_cites_its_own_document(monkeypatch, fields, links):
+    state = with_a_plan()
+    plan = state.map_objects[0].model_copy(update={"details": fields})
+    state = state.model_copy(update={"map_objects": [plan]})
+    text, _ = write(monkeypatch, state, "A plan [bplan-2].")
+    assert f"A plan {links}." in text
 
 
 def test_a_finding_that_cites_the_map_names_it_once(monkeypatch):
     from_the_map = FOUND.model_copy(update={"evidence_id": "overpass-1"})
     state = STATE.model_copy(update={"findings": [from_the_map]})
     text, _ = write(monkeypatch, state, "A workshop [osm-way-1].")
-    assert "A workshop [1]." in text and "## Sources\n\n1. OpenStreetMap\n" in text
+    assert f"A workshop ([map]({OSM}/1))." in text
 
 
 def test_an_unidentified_object_cites_its_map_data(monkeypatch):
     state = STATE.model_copy(update={"findings": [Finding.unidentified("osm-way-1")]})
     text, _ = write(monkeypatch, state, "An unidentified industrial area [osm-way-1].")
-    assert "industrial area [1]." in text and "## Sources\n\n1. OpenStreetMap\n" in text
+    assert f"industrial area ([map]({OSM}/1))." in text
 
 
 def test_the_model_gets_the_map_data_without_the_category_and_the_failures(monkeypatch):
@@ -160,7 +194,7 @@ def test_an_object_that_was_not_investigated_is_marked_and_cites_its_map_data(mo
     state = STATE.model_copy(update={"findings": []})
     text, writer = write(monkeypatch, state, "A site, not investigated [osm-way-1].")
     assert "Finding: not investigated." in writer.requests[0][-1].content
-    assert "## Sources\n\n1. OpenStreetMap\n" in text
+    assert f"not investigated ([map]({OSM}/1))." in text
 
 
 @pytest.mark.parametrize(
@@ -188,7 +222,7 @@ def test_an_object_that_was_not_investigated_is_marked_and_cites_its_map_data(mo
 )
 def test_a_draft_with_a_wrong_citation_is_written_again(monkeypatch, citation, told):
     text, writer = write(monkeypatch, STATE, f"A site {citation}.", "A site [osm-way-1].")
-    assert "A site [1, 2]." in text and "made-up" not in text
+    assert f"A site {SITE_LINKS}." in text and "made-up" not in text
     assert told in writer.requests[1][-1].content
 
 
@@ -198,11 +232,11 @@ def test_wrong_citations_in_every_draft_stop_the_run(monkeypatch):
         write(monkeypatch, STATE, *drafts)
 
 
-def test_with_no_objects_the_report_has_no_sources(monkeypatch):
+def test_with_no_objects_the_report_has_no_links(monkeypatch):
     state = RunState(property=Address(text="Freiheit 22, 13597 Berlin"))
     text, writer = write(monkeypatch, state)
     assert "No object of the checked kinds was found" in writer.requests[0][-1].content
-    assert "## Sources" not in text and text.endswith(report.OSM_CREDIT)
+    assert "](" not in text and text.endswith(report.OSM_CREDIT)
 
 
 def journey(id: str, direction, outcome, minutes: float | None = None) -> Journey:
@@ -298,7 +332,7 @@ def test_a_draft_that_leaves_out_an_object_is_written_again(monkeypatch):
     first, second = "A site [osm-way-1].", "A site [osm-way-1]. A railway [osm-way-2]."
     text, writer = write(monkeypatch, TWO, first, second)
     assert "left out these objects" in writer.requests[1][-1].content
-    assert "osm-way-2" in writer.requests[1][-1].content and "A railway [2]." in text
+    assert "osm-way-2" in writer.requests[1][-1].content and f"A railway ([map]({OSM}/2))." in text
 
 
 def test_a_draft_that_always_leaves_out_an_object_stops_the_run(monkeypatch):
@@ -309,12 +343,13 @@ def test_a_draft_that_always_leaves_out_an_object_stops_the_run(monkeypatch):
 @pytest.mark.parametrize("between", ["", " "])
 def test_citations_in_a_row_become_one(monkeypatch, between):
     text, _ = write(monkeypatch, TWO, f"A site and a railway [osm-way-1]{between}[osm-way-2].")
-    assert "A site and a railway [1, 2]." in text
+    links = f"([example.org](https://example.org/test-gmbh); map: [1]({OSM}/1), [2]({OSM}/2))"
+    assert f"A site and a railway {links}." in text
 
 
 def test_citations_in_two_paragraphs_stay_apart(monkeypatch):
     text, _ = write(monkeypatch, TWO, "A site [osm-way-1]\n\n[osm-way-2] A railway.")
-    assert "A site [1, 2]\n\n[2] A railway." in text
+    assert f"A site {SITE_LINKS}\n\n([map]({OSM}/2)) A railway." in text
 
 
 def test_the_report_says_which_kinds_it_checks(monkeypatch):
@@ -340,7 +375,7 @@ def test_the_model_writes_the_sections_of_the_report(monkeypatch):
 def test_code_adds_its_parts_around_the_sections_of_the_draft(monkeypatch):
     text, _ = write(monkeypatch, STATE, "## Nearby\n\nA workshop makes parts [osm-way-1].")
     assert (
-        f"{report.LANGUAGE_MODEL_NOTE}\n\n## Nearby\n\nA workshop makes parts [1, 2].\n\n"
+        f"{report.LANGUAGE_MODEL_NOTE}\n\n## Nearby\n\nA workshop makes parts {SITE_LINKS}.\n\n"
         "## About this report\n\nThe report covers"
     ) in text
-    assert "## Sources\n\n1. https://example.org/test-gmbh\n2. OpenStreetMap\n\n## Licences" in text
+    assert ".\n\n## Licences\n\n- " in text

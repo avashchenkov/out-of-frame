@@ -428,7 +428,7 @@ reading of the five reports of step 10.4.
    could not be identified and the journeys, with the sources and licences at the end, and a
    line from code that a language model wrote the report and its facts should be checked against
    the sources. The CLI stays a technical mode and prints the report as it does now.
-3. **Sources as named links, not numbers:** a page by its site's name, a map object by its
+3. ✅ **Sources as named links, not numbers:** a page by its site's name, a map object by its
    OpenStreetMap page, a plan by its document where the B-Plan WFS links one.
 4. **Answers in the user's language,** such as English, German or Russian: the questions and
    the report alike. This changes the architecture: code writes parts of the report, such as

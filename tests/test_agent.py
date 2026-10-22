@@ -194,8 +194,11 @@ def test_every_industrial_object_is_investigated_in_parallel(monkeypatch):
     )
     assert state.failures == []
     assert state.report is not None
-    assert "An object [1, 2]." in state.report and "1. https://example.org" in state.report
-    assert "2. OpenStreetMap" in state.report and "3." not in state.report
+    # Each object links the page of its finding and its own page on the map.
+    links = (
+        "([example.org](https://example.org), [map](https://www.openstreetmap.org/way/49572120))"
+    )
+    assert f"An object {links}." in state.report
 
 
 def test_an_object_that_triage_cannot_settle_is_investigated(monkeypatch):

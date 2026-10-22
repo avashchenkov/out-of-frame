@@ -4,6 +4,7 @@ see docs/architecture.md#grounding."""
 import datetime as dt
 import re
 from functools import cache
+from urllib.parse import urlsplit
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -11,7 +12,7 @@ from out_of_frame import research_scope, transit
 from out_of_frame.chat_model import build_chat_model
 from out_of_frame.config import MAP_OBJECTS_PER_CATEGORY, PLANS, REPORT_ATTEMPTS
 from out_of_frame.finding import render
-from out_of_frame.state import Journey, RunState, Service, Source
+from out_of_frame.state import Journey, MapObject, RunState, Service, Source
 
 CITATION = re.compile(r"\[([^\[\]\s]+)\]")  # [osm-way-1]
 CITATIONS = re.compile(r"\[[^\[\]\s]+\](?:[ \t]*\[[^\[\]\s]+\])*")  # [osm-way-1][osm-way-2]
@@ -21,6 +22,9 @@ OSM_CREDIT = "Map data © OpenStreetMap contributors: https://www.openstreetmap.
 TRANSITOUS_CREDIT = (
     "Journeys planned with Transitous and its sources: https://transitous.org/sources/"
 )
+# The fields in which the B-Plan WFS links a plan's own documents, the most useful first: the
+# plan's drawing, the page of its procedure and the page of its public display.
+PLAN_DOCUMENTS = ["scan_www", "url_www", "ausleg_www"]
 LANGUAGE_MODEL_NOTE = (
     "A language model wrote this report, and it can be wrong: check what matters to you "
     "against the sources."
@@ -102,31 +106,30 @@ def build_report_model():
 
 def fill_references(draft: str, state: RunState) -> str:
     """The report a person reads, in Markdown: a title, a note that a language model wrote it,
-    the draft, which the model writes in sections, with each citation replaced by the numbers
-    of its sources, the journeys, what the report covers, then the sources and the licences.
-    Citations in a row, such as [osm-way-1][osm-way-2], become one. A web page is given by its
-    URL, map data by its name. An object cites the page of its finding and its own map data,
-    since the report also gives facts from the map, such as its name."""
+    the draft, which the model writes in sections, with each citation replaced by links to its
+    sources, the journeys, what the report covers, then the licences. Citations in a row, such
+    as [osm-way-1][osm-way-2], become one. An object cites the page of its finding and its own
+    map or plan data, since the report also gives facts from that data, such as its name."""
     objects = {map_object.id: map_object for map_object in state.map_objects}
     evidence = {finding.map_object_id: finding.evidence_id for finding in state.findings}
     sources = {source.id: source for source in state.sources}
-    numbers: dict[str, int] = {}  # by the source as the person reads it
 
     def cite(match: re.Match) -> str:
-        cited = set()
+        links: dict[str, list[str]] = {}  # the URLs under each name, none for a source without
         for object_id in CITATION.findall(match[0]):
             map_object = objects[object_id]
             for id in [evidence.get(map_object.id), map_object.source_id]:
                 if id:
-                    cited.add(numbers.setdefault(name_source(sources[id]), len(numbers) + 1))
-        return "[" + ", ".join(str(number) for number in sorted(cited)) + "]"
+                    name, url = link_source(sources[id], map_object)
+                    urls = links.setdefault(name, [])
+                    if url and url not in urls:
+                        urls.append(url)
+        return f"({write_links(links)})"
 
     text = CITATIONS.sub(cite, draft).strip()
     assert state.property is not None  # research starts only once the property is resolved
     lines = [f"# What lies around {state.property.text}", "", LANGUAGE_MODEL_NOTE, "", text, ""]
     lines += [*describe_journeys(state), "## About this report", "", describe_scope(), ""]
-    if numbers:
-        lines += ["## Sources", "", *(f"{n}. {name}" for name, n in numbers.items()), ""]
     credits = [OSM_CREDIT, TRANSITOUS_CREDIT] if state.journeys else [OSM_CREDIT]
     return "\n".join([*lines, "## Licences", "", *(f"- {credit}" for credit in credits)])
 
@@ -183,7 +186,34 @@ def describe_scope() -> str:
     )
 
 
-def name_source(source: Source) -> str:
-    """A web page by its URL, a map or plan response by the name of its source."""
-    names = {"map": "OpenStreetMap", "plans": "Berlin B-Plan WFS"}
-    return source.url if source.kind == "web search" else names[source.kind]
+def link_source(source: Source, map_object: MapObject) -> tuple[str, str | None]:
+    """The name and URL of one of the object's sources, as a person opens it: a web page by its
+    site's name, the map data by the object's own page on OpenStreetMap, and the plan data by
+    the plan's own document. A plan for which the WFS links no document is named, not linked."""
+    if source.kind == "web search":
+        site = (urlsplit(source.url).hostname or source.url).removeprefix("www.")
+        return site, escape_url(source.url)
+    if source.kind == "map":
+        kind, number = map_object.id.removeprefix("osm-").split("-")  # see map_objects.py
+        return "map", f"https://www.openstreetmap.org/{kind}/{number}"
+    assert source.kind == "plans"  # an object comes from the map or the plans
+    fields = [map_object.details.get(field, "").strip() for field in PLAN_DOCUMENTS]
+    url = next((url for url in fields if url.startswith(("https://", "http://"))), None)
+    return ("plan document", escape_url(url)) if url else ("Berlin B-Plan WFS", None)
+
+
+def write_links(links: dict[str, list[str]]) -> str:
+    """The links of one citation: the name as the link for one URL, the name and numbered links
+    for several, such as the map pages of three railway lines, and the name alone without."""
+    parts = []
+    for name, urls in links.items():
+        if len(urls) > 1:
+            parts.append(f"{name}: " + ", ".join(f"[{n}]({url})" for n, url in enumerate(urls, 1)))
+        else:
+            parts.append(f"[{name}]({urls[0]})" if urls else name)
+    return ("; " if any(len(urls) > 1 for urls in links.values()) else ", ").join(parts)
+
+
+def escape_url(url: str) -> str:
+    """The URL with its spaces and brackets encoded, so that it cannot end a Markdown link."""
+    return url.replace(" ", "%20").replace("(", "%28").replace(")", "%29")

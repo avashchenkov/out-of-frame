@@ -441,10 +441,11 @@ are not checked: in triage the model
 may use what it knows to say what a mapped object is.
 
 The report cites a finding by its object ID, never by a link. Code replaces each citation with
-links a person can open. A web page is linked by its URL. A map or plan response is not
-linked: the report names the source, OpenStreetMap or the Berlin B-Plan WFS. An object always
-cites its own map or plan data as well as the page of its finding, since the report also
-gives facts from that data, such as the object's name. An unknown ID, an object ID in the
+links a person can open. A web page is linked by its URL and named by its site, such as
+bsr.de. A map object is linked by its own page on OpenStreetMap, and a plan by its own
+document where the B-Plan WFS links one; a plan without one is named by its source, the
+Berlin B-Plan WFS. An object always cites its own map or plan data as well as the page of its
+finding, since the report also gives facts from that data, such as the object's name. An unknown ID, an object ID in the
 text outside a citation, which the reader cannot use, or an object that the report leaves out
 sends the report back to be written again, a few times at most; after that the run stops, as
 when the model fails. So the model cannot invent a reference or drop an object.
