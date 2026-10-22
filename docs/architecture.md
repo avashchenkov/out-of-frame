@@ -163,8 +163,9 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    object has no category field: code puts the category into its `details`, next to the
    fields of its source; no model sees it. An object is in the circle if its nearest edge
    is; distances are always measured to the nearest edge. An object without a finding is
-   unclear. Unclear objects are investigated nearest first, at most five per category. This limit
-   covers objects sent by code and by triage; the rest are listed as not investigated. An
+   unclear. Code keeps the nearest five objects per map category and the nearest five plans, by
+   default, and the report says so. Every unclear one of them is investigated, whether code or
+   triage sends it, so five is also the cap of investigations per category. An
    investigation stops when its evidence is enough, or when it reaches its cap of tool calls;
    one source can be enough. Every branch runs to its end, even with nothing to do; its result
    is then empty.
