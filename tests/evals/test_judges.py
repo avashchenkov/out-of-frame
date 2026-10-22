@@ -121,6 +121,17 @@ def stub_the_judge(monkeypatch, *answers) -> list[str]:
                 ("- A depot, 400 m [osm-way-2]", ("osm-way-2",)),
             ],
         ),
+        (
+            "## Nearby\n\nA site [osm-way-1].\n\n   ## Not identified\nA depot [osm-way-2].",
+            [("A site [osm-way-1].", ("osm-way-1",)), ("A depot [osm-way-2].", ("osm-way-2",))],
+        ),
+        (
+            "## A factory, 118 m away [osm-way-1]\n\nIt is in use [osm-way-1].",
+            [
+                ("## A factory, 118 m away [osm-way-1]", ("osm-way-1",)),
+                ("It is in use [osm-way-1].", ("osm-way-1",)),
+            ],
+        ),
     ],
     ids=[
         "a citation at the end",
@@ -139,6 +150,8 @@ def stub_the_judge(monkeypatch, *answers) -> list[str]:
         "code, struck text and german quotes after a citation",
         "no letter",
         "a list",
+        "section headings",
+        "a heading that cites",
     ],
 )
 def test_the_draft_is_split_after_each_group_of_citations(draft, statements):

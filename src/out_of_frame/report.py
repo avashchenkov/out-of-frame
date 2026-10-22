@@ -21,6 +21,10 @@ OSM_CREDIT = "Map data © OpenStreetMap contributors: https://www.openstreetmap.
 TRANSITOUS_CREDIT = (
     "Journeys planned with Transitous and its sources: https://transitous.org/sources/"
 )
+LANGUAGE_MODEL_NOTE = (
+    "A language model wrote this report, and it can be wrong: check what matters to you "
+    "against the sources."
+)
 
 
 class ReportError(Exception):
@@ -97,11 +101,12 @@ def build_report_model():
 
 
 def fill_references(draft: str, state: RunState) -> str:
-    """The report a person reads: a title, the draft with each citation replaced by the
-    numbers of its sources, the journeys, then the sources and the credits. Citations in a
-    row, such as [osm-way-1][osm-way-2], become one. A web page is given by its URL, map data by
-    its name. An object cites the page of its finding and its own map data, since the report
-    also gives facts from the map, such as its name."""
+    """The report a person reads, in Markdown: a title, a note that a language model wrote it,
+    the draft, which the model writes in sections, with each citation replaced by the numbers
+    of its sources, the journeys, what the report covers, then the sources and the licences.
+    Citations in a row, such as [osm-way-1][osm-way-2], become one. A web page is given by its
+    URL, map data by its name. An object cites the page of its finding and its own map data,
+    since the report also gives facts from the map, such as its name."""
     objects = {map_object.id: map_object for map_object in state.map_objects}
     evidence = {finding.map_object_id: finding.evidence_id for finding in state.findings}
     sources = {source.id: source for source in state.sources}
@@ -118,20 +123,23 @@ def fill_references(draft: str, state: RunState) -> str:
 
     text = CITATIONS.sub(cite, draft).strip()
     assert state.property is not None  # research starts only once the property is resolved
-    lines = [f"# What lies around {state.property.text}", "", text, ""]
-    lines += [*describe_journeys(state), describe_scope(), ""]
+    lines = [f"# What lies around {state.property.text}", "", LANGUAGE_MODEL_NOTE, "", text, ""]
+    lines += [*describe_journeys(state), "## About this report", "", describe_scope(), ""]
     if numbers:
-        lines += ["Sources:", *(f"{n}. {name}" for name, n in numbers.items()), ""]
+        lines += ["## Sources", "", *(f"{n}. {name}" for name, n in numbers.items()), ""]
     credits = [OSM_CREDIT, TRANSITOUS_CREDIT] if state.journeys else [OSM_CREDIT]
-    return "\n".join([*lines, *credits])
+    return "\n".join([*lines, "## Licences", "", *(f"- {credit}" for credit in credits)])
 
 
 def describe_journeys(state: RunState) -> list[str]:
-    """The journeys as lines of the report, one line per destination with both directions, or
-    none if the user travels nowhere. They are plain data, so code writes them, not the model."""
+    """The journeys as lines of the report, under their heading, one line per destination with
+    both directions, or none if the user travels nowhere. They are plain data, so code writes
+    them, not the model."""
     if not state.journeys:
         return []
     lines = [
+        "## Journeys",
+        "",
         "Journeys by public transport on a normal weekday. Each time is the mean travel time of "
         f"up to {transit.CONNECTIONS} connections that leave at the given time or later, "
         "without the wait for them:",

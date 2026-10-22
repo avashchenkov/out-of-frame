@@ -209,7 +209,11 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    it has none. They are plain data, so no model writes them. Code also adds which kinds of
    objects the report covers and what a development plan is, and the credits the licences
    require: "© OpenStreetMap contributors" with its link, and a link to the Transitous sources
-   page if there are journeys.
+   page if there are journeys. The model writes the report in Markdown sections: the
+   identified objects, the identified plans, and the objects that could not be identified or
+   were not investigated. Code adds the title, a line that a language model wrote the report
+   and its facts should be checked against the sources, and the parts above under headings of
+   their own.
 
 ## The state
 

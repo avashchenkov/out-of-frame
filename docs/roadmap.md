@@ -424,7 +424,7 @@ reading of the five reports of step 10.4.
    run at k=3, with nothing tuned after it; its results are added to the
    [MVP eval results](evals/2026-10-21-mvp-eval-results.md) as a table of their own. Done on
    2026-10-22: every scored label correct, E7 run once more after a map outage.
-2. **The report in Markdown, in sections,** such as the identified objects, the objects that
+2. ✅ **The report in Markdown, in sections,** such as the identified objects, the objects that
    could not be identified and the journeys, with the sources and licences at the end, and a
    line from code that a language model wrote the report and its facts should be checked against
    the sources. The CLI stays a technical mode and prints the report as it does now.

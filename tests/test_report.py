@@ -126,7 +126,7 @@ def test_a_citation_becomes_the_numbers_of_its_sources(monkeypatch):
     text, _ = write(monkeypatch, STATE, "A workshop 118 m away makes parts [osm-way-1].")
     assert text.startswith("# What lies around Freiheit 22, 13597 Berlin\n")
     assert "makes parts [1, 2]." in text
-    assert "Sources:\n1. https://example.org/test-gmbh\n2. OpenStreetMap\n" in text
+    assert "## Sources\n\n1. https://example.org/test-gmbh\n2. OpenStreetMap\n" in text
     assert text.endswith(report.OSM_CREDIT)
 
 
@@ -134,13 +134,13 @@ def test_a_finding_that_cites_the_map_names_it_once(monkeypatch):
     from_the_map = FOUND.model_copy(update={"evidence_id": "overpass-1"})
     state = STATE.model_copy(update={"findings": [from_the_map]})
     text, _ = write(monkeypatch, state, "A workshop [osm-way-1].")
-    assert "A workshop [1]." in text and "Sources:\n1. OpenStreetMap\n" in text
+    assert "A workshop [1]." in text and "## Sources\n\n1. OpenStreetMap\n" in text
 
 
 def test_an_unidentified_object_cites_its_map_data(monkeypatch):
     state = STATE.model_copy(update={"findings": [Finding.unidentified("osm-way-1")]})
     text, _ = write(monkeypatch, state, "An unidentified industrial area [osm-way-1].")
-    assert "industrial area [1]." in text and "Sources:\n1. OpenStreetMap\n" in text
+    assert "industrial area [1]." in text and "## Sources\n\n1. OpenStreetMap\n" in text
 
 
 def test_the_model_gets_the_map_data_without_the_category_and_the_failures(monkeypatch):
@@ -160,7 +160,7 @@ def test_an_object_that_was_not_investigated_is_marked_and_cites_its_map_data(mo
     state = STATE.model_copy(update={"findings": []})
     text, writer = write(monkeypatch, state, "A site, not investigated [osm-way-1].")
     assert "Finding: not investigated." in writer.requests[0][-1].content
-    assert "Sources:\n1. OpenStreetMap\n" in text
+    assert "## Sources\n\n1. OpenStreetMap\n" in text
 
 
 @pytest.mark.parametrize(
@@ -202,7 +202,7 @@ def test_with_no_objects_the_report_has_no_sources(monkeypatch):
     state = RunState(property=Address(text="Freiheit 22, 13597 Berlin"))
     text, writer = write(monkeypatch, state)
     assert "No object of the checked kinds was found" in writer.requests[0][-1].content
-    assert "Sources:" not in text and text.endswith(report.OSM_CREDIT)
+    assert "## Sources" not in text and text.endswith(report.OSM_CREDIT)
 
 
 def journey(id: str, direction, outcome, minutes: float | None = None) -> Journey:
@@ -235,6 +235,7 @@ def test_code_adds_each_journey_with_its_destination_direction_and_duration(monk
     text, writer = write(monkeypatch, state)
     assert "transit" not in writer.requests[0][-1].content  # the model does not write them
     assert (
+        "## Journeys\n\n"
         "Journeys by public transport on a normal weekday. Each time is the mean travel time of "
         "up to 3 connections that leave at the given time or later, without the wait for them:"
         "\n\n"
@@ -242,9 +243,9 @@ def test_code_adds_each_journey_with_its_destination_direction_and_duration(monk
         "or later, 48 min.\n"
         "- the gym: there, leaving home at 19:00 or later, no connection found; back home, "
         "leaving it at 21:05 or later, not known, as the journey planner failed.\n\n"
-        "The report covers"
+        "## About this report\n\nThe report covers"
     ) in text
-    assert text.endswith(f"{report.OSM_CREDIT}\n{report.TRANSITOUS_CREDIT}")
+    assert text.endswith(f"- {report.OSM_CREDIT}\n- {report.TRANSITOUS_CREDIT}")
 
 
 def test_without_journeys_the_report_has_no_journeys_and_no_transit_credit(monkeypatch):
@@ -319,3 +320,27 @@ def test_citations_in_two_paragraphs_stay_apart(monkeypatch):
 def test_the_report_says_which_kinds_it_checks(monkeypatch):
     text, _ = write(monkeypatch, STATE, "A site [osm-way-1].")
     assert "nearest 5 objects of each kind it checks: industrial and energy sites;" in text
+
+
+def test_the_report_says_that_a_language_model_wrote_it(monkeypatch):
+    text, _ = write(monkeypatch)
+    assert text.startswith(
+        f"# What lies around Freiheit 22, 13597 Berlin\n\n{report.LANGUAGE_MODEL_NOTE}\n\n"
+    )
+
+
+def test_the_model_writes_the_sections_of_the_report(monkeypatch):
+    _, writer = write(monkeypatch)
+    rules = " ".join(writer.requests[0][0].content.split())
+    assert "Write the report in Markdown, in these sections, in this order" in rules
+    assert '"## Nearby"' in rules and '"## Development plans"' in rules
+    assert '"## Not identified", the objects that could not be identified' in rules
+
+
+def test_code_adds_its_parts_around_the_sections_of_the_draft(monkeypatch):
+    text, _ = write(monkeypatch, STATE, "## Nearby\n\nA workshop makes parts [osm-way-1].")
+    assert (
+        f"{report.LANGUAGE_MODEL_NOTE}\n\n## Nearby\n\nA workshop makes parts [1, 2].\n\n"
+        "## About this report\n\nThe report covers"
+    ) in text
+    assert "## Sources\n\n1. https://example.org/test-gmbh\n2. OpenStreetMap\n\n## Licences" in text

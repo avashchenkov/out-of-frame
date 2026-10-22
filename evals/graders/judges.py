@@ -41,6 +41,8 @@ RESEARCH_SCOPE = files("out_of_frame").joinpath("data/research_scope.yaml")
 # A group of citations, with only spaces between them, and the punctuation, quotes and markup
 # after it, which belong to the sentence the group ends: "**A site [osm-way-1][osm-way-2]**."
 CITATIONS = re.compile(rf"(?:{CITATION.pattern}\s*)+" + r"""[.,;:!?)"'“”’»*_~`]*""")
+# A Markdown heading that cites nothing, such as the "## Nearby" that the report prompt asks for
+SECTION_HEADING = re.compile(r"^ {0,3}#{1,6}[ \t][^\[\]\n]*$", re.MULTILINE)
 
 
 class SupportGrade(Record):
@@ -115,9 +117,10 @@ class Statement:
 def split_into_statements(draft: str) -> list[Statement]:
     """The draft's statements, in order. A piece that states nothing of its own but cites, such
     as ", [osm-way-2]." in "Two sites [osm-way-1], [osm-way-2].", belongs to the statement
-    before it. A piece that states nothing, such as a list marker, is left out."""
+    before it. A piece that states nothing, such as a list marker, is left out, as is a section
+    heading. A heading that cites an object states something, so it stays."""
     statements = []
-    for paragraph in re.split(r"\n\s*\n", draft):
+    for paragraph in re.split(r"\n\s*\n", SECTION_HEADING.sub("", draft)):
         ends = [group.end() for group in CITATIONS.finditer(paragraph)]
         texts: list[str] = []
         for start, end in zip([0, *ends], [*ends, len(paragraph)], strict=True):

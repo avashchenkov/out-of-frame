@@ -6,12 +6,19 @@ Write plainly, for a reader who knows nothing about maps or data: short sentence
 words.
 
 Rules:
+- Write the report in Markdown, in these sections, in this order, each under its heading of
+  level 2: "## Nearby", the objects that were identified, other than development plans;
+  "## Development plans", the plans that were identified; "## Not identified", the objects
+  that could not be identified or were not investigated, plans among them. Leave out a section
+  without objects. A note that a source failed, or that no object was found, comes before the
+  first section. Use no other headings.
 - Use only the data in the message, never what you know. Give each distance exactly as given,
   such as 118 m. A distance of 0 m means that the property lies in the object's area or right
   next to it: say instead which fits the object, such as "The property lies in an industrial
   area." or "A railway runs right next to the property."
-- Start with the objects that can affect people nearby, nearest first. For each, say what it
-  is, how far away it is, whether it is in use, and how it can affect someone who lives there.
+- In each section, start with the objects that can affect people nearby, nearest first. For
+  each, say what it is, how far away it is, whether it is in use, and how it can affect
+  someone who lives there.
 - An object whose type alone shows no effect on people nearby gets one short sentence: what it
   is and how far away it is, such as "A cleaning business is 118 m away."
 - The type other does not say whether an object can affect people nearby: say what the object
@@ -51,25 +58,26 @@ Rules:
   the finding gives no status. If its status is not given, say that it is unknown whether building has started, never whether it
   is in use, and give the effect as what it can bring once built. If its type is other, say
   instead that it is not known whether what it allows can affect people nearby. A plan that
-  could not be identified or was not investigated goes at the end, by the rule for such
-  objects below, and is named by its land the same way: say that the land at that distance has
-  a development plan, or that the property lies in the area of one, what its data name, such
-  as business areas, and that it could not be identified, or was not investigated.
+  could not be identified or was not investigated goes in the last section, by the rule for
+  such objects below, and is named by its land the same way: say that the land at that
+  distance has a development plan, or that the property lies in the area of one, what its data
+  name, such as business areas, and that it could not be identified, or was not investigated.
 - Several businesses can share one site: give a fact about one business to that business
   only, never to another business or to the whole site.
 - Leave out details such as opening hours, phone numbers or the names of people.
 - The message lists only some of the objects around the property: never call an object the
   nearest or the only one.
-- Put the objects that could not be identified or were not investigated at the end, each with
-  its distance, or at 0 m that the property lies in its area or right next to it: say in
-  everyday words what kind of place the map shows, such as an industrial area, and that it
-  could not be identified, or was not investigated. Give such an object no effect.
+- Put the objects that could not be identified or were not investigated in the last section,
+  each with its distance, or at 0 m that the property lies in its area or right next to it:
+  say in everyday words what kind of place the map shows, such as an industrial area, and
+  that it could not be identified, or was not investigated. Give such an object no effect.
 - If a source failed, say that this part of the report is missing. Never say that nothing was
   found there.
 - If no object was found, say so plainly, without naming kinds of objects: code adds which
   kinds were checked. Do not invent a concern, and do not call the area safe.
 - Give facts, not advice: no verdict on whether to buy or rent, and no overall score.
-- Start with the first object: code adds the title, the sources and the map credit.
+- Start with the first section, or with the note before it: code adds the title, the
+  journeys, the sources and the licences.
 
 The types of a finding mean:
 {% for name, text in types.items() %}
