@@ -434,28 +434,35 @@ reading of the five reports of step 10.4.
    drafts.
 5. **The agent as a service on Aegra,** the open-source server for LangGraph agents over the
    Agent Protocol. It keeps the conversation's state between messages in PostgreSQL, where
-   step 7, the input conversation, keeps it in memory only.
-6. **A web page as a separate service,** on a ready UI framework such as Chainlit, chosen at
-   this step, that talks to the agent over the Agent Protocol: the conversation and the
-   report as Markdown, without signing up, at most 5 runs a day in total.
+   step 7, the input conversation, keeps it in memory only. The graph is compiled without its
+   own checkpointer, as Aegra brings one, and the run's date and web search are built on the
+   server. The conversation becomes LangChain messages, as the web page needs
+   ([ADR 4](adr/0004-demo-aegra-and-agent-chat-ui.md)): the questions, the answers and, once,
+   the finished report; the `report` field stays. Runs saved in the old format still load. The
+   questions still pause the run with `interrupt()`. The demo's rules live in Aegra's auth for
+   the demo, not in the agent or the page: at most 5 conversations a day in total, each
+   counted once, a limit on messages in one conversation, an unfinished conversation shown
+   only to its own visitor, a finished one read-only and shown to all, its messages only, and
+   nothing deleted. First check that the auth can refuse a run on a finished conversation.
+6. **A web page as a separate service** in `demo/`: LangChain's Agent Chat UI
+   ([ADR 4](adr/0004-demo-aegra-and-agent-chat-ui.md)), which talks to the agent over the
+   Agent Protocol: the conversation and the report as Markdown, without signing up. It passes
+   an anonymous visitor ID to Aegra in a header. Before a conversation starts, the page says
+   that a finished one is public, the user's own words included. It shows the notice for a
+   failed service, as the CLI does.
 7. **Deployment on one VPS:** the two services apart, with only the web page open to the
    internet and the agent reachable from the web page alone. Each runs in Docker: the web
-   page, Aegra with the agent installed in its image, and PostgreSQL. The keys are passed at
-   run time, never built into an image, and a .dockerignore keeps .env and evals/results/
-   out.
+   page, Aegra with the agent installed in its image, and PostgreSQL, from a compose file in
+   `demo/`. The keys are passed at run time, never built into an image, and a .dockerignore
+   keeps .env and evals/results/ out. A monthly spend limit in the Anthropic Console and the
+   web search plan's own limit cap the cost if the demo's limit fails.
 8. **The README in its final form:** a CI badge and a link to the demo; the design choices,
    one line each; what is out of scope; the legal frame and a link to the data sources and
    their rights in [sources.md](sources.md); and how it was built, one paragraph on the agents
    used and the author's role.
-   - Two new ADRs, dated when written, each saying that it records a decision made on
-     2026-09-21 and implemented before the ADR: **why an agent**, not a fixed pipeline; and
-     **live sources instead of an own index**. The agent's rules are a few dozen entries that
-     fit in the prompt, and a search over them could only miss one. The facts about an
-     address come from queries by location: the map, the plans and the journeys. What a
-     business does and whether it still runs is spread over the web and changes, so an own
-     index would need crawling and would go stale, the failure that E2 tests; a live page is
-     also what the grounding check quotes. A plan's PDFs, which the agent does not read, are
-     where an index would pay off first.
+   - ✅ Two ADRs that record decisions made on 2026-09-21:
+     [an agent for the investigation, a workflow for the rest](adr/0002-why-an-agent.md) and
+     [live sources instead of an index of our own](adr/0003-live-sources.md).
    - No MCP and no baseline: one line each, without an ADR.
    - The legal frame: publishing the code is not publishing statements; the README names no
      report about real businesses or buildings; the report says that a language model wrote
