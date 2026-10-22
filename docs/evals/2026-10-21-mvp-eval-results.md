@@ -104,8 +104,7 @@ What the support judge found, all at plan X-129 (E7):
   is any land of a railway: tracks, stations, depots or substations, in use or not. The plan
   does not show whether trains run there, so the finding rules give it no type, and the plan
   is other, as its label. The rule is right and the judge is wrong; the railway itself comes
-  from the map, as line 6118.
-  TODO: calibrate the support judge again, with an example of a plan with railway land.
+  from the map, as line 6118. Listed under [Known limitations](#known-limitations).
 - **1 statement without a source.** In a trial without the map, the report named the plan
   around the property but cited no source.
 
@@ -172,6 +171,9 @@ The failures after:
 - A plan replaced in part by another, and a plan whose state shows only on a page about one of
   its plots.
 - A plan's type from the uses on its land today rather than from what it allows (plan-2-56e).
+- The support judge reads railway land (Bahnanlage) in a plan as an active railway, and marks
+  the agent's correct "not known" about the plan's effect as contradicted (X-129, E7). For the
+  same reason plan-v-18 (E3) is left out.
 
 ## The one-page rule
 

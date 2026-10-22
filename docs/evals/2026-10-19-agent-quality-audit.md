@@ -127,8 +127,8 @@ a stronger model is a proven remedy.
 
 ### Axis 4 applied to the same eight groups
 
-**TODO: assess the remaining candidates before selecting any for implementation.**
-This table records options and decisions. Unselected options are not scheduled changes or
+This table records options and decisions; the MVP chose among them by 2026-10-21, see the
+proposals below. Unselected options are not scheduled changes or
 measured fixes. A possible intervention does not establish that the existing constraint
 caused a particular fail.
 
@@ -202,8 +202,8 @@ that every historical failure remains after 10.8. Keep the diagnosis here; promo
 chosen interventions into the roadmap. Record experiment outcomes alongside their runs,
 then update this audit's conclusions when the evidence changes.
 
-**TODO: evaluate the proposals below.** The order is a recommendation, not a new commitment
-to implement every row. Effort estimates are relative engineering effort, not measured
+The proposals below were decided for the MVP by 2026-10-21; the paragraph after the table
+says how. The order is a recommendation, not a new commitment to implement every row. Effort estimates are relative engineering effort, not measured
 runtime cost. Expected benefit means a plausible target supported by the audit, not a
 predicted percentage gain.
 
@@ -224,11 +224,9 @@ check of railway status are left out (see the eval architecture). Row 3 joined 1
 its full run of 2026-10-21, where a key fact with a changed word ending was rejected, and the
 retry covers an answer without the Finding tool too.
 The separate status-policy review in row 6 is broader than ordering the existing
-classification rules. Rows 5 and 6 remain candidates beyond those roadmap steps, not reasons
-to delay the next code change. The recommended next action
-is row 1. Reassess later priorities after rows 1–2 and their planned full run: an error that
-disappears does not need a second fix. Move row 6 ahead of further model spending if the
-remaining status errors follow the current rules correctly.
+classification rules. Rows 5 and 6 are not planned: the MVP ends the eval work, and the
+limits they address are listed in the
+[MVP eval results](2026-10-21-mvp-eval-results.md#known-limitations).
 
 ### Conditions for trusting the comparison
 
