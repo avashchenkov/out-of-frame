@@ -1,0 +1,111 @@
+# E6: a held-out residential address. See docs/roadmap.md, After the MVP, step 1.
+# Explicit-path task: excluded from the default MVP task discovery.
+# Grok Build and Codex checked every label and agreed with all of them.
+# Label evidence and preparation checks: docs/evals/2026-10-22-held-out-tasks.md.
+id: E6
+suite: end-to-end
+covers: >-
+  A residential address near an operating gas heat and power plant. Five plans have housing,
+  community, green or local street uses; none establishes construction status.
+date: today
+
+# The agent sees only this complete first message.
+input:
+  messages:
+    - Please check Oberhofer Weg 45, 12209 Berlin. I travel nowhere regularly.
+
+# Grader-only labels, drafted on 2026-10-22 from saved live source responses.
+# IDs, coordinates, selection and tolerances come from production code.
+# All objects are scored. A null status means the evidence does not establish it.
+expected:
+  property: {lat: 52.4206707, lon: 13.3314571}
+  destinations: []
+  recorded_as: e6-oberhofer-weg-45
+  labels:
+
+    # 1390 m: Heizkraftwerk Lichterfelde. BEW lists Heizkraftwerk Lichterfelde with 300 MW
+    # electrical and 609 MW heat output, fuel Erdgas, among its current generating plants. One
+    # operator page supports both plant and operating. News about dismantling old units does not
+    # close the current site.
+    - id: heizkraftwerk-lichterfelde
+      object_id: osm-way-187916423
+      category: industry
+      coordinates: {lat: 52.4250304, lon: 13.30965685}
+      distance_tolerance_m: 270
+      identified_type: plant
+      status: operating
+      source_url: https://www.bew.berlin/fernwaermesystem/erzeugungsanlagen
+      search: Heizkraftwerk Lichterfelde BEW
+
+    # 51 m: Bebauungsplan XII-94. WFS inhalt: allgemeines Wohngebiet, Straßenverkehrsfläche,
+    # Grünfläche (private Grünfläche). These uses have no listed hazard type, so other. In Kraft
+    # getreten is legal status, not construction status; no recorded evidence establishes
+    # construction, so null. The WFS fields settle the type without a search or PDF read; source_url
+    # is its linked plan scan.
+    - id: plan-xii-94
+      object_id: bplan-0612094
+      category: planned_objects
+      coordinates: {lat: 52.419423735, lon: 13.330461955}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://fbinter.stadt-berlin.de/ScansBPlan/06_SZ/XII-94_Abz.pdf
+      search: null
+
+    # 235 m: Bebauungsplan XII-181. WFS inhalt: allgemeines Wohngebiet, Straßenverkehrsfläche. These
+    # uses have no listed hazard type, so other. In Kraft getreten is legal status, not construction
+    # status; no recorded evidence establishes construction, so null. The WFS fields settle the type
+    # without a search or PDF read; source_url is its linked plan scan.
+    - id: plan-xii-181
+      object_id: bplan-0612181
+      category: planned_objects
+      coordinates: {lat: 52.418730755, lon: 13.335594525000001}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://fbinter.stadt-berlin.de/ScansBPlan/06_SZ/XII-181_Abz.pdf
+      search: null
+
+    # 333 m: Bebauungsplan XII-87. WFS inhalt: Flächen für den Gemeinbedarf (Schule und
+    # Volksbücherei, Schulkindergarten), Straßenverkehrsfläche, Grünfläche. These uses have no
+    # listed hazard type, so other. In Kraft getreten is legal status, not construction status; no
+    # recorded evidence establishes construction, so null. The WFS fields settle the type without a
+    # search or PDF read; source_url is its linked plan scan.
+    - id: plan-xii-87
+      object_id: bplan-0612087
+      category: planned_objects
+      coordinates: {lat: 52.416869085, lon: 13.33317806}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://fbinter.stadt-berlin.de/ScansBPlan/06_SZ/XII-87_Abz.pdf
+      search: null
+
+    # 431 m: Bebauungsplan XII-159. WFS inhalt: allgemeines Wohngebiet, Straßenverkehrsfläche,
+    # Grünfläche. These uses have no listed hazard type, so other. In Kraft getreten is legal
+    # status, not construction status; no recorded evidence establishes construction, so null. The
+    # WFS fields settle the type without a search or PDF read; source_url is its linked plan scan.
+    - id: plan-xii-159
+      object_id: bplan-0612159
+      category: planned_objects
+      coordinates: {lat: 52.42018707, lon: 13.33887682}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://fbinter.stadt-berlin.de/ScansBPlan/06_SZ/XII-159_Abz.pdf
+      search: null
+
+    # 489 m: Bebauungsplan XII-284. WFS inhalt: Flächen für den Gemeinbedarf (Kindertagesstätte),
+    # Grünfläche (private Dauerkleingärten, öffentlicher Bolzplatz), Straßenverkehrsfläche, private
+    # Verkehrsfläche. These uses have no listed hazard type, so other. In Kraft getreten is legal
+    # status, not construction status; no recorded evidence establishes construction, so null. The
+    # WFS fields settle the type without a search or PDF read; source_url is its linked plan scan.
+    - id: plan-xii-284
+      object_id: bplan-0612284
+      category: planned_objects
+      coordinates: {lat: 52.41485564, lon: 13.33134001}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://fbinter.stadt-berlin.de/ScansBPlan/06_SZ/XII-284_Abz.pdf
+      search: null

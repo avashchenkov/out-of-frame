@@ -1,0 +1,180 @@
+{
+  "date": "2026-10-22",
+  "scope": "Preparation audit only; live tasks do not replay this file.",
+  "raw_responses": "evals/results/residential-tavily-preflight-2026-10-22",
+  "note": "Original page and snippet texts remain in local results. Only selected key facts are quoted here.",
+  "searches": [
+    {
+      "query": "Heizkraftwerk Lichterfelde",
+      "settings": {
+        "max_results": 5,
+        "depth": "production API default (basic)",
+        "page_chars": 40000
+      },
+      "metadata": [
+        {
+          "query": "Heizkraftwerk Lichterfelde",
+          "response_time": 1.18,
+          "request_id": "7d5783c8-b120-4393-a0f5-4249492bf49c"
+        }
+      ],
+      "urls_in_order": [
+        "https://de.wikipedia.org/wiki/Heizkraftwerk_Lichterfelde",
+        "https://www.morgenpost.de/bezirke/steglitz-zehlendorf/article241539606/lost-places-heizkraftwerk-lichterfelde-steglitz-zehlendorf.html",
+        "https://www.berlin-spart-energie.de/projekt/vattenfall-heizkraftwerk-lichterfelde-besucherzentrum-51.html",
+        "https://industriekultur.berlin/ort/heizkraftwerk-lichterfelde",
+        "https://www.bew.berlin/fernwaermesystem/erzeugungsanlagen"
+      ],
+      "raw_response": "01-lichterfelde-name-1-search.json"
+    },
+    {
+      "query": "Katjes Wetzlarer Straße 96-106 Potsdam",
+      "settings": {
+        "max_results": 5,
+        "depth": "production API default (basic)",
+        "page_chars": 40000
+      },
+      "metadata": [
+        {
+          "query": "Katjes Wetzlarer Straße 96-106 Potsdam",
+          "response_time": 1.44,
+          "request_id": "66b85da4-fb58-4a79-af47-316c416c28db"
+        }
+      ],
+      "urls_in_order": [
+        "https://www.top10berlin.de/de/cat/shopping-271/food-outlets-2884/katjes-werksverkauf-potsdam-4110",
+        "https://maps.apple.com/place?place-id=I37B3BBEFAEC11D6E",
+        "https://www.katjes.de/erleben/glaeserne-bonbonfrabrik-potsdam",
+        "https://www.potsdamtourismus.de/poi/glaeserne-bonbonfabrik",
+        "https://www.katjes.com/experience"
+      ],
+      "raw_response": "02-katjes-address-1-search.json"
+    },
+    {
+      "query": "Heizkraftwerk Lichterfelde BEW",
+      "settings": {
+        "max_results": 5,
+        "depth": "production API default (basic)",
+        "page_chars": 40000
+      },
+      "metadata": [
+        {
+          "query": "Heizkraftwerk Lichterfelde BEW",
+          "response_time": 1.92,
+          "request_id": "b0307c67-fa70-448e-852d-b60b34fdc45d"
+        }
+      ],
+      "urls_in_order": [
+        "https://de.wikipedia.org/wiki/Heizkraftwerk_Lichterfelde",
+        "https://industriekultur.berlin/ort/heizkraftwerk-lichterfelde",
+        "https://www.bew.berlin/fernwaermesystem/erzeugungsanlagen",
+        "https://www.berlin-spart-energie.de/projekt/vattenfall-heizkraftwerk-lichterfelde-besucherzentrum-51.html",
+        "https://www.gem.wiki/Lichterfelde_power_station"
+      ],
+      "raw_response": "03-lichterfelde-operator-search.json"
+    },
+    {
+      "query": "Katjes Potsdam",
+      "settings": {
+        "max_results": 5,
+        "depth": "production API default (basic)",
+        "page_chars": 40000
+      },
+      "metadata": [
+        {
+          "query": "Katjes Potsdam",
+          "response_time": 2.01,
+          "request_id": "7a8e6f47-b6df-47e9-a7b2-fe87f24afb89"
+        }
+      ],
+      "urls_in_order": [
+        "https://www.katjes.de/erleben/glaeserne-bonbonfrabrik-potsdam",
+        "https://www.katjes.com/company/history",
+        "https://www.katjes.com/company/contact",
+        "https://katjes.us",
+        "https://www.katjes.com"
+      ],
+      "raw_response": "04-katjes-city-search.json"
+    },
+    {
+      "query": "Heizkraftwerk Lichterfelde",
+      "settings": {
+        "max_results": 5,
+        "depth": "production API default (basic)",
+        "page_chars": 40000
+      },
+      "metadata": [
+        {
+          "query": "Heizkraftwerk Lichterfelde",
+          "response_time": 0.0,
+          "request_id": "87417d9c-02dd-450f-b952-9a965c96ddfa"
+        }
+      ],
+      "urls_in_order": [
+        "https://de.wikipedia.org/wiki/Heizkraftwerk_Lichterfelde",
+        "https://www.morgenpost.de/bezirke/steglitz-zehlendorf/article241539606/lost-places-heizkraftwerk-lichterfelde-steglitz-zehlendorf.html",
+        "https://www.berlin-spart-energie.de/projekt/vattenfall-heizkraftwerk-lichterfelde-besucherzentrum-51.html",
+        "https://industriekultur.berlin/ort/heizkraftwerk-lichterfelde",
+        "https://www.bew.berlin/fernwaermesystem/erzeugungsanlagen"
+      ],
+      "raw_response": "07-lichterfelde-name-2-search.json"
+    },
+    {
+      "query": "Katjes Wetzlarer Straße 96-106 Potsdam",
+      "settings": {
+        "max_results": 5,
+        "depth": "production API default (basic)",
+        "page_chars": 40000
+      },
+      "metadata": [
+        {
+          "query": "Katjes Wetzlarer Straße 96-106 Potsdam",
+          "response_time": 0.0,
+          "request_id": "678fa24b-3e35-4d1c-8866-faad98485ed0"
+        }
+      ],
+      "urls_in_order": [
+        "https://www.top10berlin.de/de/cat/shopping-271/food-outlets-2884/katjes-werksverkauf-potsdam-4110",
+        "https://maps.apple.com/place?place-id=I37B3BBEFAEC11D6E",
+        "https://www.katjes.de/erleben/glaeserne-bonbonfrabrik-potsdam",
+        "https://www.potsdamtourismus.de/poi/glaeserne-bonbonfabrik",
+        "https://www.katjes.com/experience"
+      ],
+      "raw_response": "08-katjes-address-2-search.json"
+    }
+  ],
+  "pages": [
+    {
+      "url": "https://www.bew.berlin/fernwaermesystem/erzeugungsanlagen",
+      "fetched_characters": 12454,
+      "selected_key_facts": [
+        "Heizkraftwerk Lichterfelde | 300 | 609 | Erdgas",
+        "Unsere Erzeugungsanlagen in Berlin",
+        "Darüber hinaus tragen sie zur Stromerzeugung bei."
+      ],
+      "metadata": [
+        {
+          "response_time": 0.01,
+          "request_id": "f078c16b-1d01-4586-be5d-6ee7073fb135"
+        }
+      ],
+      "raw_response": "05-lichterfelde-source-extract.json"
+    },
+    {
+      "url": "https://www.katjes.de/erleben/glaeserne-bonbonfrabrik-potsdam",
+      "fetched_characters": 1589,
+      "selected_key_facts": [
+        "Hier kannst du hautnah miterleben, wie die leckeren Katjes-Bonbons produziert werden.",
+        "Wetzlarer Str. 96 -106",
+        "14482 Potsdam"
+      ],
+      "metadata": [
+        {
+          "response_time": 0.01,
+          "request_id": "a2579edc-41a3-46b4-ada1-84c0a5560de3"
+        }
+      ],
+      "raw_response": "06-katjes-source-extract.json"
+    }
+  ]
+}

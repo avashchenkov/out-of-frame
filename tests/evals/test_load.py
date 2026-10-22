@@ -18,7 +18,9 @@ def write(path, data):
     return path
 
 
-@pytest.mark.parametrize("path", sorted(TASKS.glob("*.yaml")), ids=lambda p: p.name)
+@pytest.mark.parametrize(
+    "path", sorted(TASKS.rglob("*.yaml")), ids=lambda p: str(p.relative_to(TASKS))
+)
 def test_task_loads(path):
     load(path)
 

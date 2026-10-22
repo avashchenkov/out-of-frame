@@ -416,9 +416,10 @@ reading of the five reports of step 10.4.
 
 1. **A held-out check, before any change of the report.** The fixes of steps 8 to 10 were made
    on E1–E5, so their results do not show how the agent does at addresses it was not tuned on.
-   Two new Berlin addresses, E6 and E7, are chosen so that each rule of steps 8 to 10 applies at
-   least once: a railway, a plant against production, a housing or mixed plan, and one more try
-   for a rejected finding. Their labels follow the rules of the eval architecture; one model
+   Two new Berlin addresses, E6 and E7, cover a railway, a plant against production and a
+   housing or mixed plan. The check measures the whole agent at new addresses; it does not
+   require a rejected finding to trigger a retry, which existing code tests cover. Their labels
+   follow the rules of the eval architecture; one model
    drafts them, another checks them, and the person settles where they disagree. One end-to-end
    run at k=3, with nothing tuned after it; its results are added to the
    [MVP eval results](evals/2026-10-21-mvp-eval-results.md) as a table of their own.

@@ -27,5 +27,13 @@ Recorded on 2026-10-16 by `evals/label.py`, one building each, the end-to-end ad
 - `e4-teutonenstrasse-10.json`: "Teutonenstraße 10, 12524 Berlin" (E4).
 - `e5-am-bruchland-22.json`: "Am Bruchland 22, 12524 Berlin" (E5).
 
+Recorded on 2026-10-22 during address selection, kept without another live call:
+
+- `e6-oberhofer-weg-45.json`: "Oberhofer Weg 45, 12209 Berlin" (E6), one building.
+- `e7-teltower-strasse-31.json`: "Teltower Straße 31, 14109 Berlin" (E7), two different
+  places: way 191355292 in Steinstücken, 14109, and node 2875569798 in Wilhelmstadt, 13597.
+  Production geocoding keeps them separate, then selects Steinstücken by the requested
+  postcode 14109.
+
 Data © OpenStreetMap contributors, available under the Open Database License (ODbL) 1.0:
 <https://www.openstreetmap.org/copyright>.

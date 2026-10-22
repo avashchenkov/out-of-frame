@@ -411,6 +411,23 @@ def test_a_part_runs_only_the_tasks_of_its_suites():
         select_tasks("draft_finding", [TASKS / "l1.yaml"])
 
 
+def test_the_default_end_to_end_run_keeps_the_mvp_tasks_separate_from_held_out_tasks():
+    assert [task.id for task in select_tasks("run_end_to_end", [])] == [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+    ]
+
+
+def test_held_out_tasks_can_be_selected_explicitly():
+    paths = [TASKS / "held-out" / name for name in ("e6.yaml", "e7.yaml")]
+    assert [task.id for task in select_tasks("run_end_to_end", paths)] == ["E6", "E7"]
+    with pytest.raises(ValueError, match="cannot run E6, E7"):
+        select_tasks("draft_finding", paths)
+
+
 STAAKEN = "Hauptstraße 1, 13591 Berlin"
 # The Staaken building in the recorded responses; tests never read a task's expected result.
 STAAKEN_BUILDING = Coordinates(lat=52.5288998, lon=13.1443516)

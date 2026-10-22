@@ -151,6 +151,20 @@ def test_a_building_with_another_postcode_gives_no_coordinates(monkeypatch):
     )
 
 
+@pytest.mark.parametrize("postcode", ["14109", None])
+def test_the_e7_postcode_selects_one_of_two_different_places(monkeypatch, postcode):
+    results = read_fixture("e7-teltower-strasse-31.json")
+    # The Spandau result goes first so the test also rejects merging or taking the first hit.
+    text = "Teltower Straße 31, " + (f"{postcode} " if postcode else "") + "Berlin"
+    address, reason = geocode(monkeypatch, list(reversed(results)), text)
+    if postcode:
+        assert address.coordinates == Coordinates(lat=52.3900433, lon=13.1281581)
+        assert reason is None
+    else:
+        assert address.coordinates is None
+        assert "Several buildings" in reason and "13597" in reason and "14109" in reason
+
+
 def test_a_building_outside_berlin_gives_no_coordinates(monkeypatch):
     [building] = read_fixture("freiheit-22.json")
     building["address"]["ISO3166-2-lvl4"] = "DE-BB"  # Brandenburg

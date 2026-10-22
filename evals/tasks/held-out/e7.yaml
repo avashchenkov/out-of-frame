@@ -1,0 +1,68 @@
+# E7: a held-out residential address. See docs/roadmap.md, After the MVP, step 1.
+# Explicit-path task: excluded from the default MVP task discovery.
+# Grok Build and Codex checked every label and agreed with all of them.
+# Label evidence and preparation checks: docs/evals/2026-10-22-held-out-tasks.md.
+id: E7
+suite: end-to-end
+covers: >-
+  A residential Berlin address near an operating candy factory in Potsdam, a railway with
+  unknown status, and a housing plan that contains the property.
+date: today
+
+# The agent sees only this complete first message.
+input:
+  messages:
+    - Please check Teltower Straße 31, 14109 Berlin. I travel nowhere regularly.
+
+# Grader-only labels, drafted on 2026-10-22 from saved live source responses.
+# IDs, coordinates, selection and tolerances come from production code.
+# All objects are scored. A null status means the evidence does not establish it.
+expected:
+  property: {lat: 52.3900433, lon: 13.1281581}
+  destinations: []
+  recorded_as: e7-teltower-strasse-31
+  labels:
+
+    # 1354 m: Katjes. The operator describes candy being produced at Wetzlarer Str. 96-106, 14482
+    # Potsdam, with visitors able to watch production. The page supports a working factory, not only
+    # a shop. Its production interruption on 8-9 October 2026 is past on the label date. It
+    # describes no plant-type use. The property is in Berlin; the factory across the state border is
+    # still inside the industry radius.
+    - id: katjes-potsdam
+      object_id: osm-way-27689094
+      category: industry
+      coordinates: {lat: 52.3793057, lon: 13.117090000000001}
+      distance_tolerance_m: 80
+      identified_type: production
+      status: operating
+      source_url: https://www.katjes.de/erleben/glaeserne-bonbonfrabrik-potsdam
+      search: Katjes Wetzlarer Straße 96-106 Potsdam
+
+    # 73 m: railway ref 6118. The recorded track has railway=rail and ref=6118. Code groups the two
+    # returned ways of that ref and assigns railway with status null. This label checks that rule;
+    # it makes no claim that trains run now. Its map data suffice, so no search is required. The
+    # tolerance follows the bounds of the representative way.
+    - id: line-6118
+      object_id: osm-way-833274485
+      category: road_rail
+      coordinates: {lat: 52.38266845, lon: 13.12292345}
+      distance_tolerance_m: 1600
+      identified_type: railway
+      status: null
+      source_url: https://www.openstreetmap.org/way/833274485
+      search: null
+
+    # 0 m: Bebauungsplan X-129. WFS inhalt: allgemeines Wohngebiet, Grünfläche (Spielplatz),
+    # Straßenverkehrsfläche, Bahnanlage. These uses have no listed hazard type, so other. In Kraft
+    # getreten is legal status, not construction status; no recorded evidence establishes
+    # construction, so null. The WFS fields settle the type without a search or PDF read; source_url
+    # is its linked plan scan.
+    - id: plan-x-129
+      object_id: bplan-0610129
+      category: planned_objects
+      coordinates: {lat: 52.391612875, lon: 13.133100565}
+      distance_tolerance_m: 50
+      identified_type: other
+      status: null
+      source_url: https://fbinter.stadt-berlin.de/ScansBPlan/06_SZ/X-129_Abz.pdf
+      search: null
