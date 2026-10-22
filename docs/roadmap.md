@@ -430,10 +430,10 @@ reading of the five reports of step 10.4.
    the sources. The CLI stays a technical mode and prints the report as it does now.
 3. ✅ **Sources as named links, not numbers:** a page by its site's name, a map object by its
    OpenStreetMap page, a plan by its document where the B-Plan WFS links one.
-4. **Answers in the user's language,** such as English, German or Russian: the questions and
-   the report alike. This changes the architecture: code writes parts of the report, such as
-   the journeys and the credits, in English, and the judges' rubrics are written for English
-   drafts.
+4. **Answers in the user's language:** the agent always writes in the language the user writes
+   in, the questions and the report alike. This changes the architecture: code writes parts of
+   the report, such as the journeys and the credits, in English, and the judges' rubrics are
+   written for English drafts.
 5. **The agent as a service on Aegra,** the open-source server for LangGraph agents over the
    Agent Protocol. It keeps the conversation's state between messages in PostgreSQL, where
    step 7, the input conversation, keeps it in memory only. The graph is compiled without its
