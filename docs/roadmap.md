@@ -414,7 +414,7 @@ observed failure needs them; they are not a planned phase after the MVP.
 A live demo that a reviewer can try without signing up. Most items come from the person's
 reading of the five reports of step 10.4.
 
-1. **A held-out check, before any change of the report.** The fixes of steps 8 to 10 were made
+1. ✅ **A held-out check, before any change of the report.** The fixes of steps 8 to 10 were made
    on E1–E5, so their results do not show how the agent does at addresses it was not tuned on.
    Two new Berlin addresses, E6 and E7, cover a railway, a plant against production and a
    housing or mixed plan. The check measures the whole agent at new addresses; it does not
@@ -422,7 +422,8 @@ reading of the five reports of step 10.4.
    follow the rules of the eval architecture; one model
    drafts them, another checks them, and the person settles where they disagree. One end-to-end
    run at k=3, with nothing tuned after it; its results are added to the
-   [MVP eval results](evals/2026-10-21-mvp-eval-results.md) as a table of their own.
+   [MVP eval results](evals/2026-10-21-mvp-eval-results.md) as a table of their own. Done on
+   2026-10-22: every scored label correct, E7 run once more after a map outage.
 2. **The report in Markdown, in sections,** such as the identified objects, the objects that
    could not be identified and the journeys, with the sources and licences at the end, and a
    line from code that a language model wrote the report and its facts should be checked against

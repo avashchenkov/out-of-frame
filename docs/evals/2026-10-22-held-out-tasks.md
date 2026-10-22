@@ -2,7 +2,8 @@
 
 Drafted on 2026-10-22 for the held-out check in
 [roadmap step 1 after the MVP](../roadmap.md#after-the-mvp-the-demo).
-No E6/E7 agent trial has been run. Prompts, graders and settings are unchanged.
+No E6/E7 agent trial was run before the labels were set. Prompts, graders and settings are
+unchanged.
 
 Grok Build and Codex checked the labels and agreed with all of them; see
 [Review and run](#review-and-run).
@@ -83,35 +84,32 @@ investigation tests passed: 243 tests. None of these checks called a model or a 
 
 ## Review and run
 
-An external Grok review was supplied by the person on 2026-10-22. It confirmed the recorded
-inventory and its IDs, coordinates, categories and tolerances, then found two preparation
-bugs: default task selection included E6/E7, and the Nominatim README described E7's two
-places as a duplicate building. Both are fixed, with regression checks. It also questioned
-retry coverage, which the person's scope decision below settles.
+A Grok review confirmed the recorded inventory and its IDs, coordinates, categories and
+tolerances. It found two preparation bugs: default task selection included E6/E7, and the
+Nominatim README described E7's two places as a duplicate building. Both are fixed, with
+regression checks.
 
-Grok Build and Codex then checked each label against its evidence and the project
-definitions: identity, type, status, search reachability, complete inventory and coordinate
-tolerances. On 2026-10-22 the person confirmed that both agreed with all nine labels, so
-there was no disagreement to settle. Their written label reports were not saved.
+Grok Build and Codex checked each label against its evidence and the project definitions:
+identity, type, status, search reachability, complete inventory and coordinate tolerances.
+Both agreed with all nine labels.
 
-After these fixes, the loader, runner, label and geocoding tests passed: 197 tests. Ruff and
-`git diff --check` passed. A local check confirmed default selection E1-E5, explicit selection
-E6/E7, nine held-out labels, and an exact match between the reachability index and the local
-responses. No paid API or model was called.
+After the fixes, the loader, runner, label and geocoding tests passed: 197 tests. Ruff and
+`git diff --check` passed. Default selection gives E1-E5 and explicit selection E6/E7, with
+nine held-out labels; the reachability index matches the local responses exactly.
 
-The pair covers plant versus production, housing plans, railway status and reporting a
-property inside a plan. On 2026-10-22 the person confirmed that this end-to-end check measures
-the whole agent and need not exercise the retry. Existing code tests cover that behaviour.
-No trial is forced or repeated to make a finding fail. This is no longer a readiness condition.
+The pair covers plant versus production, housing plans, railway status and a property inside
+a plan. The check measures the whole agent; it does not need to exercise the retry for a
+rejected finding, which code tests cover. No trial is forced to make a finding fail.
 
-TODO: After approval of the paid run, run only the two held-out tasks once
-at k=3 (six reports, 27 label-trials when all objects are fetched):
+The two tasks ran once at k=3 on 2026-10-22 at c641c71 (six reports, 27 label-trials when
+all objects are fetched):
 
 ```sh
 uv run --env-file .env python -m evals.run --part run_end_to_end --k 3 \
   evals/tasks/held-out/e6.yaml evals/tasks/held-out/e7.yaml
 ```
 
-The historical six-run estimate is about $1.53 including judges; allow roughly $2, with
-retries outside that estimate. Keep the held-out results separate from
-E1-E5 and do not tune after seeing them.
+Two E7 trials lost the map to an Overpass outage, so E7 ran once more at k=3 at the same
+commit, with nothing changed. Both runs cost $0.71 with judges. The results are in the
+[MVP eval results](2026-10-21-mvp-eval-results.md#held-out-check), apart from E1-E5. Nothing
+is tuned after seeing them.

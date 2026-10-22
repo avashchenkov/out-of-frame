@@ -12,7 +12,8 @@ and graded is in the [eval architecture](../eval-architecture.md).
 | Judges | Claude Haiku 5.5, extra-high effort, calibrated | the same |
 
 The fixes were made on these same tasks, so the "after" column shows that they work here, not
-how the agent does at addresses it was not tuned on.
+how the agent does at addresses it was not tuned on. A held-out check at two new addresses
+followed on 2026-10-22; see [Held-out check](#held-out-check).
 
 ## End-to-end
 
@@ -66,6 +67,53 @@ unstable: a search that found another page, and a plan rule that the model appli
 once. Live search and the model vary from trial to trial, so one miss in three on a label is
 expected spread, not a failure of the agent; a person reviews the results either way. Within
 the limits below, the agent does what the MVP set out to do.
+
+## Held-out check
+
+Two new Berlin addresses, E6 and E7, on 2026-10-22 at c641c71: the agent, judges and settings
+of the "after" column, unchanged. Nothing was tuned on them before or after the runs. The
+labels and how they were prepared are in the
+[preparation note](2026-10-22-held-out-tasks.md): 9 labels, all scored.
+
+| | E6 and E7 | E7 again |
+|---|---|---|
+| Label-trials correct, of those fetched | 23 of 23 | 9 of 9 |
+| Label-trials not fetched | 4 | 0 |
+| Wrong claims or abstentions | 0 | 0 |
+| False alarms | 0 | 0 |
+| Support judge: statements unsupported or contradicted | 3 of 27 | 2 of 9 |
+| Interpretation judge: reports passed | 6 of 6 | 3 of 3 |
+| No-verdict judge: reports passed | 6 of 6 | 3 of 3 |
+| Tool calls | 58 | 12 |
+| Cost: agent, judges | $0.53, $0.04 | $0.13, $0.01 |
+| Trials with a failed source | 2, the map (E7) | none |
+
+In the first run, two trials of E7 lost the map to the public Overpass server (502). Their
+plan label was graded; the factory and the railway were not fetched. Both reports said that
+the map could not be loaded. E7 was then run again at k=3 at the same commit, and every source
+answered. Both runs are kept.
+
+Every held-out label is correct in every trial that fetched it: Heizkraftwerk Lichterfelde
+and the five plans of E6 in 3 of 3 trials, Katjes and line 6118 in 4 of 4, and X-129 in 6 of 6.
+
+What the support judge found, all at plan X-129 (E7):
+
+- **4 contradicted or unsupported statements in 6 trials.** The report says that it is not
+  known whether what the plan allows can affect people nearby. The judge reads the plan's
+  railway land (Bahnanlage) as the type railway, which brings train noise. But railway land
+  is any land of a railway: tracks, stations, depots or substations, in use or not. The plan
+  does not show whether trains run there, so the finding rules give it no type, and the plan
+  is other, as its label. The rule is right and the judge is wrong; the railway itself comes
+  from the map, as line 6118.
+  TODO: calibrate the support judge again, with an example of a plan with railway land.
+- **1 statement without a source.** In a trial without the map, the report named the plan
+  around the property but cited no source.
+
+**Conclusion.** At two addresses that it was not tuned on, the agent gets every scored label
+right, with no false alarms. Two addresses and 9 labels are too few for a rate, and the
+addresses were chosen so that every label is reachable: 7 of the 9 are settled by map or plan
+data alone. So the check shows no sign that the fixes of steps 8 to 10 fit only E1–E5; it
+does not measure how often the agent is right at any Berlin address.
 
 ## Component suites
 
