@@ -2,31 +2,33 @@
 
 Status: accepted, 2026-10-22
 
-This decision is about the public demo ([roadmap](../roadmap.md#after-the-mvp-the-demo), steps
-5 to 7). It also changes the agent's messages; see Consequences.
+Access rules, public scope and deployment updated on 2026-10-23.
+
+This decision covers [demo steps 5 to 8](../roadmap.md#after-the-mvp-the-demo).
+The [demo architecture](../demo-architecture.md) defines access, limits and retention;
+the [launch checklist](../demo-launch-checklist.md) covers notices and deployment requirements.
 
 ## Context
 
-The demo lets anyone try the agent in a browser, without signing up, with at most 5
-conversations a day in total, so that strangers cannot raise the cost of the model and web
-search. It needs a server that runs the LangGraph graph and keeps each conversation between
-messages, and a chat page that shows the questions and the report. Only the page is open to
-the internet.
+The demo offers author-prepared recorded examples and a private chat without sign-up.
+It needs a server that runs the existing LangGraph graph, saves progress between messages
+and recovers interrupted work, plus a page for questions and reports. Public usage is bounded
+by admission limits and separate provider budgets. Only the page is open to the internet.
 
 ## Decision
 
-- **Backend: [Aegra](https://github.com/aegra/aegra),** an open-source, self-hosted server for
-  LangGraph agents under the Apache 2.0 licence. It serves the graph over the Agent Protocol,
-  keeps the conversations in PostgreSQL, and replaces LangSmith Deployment, LangChain's own
-  service, so the LangGraph SDK works with it unchanged.
+- **Backend: [Aegra](https://github.com/aegra/aegra),** a self-hosted LangGraph server under the
+  Apache 2.0 licence. It serves the Agent Protocol, persists conversations in PostgreSQL
+  and supports the LangGraph SDK.
 - **Frontend: LangChain's [Agent Chat UI](https://github.com/langchain-ai/agent-chat-ui),** a
-  Next.js chat page under the MIT licence, cloned into `demo/`. It talks to such a server
-  through the LangGraph SDK.
+  Next.js chat page under the MIT licence, cloned into `demo/` and adapted for this graph.
+- **Deployment:** one VPS with Docker Compose: Next.js, Aegra, PostgreSQL and Redis.
+  Redis enables Aegra's built-in worker recovery and holds temporary stream events.
+  PostgreSQL keeps server records and checkpoints.
 
-Both are made for LangGraph and speak the same API, so the server and the chat are reused, not
-written. The demo still needs its own rules, such as the daily limit and who can see or
-continue a conversation. They belong to the demo's own setup of Aegra, its auth handlers, not
-to the agent's code or the page. The page needs small changes of its own.
+TODO: implement the decision in demo steps 6 to 8. Next.js manages the cookie, serves examples,
+constructs allowed run requests and filters browser responses. Aegra's demo handlers enforce
+ownership and admission. Visitor conversations and reports remain private.
 
 ## Alternatives
 
@@ -43,20 +45,22 @@ to the agent's code or the page. The page needs small changes of its own.
 
 ## Consequences
 
-- Agent Chat UI reads LangChain messages from the state's `messages` key, so roadmap step 5
-  changes the agent. In the code, `messages` will hold LangChain messages, and runs saved in
-  the old `{role, text}` form will still load. In [the state](../architecture.md#the-state),
-  `messages` will no longer be the input phase alone: the finished report is added once as one
-  more agent message, and the `report` field stays for the CLI and the judges.
-- The agent asks its questions with `interrupt()`, so the page answers a waiting run with a
-  resume command, not with a new message. A failed service is not a message either, so the
-  page takes its notice from the stream, as the CLI does.
-- A finished conversation is public and stays. Other visitors see only its messages: the
-  user's words, the questions and the report. The rest of the state, such as the page texts in
-  `sources`, which have rights of their own ([data rights](../sources.md#data-rights)), stays
-  hidden. Before a conversation starts, the page says that a finished conversation is public,
-  the user's own words included.
-- Three services to run: Aegra, PostgreSQL and the page. The page is a fork: TypeScript code
-  in the repository, and its updates are merged by hand.
+TODO: the implementation must account for these changes:
 
-TODO: roadmap steps 5 to 7 implement this decision.
+- Agent Chat UI needs LangChain messages in `messages`. Append the finished report once,
+  keep `report` for the CLI and judges, and preserve loading of old `{role, text}` runs.
+  Update [the agent state description](../architecture.md#the-state) with that implementation.
+- Questions use `interrupt()`; answers resume a saved checkpoint. Stream progress and saved
+  service-failure notices alongside the report. Reconnect to a run after browser disconnection.
+- Each visitor has a separate pseudonymous identity. Set its cookie on the first admitted
+  message, never on refused admission. Keep only the current conversation and provide owner
+  deletion/replacement. The start notice explains that clearing cookies loses access while
+  server records remain subject to the original expiry.
+- The proxy must filter streams and state responses: the standard UI can receive the whole
+  graph state. Expose only the conversation, final report and required status/progress data.
+- Recorded examples are frontend files, not live database threads. No public visitor-report
+  API, report-copy table or publication flow is needed.
+- Keep PostgreSQL: Aegra requires it beyond the graph's checkpoints. Redis runs without disk
+  persistence; recovery uses PostgreSQL. Coordinate cancellation and cleanup so workers
+  cannot recreate deleted data.
+- The page is a TypeScript fork in the repository; merge upstream updates by hand.

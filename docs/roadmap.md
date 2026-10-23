@@ -435,41 +435,46 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    user's messages, the later ones first, and the report model writes in it. A model call translates the texts that code adds, with placeholders that code fills in, so that no value of the run passes
    through the translation. The eval tasks stay in English, so the judges and their calibration do not
    change.
-5. **The demo architecture, before implementation.** Write a short `docs/demo-architecture.md`:
-   the page, Aegra and PostgreSQL; visitor cookies and access; the flow from a message to a
-   public report. Align [ADR 4](adr/0004-demo-aegra-and-agent-chat-ui.md) with these decisions.
-   Settle whether public reports include the journeys. This is the next step after this plan
-   is approved.
-6. **The agent as a service on Aegra.** Aegra runs the existing LangGraph graph and saves its
-   state in PostgreSQL, with the date and web search supplied on the server. The conversation
-   becomes LangChain messages, with the finished report added once. The `report` field stays,
-   old saved runs still load, and the CLI and evals still work. Update the agent architecture
-   to match the message changes.
+5. **The demo architecture, before implementation.** Define the services, private access,
+   run flow, static examples, limits and retention in the [demo architecture](demo-architecture.md).
+   Align [ADR 4](adr/0004-demo-aegra-and-agent-chat-ui.md) and separate the
+   [launch checklist](demo-launch-checklist.md) from the technical design.
+6. **The agent as a service on Aegra.** Wrap the existing graph with PostgreSQL checkpoints
+   and Redis recovery. Use LangChain messages, interrupt/resume and an explicit final-report
+   marker; preserve the CLI, evals and old saved runs. Update the agent architecture with
+   the message changes. Move the scripted dialogue runner and judge settings into `evals/`,
+   with separate example environment files.
 
-   Each visitor has a separate anonymous identity tied to a cookie. An unfinished conversation
-   is accessible only to that visitor. Losing the cookie loses access; the data stays in the
-   database. A completed conversation cannot be continued. A small read-only API lists and
-   serves finished reports to everyone, only after the graph completes. The input conversation
-   and the rest of the state, including source texts, stay private.
+   Implement cookie ownership, atomic admission limits, one current conversation per
+   identity, and coordinated cancellation/deletion with scheduled and operator cleanup.
+   Retain admission counters after chat deletion. Add explicit Markdown licence links and
+   escape user text in reports, checking affected tests and graders. Start with the stubbed
+   restart/resume integration check; cover the remaining
+   [implementation checks](demo-architecture.md#implementation-checks), including quotas,
+   recovery, deletion races and exclusion of source texts from browser responses.
+7. **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
+   report, progress and fixed service-failure notices, plus reviewed recorded examples.
+   The Next.js proxy constructs allowed requests, filters all browser responses and checks
+   regional eligibility. Disable unused history, branching, editing and regeneration.
+   Show remaining submissions, message limits, clear refusal reasons and the author contact.
+   Keep examples available when live input is unavailable.
 
-   The backend enforces at most 5 new conversations per Berlin day across all visitors, each
-   counted once, and a message limit per conversation. Start with a small integration check
-   using a stubbed model and sources: a question, a server restart, an answer through the SDK
-   and a finished report. Tests cover visitor isolation, public reports, refusal to continue
-   a completed conversation, and limits under concurrent requests and other API entry points.
-7. **The web interface** in `demo/`, based on Agent Chat UI: the private conversation and
-   Markdown report, plus a public list and view of finished reports. The page's server passes
-   the visitor identity to Aegra. Adapt replies to resume a waiting question, show progress
-   and service failures, and disable editing, branching and regeneration. Before starting,
-   explain what will be public and that clearing cookies loses access to unfinished work.
-   Check the flow in two separate browser sessions and on a narrow screen. Finish with one
-   live conversation after approval of its estimated cost.
-8. **Deployment on one VPS:** Docker Compose in `demo/` runs the web page, Aegra with the
-   agent installed, and PostgreSQL with persistent storage. Only the web page is open to the
-   internet; it reaches Aegra through the private network. The keys are passed at run time,
-   never built into an image, and a .dockerignore keeps .env and evals/results/ out. A monthly
-   spend limit in the Anthropic Console and the web search plan's own limit cap the cost if
-   the demo's limit fails.
+   Keep the interface in English. Before input, show the service terms and short notice:
+   private access, the essential cookie, retention on our server, external providers and loss
+   of access after clearing cookies. Add accessible Privacy notice and Impressum links.
+   Label New chat as deleting the current conversation and offer Delete chat separately.
+   Render reports safely with working source and licence links. Leaving the page keeps the
+   run active. Check separate browser sessions, a narrow screen and filtered network payloads.
+8. **Deployment on one VPS.** Docker Compose runs Next.js, Aegra, PostgreSQL and Redis,
+   with only Next.js public. PostgreSQL persists; Redis has no disk persistence. Pass secrets
+   at runtime and build the backend image without project tests, evals or development tools.
+   Verify the package and image separately from the development/CI environment.
+
+   Complete the [launch checklist](demo-launch-checklist.md): operator details, notices,
+   provider terms and budgets, trusted region checks, HTTPS, retention and cleanup.
+   Choose budget amounts and the country data source with the deployment settings.
+   Finish with a live conversation after approval of its estimated cost. Enable live input
+   only after these checks pass; recorded examples can be served earlier.
 9. **The README in its final form:** a CI badge and a link to the demo; the design choices,
    one line each; what is out of scope; the legal frame and a link to the data sources and
    their rights in [sources.md](sources.md); and how it was built, one paragraph on the agents
@@ -478,9 +483,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
      [an agent for the investigation, a workflow for the rest](adr/0002-why-an-agent.md) and
      [live sources instead of an index of our own](adr/0003-live-sources.md).
    - No MCP and no baseline: one line each, without an ADR.
-   - Explain that the demo publishes finished reports. Keep real reports out of the
-     repository; each report says that a language model wrote it and its facts should be
-     checked against the sources.
+   - Explain the private live chat and the five recorded examples. Only the reviewed static
+     examples belong in the repository; never commit visitor reports. Each report says that
+     a language model wrote it and its facts should be checked against the sources.
 
 A change of the report reaches the judges: their rubrics and calibration sets are checked
 against it before results are quoted again.

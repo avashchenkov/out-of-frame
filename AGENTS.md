@@ -52,6 +52,8 @@ Python 3.14 with uv. Add dependencies with `uv add` and run commands with `uv ru
 - Never open, print or read `.env`; `.env.example` is fine. Tests and code graders run without
   keys.
 - Ask before any run that calls a paid API, the model or web search, with a cost estimate.
-- Settings live in `src/out_of_frame/config.py` and the environment; never hard-code them.
+- Agent runtime settings live in `src/out_of_frame/config.py` and the environment; never
+  hard-code them. TODO: move evaluation-only settings to `evals/config.py`, outside the
+  runtime package, with their example environment in `evals/.env.example`.
 - Hand work to another agent or model, such as Codex or Grok, only when the user asks. It works
   read-only and does not hand the work on.
