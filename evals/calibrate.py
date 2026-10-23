@@ -26,6 +26,7 @@ from typing import Literal
 import yaml
 from pydantic_core import to_jsonable_python
 
+from evals.config import JUDGE_EFFORT, JUDGE_MODEL
 from evals.graders import judges
 from evals.graders.judges import (
     RESEARCH_SCOPE,
@@ -37,7 +38,6 @@ from evals.graders.judges import (
     SupportGrade,
 )
 from evals.load import EVALS
-from out_of_frame.config import JUDGE_EFFORT, JUDGE_MODEL
 from out_of_frame.record import Record
 from out_of_frame.report import CITATION
 from out_of_frame.state import RunState

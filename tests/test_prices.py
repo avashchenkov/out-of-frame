@@ -4,8 +4,9 @@ import datetime as dt
 
 import pytest
 
+from evals.config import JUDGE_MODEL
 from out_of_frame import prices
-from out_of_frame.config import INJECTION_MODEL, JUDGE_MODEL, MODEL
+from out_of_frame.config import INJECTION_MODEL, MODEL
 from out_of_frame.prices import ModelPrice, Prices, TavilyPrice
 
 

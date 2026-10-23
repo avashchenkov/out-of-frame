@@ -25,6 +25,7 @@ from langchain_core.callbacks import get_usage_metadata_callback
 from pydantic_core import to_jsonable_python
 
 from evals.calibrate import check_calibrated
+from evals.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from evals.graders import judges
 from evals.graders.end_to_end import BranchResult
 from evals.graders.judges import (
@@ -43,9 +44,6 @@ from out_of_frame.config import (
     INJECTION_EFFORT,
     INJECTION_MAX_TOKENS,
     INJECTION_MODEL,
-    JUDGE_EFFORT,
-    JUDGE_MAX_TOKENS,
-    JUDGE_MODEL,
     MAX_TOKENS,
     MODEL,
 )

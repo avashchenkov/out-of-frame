@@ -27,18 +27,12 @@ from pydantic_core import to_jsonable_python
 
 from evals import judge
 from evals.calibrate import check_calibrated
+from evals.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from evals.graders.judges import RESEARCH_SCOPE
 from evals.graders.report import grade_citations, grade_distances
 from evals.run import add_up_judges, describe_code, describe_judges, sum_up_judges
 from out_of_frame import prices, report
-from out_of_frame.config import (
-    EFFORT,
-    JUDGE_EFFORT,
-    JUDGE_MAX_TOKENS,
-    JUDGE_MODEL,
-    MAX_TOKENS,
-    MODEL,
-)
+from out_of_frame.config import EFFORT, MAX_TOKENS, MODEL
 from out_of_frame.prices import compute_run_cost
 from out_of_frame.state import RunState
 

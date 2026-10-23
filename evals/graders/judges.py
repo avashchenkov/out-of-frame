@@ -18,9 +18,9 @@ import jinja2
 from langchain_core.messages import HumanMessage
 from pydantic import Field
 
+from evals.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from out_of_frame import research_scope
 from out_of_frame.chat_model import build_chat_model
-from out_of_frame.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from out_of_frame.grounding import collect_cited_page
 from out_of_frame.record import Record
 from out_of_frame.report import CITATION, find_plans, find_reported_failures

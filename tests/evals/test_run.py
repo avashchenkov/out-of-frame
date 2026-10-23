@@ -12,6 +12,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
 from evals import judge
+from evals.config import JUDGE_MAX_TOKENS
 from evals.graders.end_to_end import AddressLabel, ExpectedRun
 from evals.graders.finding import Expected
 from evals.graders.input_loop import ExpectedDestination, ExpectedInput
@@ -42,7 +43,6 @@ from out_of_frame.config import (
     INJECTION_EFFORT,
     INJECTION_MAX_TOKENS,
     INJECTION_MODEL,
-    JUDGE_MAX_TOKENS,
     MAX_TOKENS,
     MODEL,
 )

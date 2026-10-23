@@ -27,6 +27,7 @@ import out_of_frame.report
 import out_of_frame.triage
 from evals import judge
 from evals.calibrate import check_calibrated
+from evals.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from evals.graders.end_to_end import (
     ExpectedRun,
     grade_findings,
@@ -45,9 +46,6 @@ from out_of_frame.config import (
     INJECTION_EFFORT,
     INJECTION_MAX_TOKENS,
     INJECTION_MODEL,
-    JUDGE_EFFORT,
-    JUDGE_MAX_TOKENS,
-    JUDGE_MODEL,
     MAX_TOKENS,
     MODEL,
 )
