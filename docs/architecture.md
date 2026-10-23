@@ -17,6 +17,7 @@ flowchart TD
         START((" ")):::start
         U(["User"]):::human
         M["Extract the property address,<br/>commute destinations<br/>and departure times"]:::model
+        L["Find the language<br/>the user wants"]:::model
         G["Geocode every address"]:::code
         NOM[["Nominatim<br/>geocoding API"]]:::ext
         C{"Anything missing<br/>or unclear?"}:::code
@@ -24,7 +25,7 @@ flowchart TD
         DONE(["Input complete"]):::milestone
         START --> U
         U -->|"any message"| M
-        M --> G
+        M --> L --> G
         G --> C
         G -.-|"only if there are any"| NOM
         C -.->|"yes"| A
@@ -93,9 +94,11 @@ flowchart TD
         RS(["Report starts"]):::milestone
         W["Write the report<br/>from the state, with its own prompt<br/>why each object matters, from its type<br/>unidentified and not investigated<br/>objects at the end"]:::model
         REF["Fill in the references<br/>from the evidence,<br/>add the journeys"]:::code
+        TL["Translate the texts<br/>that code adds"]:::model
         OUT(["Report to the user"]):::human
         STOP(("●")):::stop
         RS --> W --> REF
+        REF -.-|"only if not English"| TL
         REF -.->|"all IDs found"| OUT
         REF -.->|"unknown ID or an object left out:<br/>write again"| W
         OUT --> STOP
@@ -144,6 +147,11 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    - The model picks out only what the user added or changed in this message, never
      coordinates. Code applies these changes; everything else stays as it was, destination
      IDs included.
+   - After each message, a model call reads all of the user's messages, without the agent's
+     questions, and names the language the user wants the answers in: later messages count
+     more, and a pasted listing and addresses do not count. The agent writes in that
+     language, the questions and the report alike, and in English if the messages do not
+     show it, such as messages with only an address.
    - After each message, code geocodes every address again and never changes its text. The
      new result replaces the old one. An address gets coordinates only if there is exactly
      one precise match. If nothing matches, several places match, or the match is only a
@@ -213,7 +221,13 @@ phases, and nothing is kept for the next run. The flowchart does not show the st
    identified objects, the identified plans, and the objects that could not be identified or
    were not investigated. Code adds the title, a line that a language model wrote the report
    and its facts should be checked against the sources, and the parts above under headings of
-   their own.
+   their own. The model writes the report in the user's language. The texts that code adds
+   are in English, with placeholders, such as the address or a time, that code fills in. For
+   another language, a model call translates these texts, and code checks that each
+   translation is not empty and keeps its placeholders; if one does not, they all stay in
+   English. So no value of the run, such as the address, a time or a link, passes through the
+   translation. The credits that the licences require stay in
+   English, word for word.
 
 ## The state
 
@@ -245,6 +259,7 @@ validation are left to the code.
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
 | `messages` | list of Message | The conversation in the input phase | Append |
+| `language` | text, or null | The language the user wants the answers in, by its name in English; null if the messages do not show it, and the agent writes in English then | Replace |
 | `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
 | `sources` | list of Source | Geocoding, map and plan responses, plus Tavily snippets and pages cited by findings | Append |
@@ -356,17 +371,18 @@ message is the input of the run and goes straight into `messages`.
 | Phase | Step | Who | Reads | Writes |
 |---|---|---|---|---|
 | Input | Extract the property address, commute destinations and departure times | model + code | `messages`, `property.text`, `destinations[]` without `address.coordinates` and `address.source_id` | `property.text`, `destinations[]`: `id`, `name`, `address.text`, `leave_home`, `leave_place` |
+| Input | Find the language the user wants | model | the user's `messages`, without the agent's questions | `language` |
 | Input | Geocode every address | code | `property.text`, `destinations[]` (only `address.text` is geocoded) | `property.coordinates`, `property.source_id`, `destinations[].address.coordinates`, `destinations[].address.source_id`, `sources` |
 | Input | Anything missing or unclear? | code | `property`, `destinations`, the geocoding `sources` they point to | nothing |
-| Input | Ask for what is missing | model | `messages`, and what is missing, computed by code | `messages`: the question and the user's answer |
+| Input | Ask for what is missing | model | `messages`, `language`, and what is missing, computed by code | `messages`: the question and the user's answer |
 | Research | Get map objects in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Triage | model + code | one remaining map object per call: `id`, `source_id`, and the kind of the `sources` entry that it names, which keeps plans out (code); `name`, `details` without the category (model) | `findings` for clear objects; code sets `map_object_id` and `evidence_id` |
 | Research | Get the addresses of the objects to investigate | code | `map_objects`, `findings`: which objects go to investigation, computed by code; the kind of the `sources` entry that each one's `source_id` names: only map objects have addresses; each one's element in that map response, which gives its OSM type, ID and tags | `map_objects[].addresses` of those objects |
 | Research | Get B-Plans in the radius | code | `property.coordinates` | `map_objects`, `sources`, `failures` |
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects`, and the kind of the entry of `sources` that its `source_id` names | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
-| Report | Write the report | model + code | code reads the kind of the `sources` entry that each object's `source_id` names, which marks plans; model reads `map_objects` without the category, `findings`, `failures` other than transit; on a retry, the unknown IDs and the objects left out (code) | `report` |
-| Report | Fill in the references | code | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys`, `destinations[]`: `id`, `name`, `leave_home`, `leave_place` | `report` |
+| Report | Write the report | model + code | code reads the kind of the `sources` entry that each object's `source_id` names, which marks plans; model reads `language`, `map_objects` without the category, `findings`, `failures` other than transit; on a retry, the unknown IDs and the objects left out (code) | `report` |
+| Report | Fill in the references | code + model | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys`, `destinations[]`: `id`, `name`, `leave_home`, `leave_place` (code); if `language` is not English, a model call translates the texts that code adds, from those texts alone, never the state, and code checks their placeholders (model) | `report` |
 
 ### The investigation subgraph
 
@@ -454,7 +470,9 @@ when the model fails. So the model cannot invent a reference or drop an object.
 
 Only web pages can bring in prompt injection: text written to give the model instructions.
 Map and plan data are trusted. The user's messages reach only the input phase, and later
-phases get only addresses, names and times from it.
+phases get only addresses, names, times and the name of a language from it. The model gives
+that name in free form, so a user could put other words into it; they would change only their
+own report.
 
 Before the investigation model sees a snippet or a page, a separate model call checks it for
 instructions aimed at the model. This checker has no tools and answers only yes or no, so
@@ -481,6 +499,10 @@ Code retries each call to the model or a source a few times. If it still fails:
   rest continues.
 - **Web search in an investigation:** the object stays unidentified, and the other
   investigations continue.
+
+The translation of the texts that code adds to the report is the exception among model calls:
+a failed call, an answer that is cut off or does not parse, or a translation that does not fit
+leaves all of them in English. The report still comes out.
 
 In the last three cases, code adds the service to `failures` and at once shows the user one
 fixed sentence per failed service, for example "Development plans could not be loaded, so the

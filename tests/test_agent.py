@@ -41,7 +41,7 @@ from out_of_frame.state import (
 from out_of_frame.web_search import PageText, WebSearchError
 from tests.test_finding import ANSWER, FakeModel
 from tests.test_investigation import SEARCH, SNIPPET, FakeWebSearch
-from tests.test_report import FakeWriter
+from tests.test_report import GERMAN, FakeWriter, stub_the_translation
 from tests.test_triage import UNCLEAR as TRIAGE_UNCLEAR
 from tests.test_triage import stub_the_triage
 
@@ -112,11 +112,13 @@ def stub_the_conversation(
     monkeypatch,
     addresses: dict[str, str | None] | None = None,
     destinations: list[ExtractedDestination] | None = None,
+    language: str | None = None,
 ) -> list:
     """The extract call takes the user's whole last message for the property's address, or
     finds the address that addresses gives for it, None for none, and the user travels to the
-    destinations, by default nowhere; the questions are Question 1, Question 2 and so on.
-    Returns what code found missing for each question."""
+    destinations, by default nowhere; the user writes in the language, by default not known;
+    the questions are Question 1, Question 2 and so on. Returns what code found missing for
+    each question."""
     asked = []
 
     def extract(state):
@@ -129,6 +131,7 @@ def stub_the_conversation(
         return f"Question {len(asked)}"
 
     monkeypatch.setattr(conversation, "extract", extract)
+    monkeypatch.setattr(conversation, "detect_language", lambda state: language)
     monkeypatch.setattr(conversation, "ask", ask)
     return asked
 
@@ -168,6 +171,19 @@ INDUSTRY = [  # the five nearest industrial objects around Freiheit 22, nearest 
     "osm-way-813407382",
     "osm-way-185943862",
 ]
+
+
+def test_a_user_who_writes_german_gets_the_report_in_german(monkeypatch):
+    stub_the_sources(monkeypatch)
+    stub_the_models(monkeypatch)
+    stub_the_conversation(monkeypatch, language="German")
+    writer = FakeWriter()
+    monkeypatch.setattr(report, "build_report_model", lambda: writer)
+    stub_the_translation(monkeypatch, GERMAN)
+    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    assert state.language == "German"
+    assert "Write the whole report in German" in writer.requests[0][0].content
+    assert state.report is not None and state.report.startswith(f"# Was liegt um {FREIHEIT_22}")
 
 
 def test_every_industrial_object_is_investigated_in_parallel(monkeypatch):

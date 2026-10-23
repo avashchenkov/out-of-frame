@@ -100,6 +100,7 @@ def build_graph():
         raise ValueError("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE must be at least 2")
     builder = StateGraph(RunState, context_schema=Context)
     builder.add_node(extract_input)
+    builder.add_node(detect_language)
     builder.add_node(geocode_input)
     builder.add_node(ask_for_missing)
     builder.add_node(wait_for_answer)
@@ -112,7 +113,8 @@ def build_graph():
     builder.add_node(write_report)
     builder.add_node(fill_references)
     builder.add_edge(START, "extract_input")
-    builder.add_edge("extract_input", "geocode_input")
+    builder.add_edge("extract_input", "detect_language")
+    builder.add_edge("detect_language", "geocode_input")
     builder.add_conditional_edges(
         "geocode_input", check_input, ["ask_for_missing", *RESEARCH_STARTS]
     )
@@ -137,6 +139,12 @@ def extract_input(state: RunState) -> dict:
     """The changes that the user's last message makes, see conversation.apply; everything else
     stays as it was."""
     return conversation.apply(conversation.extract(state), state)
+
+
+def detect_language(state: RunState) -> dict:
+    """The language that the user wants the answers in, after each of their messages, so that
+    the questions are in it too."""
+    return {"language": conversation.detect_language(state)}
 
 
 def geocode_input(state: RunState) -> dict:
@@ -304,5 +312,7 @@ def write_report(state: RunState, runtime: Runtime[Context]) -> dict:
 
 
 def fill_references(state: RunState) -> dict:
+    """The report a person reads, with the texts that code adds in the user's language."""
     assert state.report is not None  # write_report comes first
-    return {"report": report.fill_references(state.report, state)}
+    texts = report.translate_texts(state.find_language())
+    return {"report": report.fill_references(state.report, state, texts)}

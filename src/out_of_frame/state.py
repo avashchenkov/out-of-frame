@@ -209,10 +209,13 @@ def replace_by_id(old: list, new: list) -> list:
 class RunState(Record):
     """The state of one run, see docs/architecture.md#the-state. LangGraph appends a node's
     messages, sources, map objects, findings and journeys to the lists, a map object in place of
-    the one with its ID, adds each new failure, and replaces the property, the destinations and
-    the report."""
+    the one with its ID, adds each new failure, and replaces the language, the property, the
+    destinations and the report."""
 
     messages: Annotated[list[Message], operator.add] = []  # the conversation in the input phase
+    # The language the user wants the answers in, by its name in English, as the model reads it
+    # from their messages; null if they do not show it.
+    language: str | None = None
     property: Address | None = None  # null until the user gives its address
     # Null until the user says where they travel, empty if nowhere; replaced as a whole list.
     destinations: list[Destination] | None = None
@@ -222,6 +225,10 @@ class RunState(Record):
     journeys: Annotated[list[Journey], operator.add] = []  # two per destination, there and back
     failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
     report: str | None = None  # the model's draft, then the report with its references filled in
+
+    def find_language(self) -> str:
+        """The language that the agent writes in: the user's, or English if it is not known."""
+        return self.language or "English"
 
     def find_source_kind(self, map_object: MapObject) -> ObjectSourceKind:
         """The kind of the source that the object comes from, by its source ID."""

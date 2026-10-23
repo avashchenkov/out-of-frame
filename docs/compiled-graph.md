@@ -21,6 +21,7 @@ config:
 graph TD;
 	__start__([<p>__start__</p>]):::first
 	extract_input(extract_input)
+	detect_language(detect_language)
 	geocode_input(geocode_input)
 	ask_for_missing(ask_for_missing)
 	wait_for_answer(wait_for_answer)
@@ -35,7 +36,8 @@ graph TD;
 	__end__([<p>__end__</p>]):::last
 	__start__ --> extract_input;
 	ask_for_missing --> wait_for_answer;
-	extract_input --> geocode_input;
+	detect_language --> geocode_input;
+	extract_input --> detect_language;
 	geocode_input -.-> ask_for_missing;
 	geocode_input -.-> get_map_objects;
 	geocode_input -.-> get_plans;

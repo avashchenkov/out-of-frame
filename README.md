@@ -17,6 +17,8 @@ You give it an address or a listing. It asks where you travel regularly and when
 4. writes a report: what each object is, how far it is, why it matters to someone living
    there, and the source of each fact.
 
+It writes in the language you write in.
+
 It is a LangGraph agent on Claude Haiku 5.5, with Tavily for web search. Code decides what
 runs next, except when the model stops searching for one object, checks that every finding
 from a web search quotes its page word for word, and fills in the references. See the

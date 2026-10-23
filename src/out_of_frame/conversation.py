@@ -51,6 +51,14 @@ class ExtractedDestination(BaseModel):
     )
 
 
+class UserLanguage(BaseModel):
+    """The language that the user wants the answers in."""
+
+    language: str | None = Field(
+        description="The language by its name in English; null if the messages do not show it."
+    )
+
+
 class Change(BaseModel):
     """What the user's last message adds to the input or changes in it."""
 
@@ -78,9 +86,9 @@ def extract(state: RunState) -> Change:
 
 def apply(change: Change, state: RunState) -> dict:
     """The fields of the input that the change replaces. A new address has no coordinates yet:
-    code geocodes it next. A place so far keeps its ID and each field that the change leaves
-    null. A new place gets a new ID, and so does one with an ID that is not among the places so
-    far, or that the change gives twice."""
+    code geocodes it next. A place so far keeps its ID and each
+    field that the change leaves null. A new place gets a new ID, and so does one with an ID
+    that is not among the places so far, or that the change gives twice."""
     update: dict = {}
     if change.property_address is not None:
         update["property"] = Address(text=change.property_address)
@@ -106,6 +114,19 @@ def apply(change: Change, state: RunState) -> dict:
         else:
             destinations.append(old.model_copy(update=fields))
     return update | {"destinations": destinations}
+
+
+def detect_language(state: RunState) -> str | None:
+    """The language that the user wants the answers in, by its name in English, as the model
+    reads it from all of the user's messages; null if they do not show it. Each message is
+    numbered, so that a pasted text with blank lines in it is not taken for several."""
+    system = SystemMessage(render("language.md.j2"))
+    texts = [message.text for message in state.messages if message.role == "user"]
+    text = "\n\n".join(f"Message {n}:\n{text}" for n, text in enumerate(texts, 1))
+    answer: Any = build_language_model().invoke([system, HumanMessage(text)])
+    if answer["raw"].response_metadata.get("stop_reason") != "end_turn" or not answer["parsed"]:
+        raise ConversationError("the answer about the language was cut off or does not parse")
+    return answer["parsed"].language
 
 
 def find_missing(state: RunState) -> list[str]:
@@ -143,7 +164,7 @@ def find_missing(state: RunState) -> list[str]:
 
 def ask(state: RunState, missing: list[str]) -> str:
     """The question to the user about what code found missing."""
-    system = SystemMessage(render("ask.md.j2", missing=missing))
+    system = SystemMessage(render("ask.md.j2", missing=missing, language=state.find_language()))
     answer = build_ask_model().invoke([system, *build_chat(state.messages)])
     question = answer.text.strip()
     if answer.response_metadata.get("stop_reason") != "end_turn" or not question:
@@ -165,6 +186,14 @@ def build_extract_model():
     """The model with native structured output, which leaves it its thinking, as in
     triage.build_triage_model."""
     return build_chat_model().with_structured_output(Change, method="json_schema", include_raw=True)
+
+
+@cache
+def build_language_model():
+    """The model with native structured output, as in build_extract_model."""
+    return build_chat_model().with_structured_output(
+        UserLanguage, method="json_schema", include_raw=True
+    )
 
 
 @cache

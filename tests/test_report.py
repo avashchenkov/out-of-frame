@@ -3,8 +3,11 @@
 import datetime as dt
 import re
 
+import anthropic
+import httpx
 import pytest
 from langchain_core.messages import AIMessage
+from langchain_core.runnables import RunnableLambda
 
 from out_of_frame import report
 from out_of_frame.config import REPORT_ATTEMPTS
@@ -53,6 +56,7 @@ STATE = RunState(
     findings=[FOUND],
 )
 OSM = "https://www.openstreetmap.org/way"
+ENGLISH = report.write_english_texts()
 SITE_LINKS = f"([example.org](https://example.org/test-gmbh), [map]({OSM}/1))"
 
 
@@ -360,7 +364,7 @@ def test_the_report_says_which_kinds_it_checks(monkeypatch):
 def test_the_report_says_that_a_language_model_wrote_it(monkeypatch):
     text, _ = write(monkeypatch)
     assert text.startswith(
-        f"# What lies around Freiheit 22, 13597 Berlin\n\n{report.LANGUAGE_MODEL_NOTE}\n\n"
+        f"# What lies around Freiheit 22, 13597 Berlin\n\n{ENGLISH.language_model_note}\n\n"
     )
 
 
@@ -368,14 +372,127 @@ def test_the_model_writes_the_sections_of_the_report(monkeypatch):
     _, writer = write(monkeypatch)
     rules = " ".join(writer.requests[0][0].content.split())
     assert "Write the report in Markdown, in these sections, in this order" in rules
-    assert '"## Nearby"' in rules and '"## Development plans"' in rules
-    assert '"## Not identified", the objects that could not be identified' in rules
+    assert 'heading of level 2 that means, in English: "Nearby"' in rules
+    assert '"Development plans"' in rules
+    assert '"Not identified", the objects that could not be identified' in rules
 
 
 def test_code_adds_its_parts_around_the_sections_of_the_draft(monkeypatch):
     text, _ = write(monkeypatch, STATE, "## Nearby\n\nA workshop makes parts [osm-way-1].")
     assert (
-        f"{report.LANGUAGE_MODEL_NOTE}\n\n## Nearby\n\nA workshop makes parts {SITE_LINKS}.\n\n"
+        f"{ENGLISH.language_model_note}\n\n## Nearby\n\nA workshop makes parts {SITE_LINKS}.\n\n"
         "## About this report\n\nThe report covers"
     ) in text
     assert ".\n\n## Licences\n\n- " in text
+
+
+def test_the_model_writes_the_report_in_the_users_language(monkeypatch):
+    _, writer = write(monkeypatch, STATE.model_copy(update={"language": "German"}))
+    rules = " ".join(writer.requests[0][0].content.split())
+    assert "Write the whole report in German, its headings too" in rules
+    assert "Keep names and addresses as they are" in rules
+    _, writer = write(monkeypatch)
+    assert "Write the whole report in English, its headings" in writer.requests[0][0].content
+
+
+GERMAN = {
+    "title": "Was liegt um {address}",
+    "language_model_note": "Ein Sprachmodell hat diesen Bericht geschrieben.",
+    "about_heading": "Über diesen Bericht",
+    "scope": "Der Bericht nennt die {objects} nächsten Objekte jeder Art: {kinds}; und die "
+    "{plans} nächsten Bebauungspläne.",
+    "kinds": "Industrie",
+    "licences_heading": "Lizenzen",
+    "map_link": "Karte",
+}
+
+
+def stub_the_translation(monkeypatch, texts: dict, stop_reason="end_turn", parses=True) -> list:
+    """The translation model answers with the English texts, the given ones changed, or with an
+    answer that does not parse; returns the requests."""
+    requests = []
+
+    def reply(request):
+        requests.append(request)
+        raw = AIMessage("", response_metadata={"stop_reason": stop_reason})
+        parsed = ENGLISH.model_copy(update=texts) if parses else None
+        return {"raw": raw, "parsed": parsed, "parsing_error": None if parses else "not JSON"}
+
+    monkeypatch.setattr(report, "build_translation_model", lambda: RunnableLambda(reply))
+    return requests
+
+
+def test_code_adds_its_texts_in_the_users_language_but_the_credits_word_for_word(monkeypatch):
+    requests = stub_the_translation(monkeypatch, GERMAN)
+    texts = report.translate_texts("German")
+    text = fill_references("A workshop [osm-way-1].", STATE, texts)
+    assert text == (
+        "# Was liegt um Freiheit 22, 13597 Berlin\n\n"
+        "Ein Sprachmodell hat diesen Bericht geschrieben.\n\n"
+        f"A workshop ([example.org](https://example.org/test-gmbh), [Karte]({OSM}/1)).\n\n"
+        "## Über diesen Bericht\n\n"
+        "Der Bericht nennt die 5 nächsten Objekte jeder Art: Industrie; und die 5 nächsten "
+        "Bebauungspläne.\n\n"
+        f"## Lizenzen\n\n- {report.OSM_CREDIT}"
+    )
+    [[prompt]] = requests
+    assert prompt.content.startswith("Translate the texts below into German.")
+    assert '"title": "What lies around {address}"' in prompt.content
+
+
+def test_english_texts_need_no_translation(monkeypatch):
+    requests = stub_the_translation(monkeypatch, GERMAN)
+    assert report.translate_texts("English") == ENGLISH and requests == []
+
+
+@pytest.mark.parametrize(
+    "field, translation",
+    [
+        ("title", "Was liegt hier"),
+        ("title", "Was liegt um {adresse}"),
+        ("title", "{address}: {address}"),
+        ("title", "Was liegt um {address}}"),
+        ("title", "Was liegt um {address:{missing}}"),
+        ("minutes", "{minutes:s} Min."),
+        ("title", "Was liegt um {address!r}"),
+        ("minutes", "{minutes} Min. {minutes}"),
+        (
+            "journey",
+            "{destination}: hin ab {leave_home}, {back}; zurück ab {leave_place}, {there}.",
+        ),
+        ("language_model_note", " "),
+    ],
+    ids=[
+        "dropped",
+        "renamed",
+        "repeated",
+        "a stray bracket",
+        "a nested field",
+        "a format",
+        "a conversion",
+        "an extra one",
+        "two that change places",
+        "empty",
+    ],
+)
+def test_one_text_that_does_not_fit_leaves_every_text_in_english(monkeypatch, field, translation):
+    stub_the_translation(monkeypatch, GERMAN | {field: translation})
+    assert report.translate_texts("German") == ENGLISH
+
+
+@pytest.mark.parametrize(
+    "stop_reason, parses", [("max_tokens", True), ("end_turn", False)], ids=["cut off", "no parse"]
+)
+def test_a_translation_that_is_cut_off_or_does_not_parse_leaves_the_texts_in_english(
+    monkeypatch, stop_reason, parses
+):
+    stub_the_translation(monkeypatch, GERMAN, stop_reason, parses)
+    assert report.translate_texts("German") == ENGLISH
+
+
+def test_a_failed_translation_call_leaves_the_texts_in_english(monkeypatch):
+    def fail(request):
+        raise anthropic.APIConnectionError(request=httpx.Request("POST", "https://example.org"))
+
+    monkeypatch.setattr(report, "build_translation_model", lambda: RunnableLambda(fail))
+    assert report.translate_texts("German") == ENGLISH

@@ -9,7 +9,12 @@ from pydantic import ValidationError
 
 from evals.load import FIXTURES
 from out_of_frame import conversation
-from out_of_frame.conversation import Change, ConversationError, ExtractedDestination
+from out_of_frame.conversation import (
+    Change,
+    ConversationError,
+    ExtractedDestination,
+    UserLanguage,
+)
 from out_of_frame.state import Address, Coordinates, Destination, Message, RunState, Source
 
 LISTING = "Bright flat at Freiheit 22, 13597 Berlin. Viewings: our office, Hauptstraße 1."
@@ -91,6 +96,38 @@ def extracted(name, id=None, address=None, leave_home=None, leave_place=None):
     return ExtractedDestination(
         id=id, name=name, address=address, leave_home=leave_home, leave_place=leave_place
     )
+
+
+def stub_the_language(monkeypatch, language, stop_reason="end_turn") -> list:
+    """The language model answers with the language; returns the requests."""
+    requests = []
+
+    def reply(request):
+        requests.append(request)
+        raw = AIMessage("", response_metadata={"stop_reason": stop_reason})
+        return {"raw": raw, "parsed": UserLanguage(language=language), "parsing_error": None}
+
+    monkeypatch.setattr(conversation, "build_language_model", lambda: RunnableLambda(reply))
+    return requests
+
+
+def test_the_model_names_the_language_from_the_users_messages_alone(monkeypatch):
+    requests = stub_the_language(monkeypatch, "German")
+    assert conversation.detect_language(STATE) == "German"
+    [(system, user)] = requests
+    # Numbered, and without the agent's question
+    assert user == HumanMessage(f"Message 1:\nHello\n\nMessage 2:\n{LISTING}")
+    rules = " ".join(system.content.split())
+    assert "Later messages count more than earlier ones" in rules
+    assert "not a text they pasted, such as a property listing" in rules
+    assert "Give null if the messages do not show it" in rules
+    assert RunState().find_language() == "English"
+
+
+def test_an_answer_about_the_language_that_is_cut_off_stops_the_run(monkeypatch):
+    stub_the_language(monkeypatch, "German", "max_tokens")
+    with pytest.raises(ConversationError):
+        conversation.detect_language(STATE)
 
 
 def test_a_change_without_destinations_leaves_them_and_a_new_address_has_no_coordinates():
@@ -201,6 +238,14 @@ def test_the_question_is_about_what_code_found_missing(monkeypatch):
     assert "ask which one is meant" in system.content and f"- {missing[0]}" in system.content
     assert "say that they may travel nowhere" in system.content
     assert chat == CHAT
+
+
+@pytest.mark.parametrize("language, told", [(None, "English"), ("German", "German")])
+def test_the_question_is_in_the_users_language(monkeypatch, language, told):
+    requests = stub_the_ask(monkeypatch, "Welche Adresse?")
+    conversation.ask(STATE.model_copy(update={"language": language}), ["No address."])
+    [(system, *_)] = requests
+    assert f"Write plainly, in {told}, in one to four short sentences" in system.content
 
 
 @pytest.mark.parametrize(
