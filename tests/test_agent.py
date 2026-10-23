@@ -35,7 +35,6 @@ from out_of_frame.state import (
     Finding,
     Journey,
     MapObject,
-    Message,
     RunState,
     replace_by_id,
 )
@@ -289,7 +288,10 @@ def test_a_precise_address_in_the_first_message_starts_research_without_a_questi
     stub_the_sources(monkeypatch)
     asked = stub_the_conversation(monkeypatch)
     state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch())
-    assert asked == [] and state.messages == [Message(role="user", text=FREIHEIT_22)]
+    assert asked == [] and [(m.type, m.text) for m in state.messages[:-1]] == [
+        ("human", FREIHEIT_22)
+    ]
+    assert state.messages[-1].id == "final-report"
     assert state.property == Address(
         text=FREIHEIT_22,
         coordinates=Coordinates(lat=52.5292863, lon=13.2357896),
@@ -310,12 +312,12 @@ def test_the_agent_asks_until_the_address_resolves_then_goes_on(monkeypatch):
         ["The user has not given the property's address."],
         ["'Freiheit, Berlin' matches only a street or an area, not one building."],
     ]
-    assert [(message.role, message.text) for message in state.messages] == [
-        ("user", "Hello"),
-        ("agent", "Question 1"),
-        ("user", "Freiheit, Berlin"),
-        ("agent", "Question 2"),
-        ("user", FREIHEIT_22),
+    assert [(message.type, message.text) for message in state.messages[:-1]] == [
+        ("human", "Hello"),
+        ("ai", "Question 1"),
+        ("human", "Freiheit, Berlin"),
+        ("ai", "Question 2"),
+        ("human", FREIHEIT_22),
     ]
     assert state.property is not None and state.property.source_id == "nominatim-2"
     assert [source.request for source in state.sources if source.kind == "geocoding"] == [

@@ -7,13 +7,13 @@ import itertools
 from functools import cache
 from typing import Any
 
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from out_of_frame import geocoding
 from out_of_frame.chat_model import build_chat_model
 from out_of_frame.finding import render
-from out_of_frame.state import Address, Destination, Message, RunState
+from out_of_frame.state import Address, Destination, RunState
 
 # A clock time as the model gives it, such as 07:45, or 7:45 as the user may write it: the API
 # shows the model this pattern but does not enforce it.
@@ -121,7 +121,7 @@ def detect_language(state: RunState) -> str | None:
     reads it from all of the user's messages; null if they do not show it. Each message is
     numbered, so that a pasted text with blank lines in it is not taken for several."""
     system = SystemMessage(render("language.md.j2"))
-    texts = [message.text for message in state.messages if message.role == "user"]
+    texts = [message.text for message in state.messages if message.type == "human"]
     text = "\n\n".join(f"Message {n}:\n{text}" for n, text in enumerate(texts, 1))
     answer: Any = build_language_model().invoke([system, HumanMessage(text)])
     if answer["raw"].response_metadata.get("stop_reason") != "end_turn" or not answer["parsed"]:
@@ -172,13 +172,10 @@ def ask(state: RunState, missing: list[str]) -> str:
     return question
 
 
-def build_chat(messages: list[Message]) -> list[BaseMessage]:
+def build_chat(messages: list[BaseMessage]) -> list[BaseMessage]:
     """The conversation as the model's own chat: the user's messages, and the agent's questions
     as the model's turns. It ends with the user's last message."""
-    return [
-        HumanMessage(message.text) if message.role == "user" else AIMessage(message.text)
-        for message in messages
-    ]
+    return list(messages)
 
 
 @cache

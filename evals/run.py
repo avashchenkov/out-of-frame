@@ -226,7 +226,10 @@ def run_input_loop(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Tria
         except (dialogue.UnansweredQuestionError, UnrecordedRequestError) as error:  # its failure
             failure = repr(error)
     state = RunState.model_validate(graph.get_state(config).values)
-    transcript: list[dict] = [message.model_dump() for message in state.messages]
+    transcript: list[dict] = [
+        {"role": "user" if message.type == "human" else "agent", "text": message.text}
+        for message in state.messages
+    ]
     if failure is not None:
         transcript.append({"failure": failure})
     return Trial(state, transcript)

@@ -4,7 +4,9 @@ import datetime as dt
 import operator
 from typing import Annotated, Literal, Self
 
-from pydantic import ConfigDict, Field, model_validator
+from langchain_core.messages import AnyMessage, BaseMessage, convert_to_messages
+from langgraph.graph.message import add_messages
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from out_of_frame.record import Record
 
@@ -212,7 +214,7 @@ class RunState(Record):
     the one with its ID, adds each new failure, and replaces the language, the property, the
     destinations and the report."""
 
-    messages: Annotated[list[Message], operator.add] = []  # the conversation in the input phase
+    messages: Annotated[list[AnyMessage], add_messages] = []  # input conversation and final report
     # The language the user wants the answers in, by its name in English, as the model reads it
     # from their messages; null if they do not show it.
     language: str | None = None
@@ -225,6 +227,28 @@ class RunState(Record):
     journeys: Annotated[list[Journey], operator.add] = []  # two per destination, there and back
     failures: Annotated[list[Service], add_new] = []  # the services that failed after retries
     report: str | None = None  # the model's draft, then the report with its references filled in
+
+    @field_validator("messages", mode="before")
+    @classmethod
+    def load_messages(cls, messages):
+        """Read both LangChain messages and the original saved {role, text} records."""
+        converted = []
+        for message in messages:
+            if isinstance(message, Message):
+                message = message.model_dump()
+            if isinstance(message, dict) and "text" in message and "role" in message:
+                message = {
+                    "role": "assistant" if message["role"] == "agent" else "user",
+                    "content": message["text"],
+                }
+            # Pydantic reads saved LangChain records without moving their metadata.
+            if isinstance(message, BaseMessage) or (
+                isinstance(message, dict) and "type" in message
+            ):
+                converted.append(message)
+            else:
+                converted.extend(convert_to_messages([message]))
+        return converted
 
     def find_language(self) -> str:
         """The language that the agent writes in: the user's, or English if it is not known."""

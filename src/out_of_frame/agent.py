@@ -6,6 +6,7 @@ import logging
 import uuid
 from functools import cache
 
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
@@ -27,7 +28,7 @@ from out_of_frame import (
 from out_of_frame.config import INVESTIGATIONS_AT_ONCE
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
-from out_of_frame.state import Address, MapObject, Message, ObjectSourceKind, RunState
+from out_of_frame.state import Address, MapObject, ObjectSourceKind, RunState
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ RESEARCH_STARTS = ["get_map_objects", "get_plans", "plan_journeys"]
 
 def start(message: str) -> RunState:
     """The state that a run starts from: the user's first message."""
-    return RunState(messages=[Message(role="user", text=message)])
+    return RunState(messages=[HumanMessage(message)])
 
 
 def start_thread() -> RunnableConfig:
@@ -61,26 +62,30 @@ def find_question(graph, config: RunnableConfig) -> str | None:
 
 
 @cache
-def build_graph():
-    """The graph, which keeps the state of each run in memory, so that a run can wait for the
-    user's answer and go on; a known MVP limitation: a run that stops is not continued once
-    the process has ended."""
+def build_graph(*, checkpointer=None):
+    """The cached CLI/eval graph, with memory unless its caller supplies storage."""
+    return compile_graph(checkpointer=checkpointer)
+
+
+def compile_graph(*, checkpointer=None, context_schema=Context, node_wrapper=None):
+    """The agent with a caller-owned checkpointer, or memory for the CLI and evals."""
     if INVESTIGATIONS_AT_ONCE < 2:  # a stream with its subgraphs takes one, see config.py
         raise ValueError("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE must be at least 2")
-    builder = StateGraph(RunState, context_schema=Context)
-    builder.add_node(extract_input)
-    builder.add_node(detect_language)
-    builder.add_node(geocode_input)
-    builder.add_node(ask_for_missing)
-    builder.add_node(wait_for_answer)
-    builder.add_node(get_map_objects)
-    builder.add_node(get_plans)
-    builder.add_node(plan_journeys)
-    builder.add_node(triage_objects)
-    builder.add_node(get_addresses)
-    builder.add_node(investigate_object)
-    builder.add_node(write_report)
-    builder.add_node(fill_references)
+    builder = StateGraph(RunState, context_schema=context_schema)
+    wrap = node_wrapper or (lambda node: node)
+    builder.add_node(wrap(extract_input))
+    builder.add_node(wrap(detect_language))
+    builder.add_node(wrap(geocode_input))
+    builder.add_node(wrap(ask_for_missing))
+    builder.add_node(wrap(wait_for_answer))
+    builder.add_node(wrap(get_map_objects))
+    builder.add_node(wrap(get_plans))
+    builder.add_node(wrap(plan_journeys))
+    builder.add_node(wrap(triage_objects))
+    builder.add_node(wrap(get_addresses))
+    builder.add_node(wrap(investigate_object))
+    builder.add_node(wrap(write_report))
+    builder.add_node(wrap(fill_references))
     builder.add_edge(START, "extract_input")
     builder.add_edge("extract_input", "detect_language")
     builder.add_edge("detect_language", "geocode_input")
@@ -98,9 +103,22 @@ def build_graph():
     builder.add_edge("write_report", "fill_references")
     builder.add_edge("fill_references", END)
     # The state's own records, which the checkpointer may load back without a warning.
-    records = ["Address", "Destination", "Finding", "Journey", "MapObject", "Message", "Source"]
-    serde = JsonPlusSerializer(allowed_msgpack_modules=[("out_of_frame.state", r) for r in records])
-    graph = builder.compile(checkpointer=InMemorySaver(serde=serde))
+    records = [
+        "Address",
+        "Coordinates",
+        "Destination",
+        "Finding",
+        "Journey",
+        "MapObject",
+        "Message",
+        "Source",
+    ]
+    serde = JsonPlusSerializer(
+        allowed_msgpack_modules=[ObjectToInvestigate, *(("out_of_frame.state", r) for r in records)]
+    )
+    graph = builder.compile(
+        checkpointer=checkpointer if checkpointer is not None else InMemorySaver(serde=serde)
+    )
     return graph.with_config(max_concurrency=INVESTIGATIONS_AT_ONCE)
 
 
@@ -149,14 +167,14 @@ def check_input(state: RunState) -> str | list[str]:
 
 def ask_for_missing(state: RunState) -> dict:
     question = conversation.ask(state, conversation.find_missing(state))
-    return {"messages": [Message(role="agent", text=question)]}
+    return {"messages": [AIMessage(question)]}
 
 
 def wait_for_answer(state: RunState) -> dict:
     """The run waits here for the user's answer to the question. On resume LangGraph runs this
     node again from its start, so it makes no model call."""
     answer = interrupt(state.messages[-1].text)
-    return {"messages": [Message(role="user", text=answer)]}
+    return {"messages": [HumanMessage(answer)]}
 
 
 def get_map_objects(state: RunState) -> dict:
@@ -283,5 +301,9 @@ def write_report(state: RunState, runtime: Runtime[Context]) -> dict:
 def fill_references(state: RunState) -> dict:
     """The report a person reads, with the texts that code adds in the user's language."""
     assert state.report is not None  # write_report comes first
+    existing = next((m for m in state.messages if m.id == "final-report"), None)
+    if existing is not None and existing.text == state.report:
+        return {"report": state.report, "messages": [existing]}
     texts = report.translate_texts(state.find_language())
-    return {"report": report.fill_references(state.report, state, texts)}
+    finished = report.fill_references(state.report, state, texts)
+    return {"report": finished, "messages": [AIMessage(finished, id="final-report")]}

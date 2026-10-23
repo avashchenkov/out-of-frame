@@ -139,7 +139,7 @@ flowchart TD
 A run has three phases. All steps share one run state: each step reads it and writes its
 result to it. Each investigation is a subgraph with its own state (see
 [The investigation subgraph](#the-investigation-subgraph)). Only the state passes between
-phases, and nothing is kept for the next run. The flowchart does not show the state; the table
+phases; separate conversations share no state. The flowchart does not show the state; the table
 [What each step reads and writes](#what-each-step-reads-and-writes) does.
 
 1. **Input** is one loop for any first message: a greeting, an address alone or a full
@@ -258,7 +258,7 @@ validation are left to the code.
 
 | Field | Type | Contents | Reducer |
 |---|---|---|---|
-| `messages` | list of Message | The conversation in the input phase | Append |
+| `messages` | list of Message | The input conversation and finished report | Append; a message with a known ID replaces the old one |
 | `language` | text, or null | The language the user wants the answers in, by its name in English; null if the messages do not show it, and the agent writes in English then | Replace |
 | `property` | Address, or null | The property, in Berlin; null until the user gives its address | Replace |
 | `destinations` | list of Destination, or null | The places the user travels to, with departure times; null until the user answers, an empty list if they travel nowhere | Replace the whole list, so a correction wins |
@@ -277,8 +277,9 @@ nowhere.
 classDiagram
     direction LR
     class Message {
-        role: user | agent
-        text: text
+        id: ID
+        role: user | assistant
+        content: text
     }
     class Address {
         text: text
@@ -336,6 +337,17 @@ classDiagram
     Journey --> Destination : destination_id
 ```
 
+Messages use LangChain `HumanMessage` and `AIMessage` records. Questions are saved before
+`interrupt()` pauses the graph; an answer resumes it with `Command(resume=...)`. The finished
+report is an AI message with the stable ID `final-report`, added only after references,
+credits and translated text. Replaying that step replaces the message. The `report` field
+stays available to the CLI and evals; old saved `{role, text}` messages still load.
+
+The caller supplies the checkpointer: memory for the CLI and evals, PostgreSQL for the
+[Aegra demo](demo-architecture.md). A browser conversation uses one thread, with a separate
+execution run for its first message and each answer. The server builds the date and web
+search client for each invocation; they are never saved in the state or accepted from a browser.
+
 `Address.source_id` points to the Nominatim response for this address. If the address is not
 found, or several places match it, code uses this response to build the question for the user.
 
@@ -382,7 +394,7 @@ message is the input of the run and goes straight into `messages`.
 | Research | Investigate each object, one run per object | model + code | one entry of `map_objects`, and the kind of the entry of `sources` that its `source_id` names | one entry of `findings`, the source it cites, `failures` |
 | Research | Plan journeys there and back | code | `property.coordinates`, `destinations[]`: `id`, `address.coordinates`, `leave_home`, `leave_place` | `journeys`, `failures` |
 | Report | Write the report | model + code | code reads the kind of the `sources` entry that each object's `source_id` names, which marks plans; model reads `language`, `map_objects` without the category, `findings`, `failures` other than transit; on a retry, the unknown IDs and the objects left out (code) | `report` |
-| Report | Fill in the references | code + model | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys`, `destinations[]`: `id`, `name`, `leave_home`, `leave_place` (code); if `language` is not English, a model call translates the texts that code adds, from those texts alone, never the state, and code checks their placeholders (model) | `report` |
+| Report | Fill in the references | code + model | `report`, `findings[]`: `map_object_id`, `evidence_id`, `sources`, `journeys`, `destinations[]`: `id`, `name`, `leave_home`, `leave_place` (code); if `language` is not English, a model call translates the texts that code adds, from those texts alone, never the state, and code checks their placeholders (model) | `report`, `messages`: the finished report with ID `final-report` |
 
 ### The investigation subgraph
 

@@ -92,7 +92,7 @@ def test_a_run_that_stops_at_a_question_is_saved_with_it(monkeypatch):
     stub_the_sources(monkeypatch, {"Freiheit, Berlin": "freiheit-street.json"})
     saved, _ = judge.run_agent("Freiheit, Berlin", DATE, MeteredWebSearch(FakeWebSearch()))
     assert "UnansweredQuestionError: Question 1" in saved["error"]
-    assert [message["text"] for message in saved["state"]["messages"]] == [
+    assert [message["content"] for message in saved["state"]["messages"]] == [
         "Freiheit, Berlin",
         "Question 1",
     ]
