@@ -4,8 +4,9 @@ A browser demo of the existing agent: one private conversation per browser ident
 recorded examples, without sign-up. The [agent architecture](architecture.md) describes the
 research; [ADR 4](adr/0004-demo-aegra-and-agent-chat-ui.md) records the stack choice.
 
-TODO: implement this design in [demo steps 6 to 8](roadmap.md#after-the-mvp-the-demo).
-Complete the [launch checklist](demo-launch-checklist.md) before enabling live input.
+This document defines the design. Implementation work and progress are tracked in
+[demo steps 6 to 8](roadmap.md#after-the-mvp-the-demo).
+The [launch checklist](demo-launch-checklist.md) defines the requirements for enabling live input.
 
 ## Services
 
@@ -32,15 +33,15 @@ PostgreSQL persists server records and checkpoints; Aegra v0.10.8
 [requires it](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/core/database.py).
 The setup lives in `demo/`.
 
-TODO: run Redis on the same VPS without RDB snapshots or AOF persistence, and without a
+Redis runs on the same VPS without RDB snapshots or AOF persistence, and without a
 persistent data volume. PostgreSQL holds the work needed for recovery after Redis restarts.
 Aegra's replay buffer already expires
 [10 minutes after the last event](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/services/redis_broker.py);
 the value is defined in [base_broker.py](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/services/base_broker.py).
 Explicit chat deletion also removes its Redis data immediately after workers stop.
 
-TODO: separate evaluation code before packaging. Move the scripted dialogue runner and judge
-settings into `evals/`, with settings in `evals/config.py` and examples in `evals/.env.example`.
+The scripted dialogue runner and judge settings belong in `evals/`, with settings in
+`evals/config.py` and examples in `evals/.env.example`.
 Keep agent settings in `src/out_of_frame/config.py` and the root `.env.example`; Next.js
 server settings use environment variables. The agent must not import eval code or read judge
 settings. Tests and evals call the normal runtime code from outside the package.
@@ -49,7 +50,7 @@ tests, evals, fixtures, development tools, `.env` and `evals/results/`; pass sec
 
 ## Visitor and access
 
-TODO: Next.js sets a random signed, HttpOnly, Secure, SameSite=Lax identity cookie on the
+Next.js sets a random signed, HttpOnly, Secure, SameSite=Lax identity cookie on the
 first admitted message. Refused admission sets no cookie. Its fixed lifetime is in
 [Demo limits](#demo-limits); reading, replying or starting another chat never renews it.
 The proxy verifies signature and expiry and replaces client-supplied identity headers.
@@ -66,7 +67,7 @@ below. Serialise replacement and admission per identity. If a chat quota is exha
 disable replacement while keeping the existing chat readable and deletable.
 A completed conversation can be read or deleted, not continued.
 
-TODO: use an English interface for an English-reading adult technical audience. Before input,
+The interface is in English for an English-reading adult technical audience. Before input,
 show the [start notice and service terms](demo-launch-checklist.md#before-the-first-message).
 Show remaining submissions and the message-length limit. On refusal, explain the relevant
 limit and reset, if any; keep examples, saved reports and deletion available.
@@ -74,7 +75,7 @@ Offer a dedicated author contact for questions, feedback, data requests or an ar
 
 ## From a message to a report
 
-TODO: one conversation is one Aegra thread. The initial message and each answer start separate
+One conversation is one Aegra thread. The initial message and each answer start separate
 runs on that thread:
 
 1. Next.js checks the cookie and region, constructs the permitted request, and Aegra checks
@@ -104,7 +105,7 @@ server-selected checkpoint within the limits. Fixed source-failure notices come 
 
 ### Browser responses
 
-TODO: filter data in the Next.js proxy before it reaches the browser. Agent Chat UI normally
+The Next.js proxy filters data before it reaches the browser. Agent Chat UI normally
 requests [state values and subgraphs](https://github.com/langchain-ai/agent-chat-ui/blob/main/src/components/thread/index.tsx).
 The demo sets stream modes on the server: top-level `values` and `updates`, with subgraph
 streaming off. Forward only visible user messages, questions, the final report, failure codes
@@ -119,17 +120,17 @@ the browser through any exposed route.
 
 ### Report rendering
 
-TODO: escape user addresses and destination names as plain text in `fill_references` and
+Escape user addresses and destination names as plain text in `fill_references` and
 `describe_journeys`, including Markdown link and HTML syntax. List labels are plain text.
 Both live and recorded report views disable raw HTML and bare-URL autolinking while allowing
-explicit source links. Change `OSM_CREDIT` and `TRANSITOUS_CREDIT` in `report.py` to explicit
-Markdown links, preserving the attribution words and targets required by
-[data rights](sources.md#data-rights). Update affected report tests and check grader assumptions.
+explicit source links. `OSM_CREDIT` and `TRANSITOUS_CREDIT` in `report.py` use explicit
+Markdown links with the attribution words and targets required by
+[data rights](sources.md#data-rights).
 Test input such as `[Prize](https://example.com)` alongside working licence links.
 
 ## Static examples
 
-TODO: the author prepares five recorded conversations as frontend files in `demo/`.
+The author prepares five recorded conversations as frontend files in `demo/`.
 Each contains visible messages, the finished Markdown report and fixed service-failure
 notices, with source links, credits and the AI notice. Use public places and fictional
 journeys, without real people's personal details. Review each export; exclude raw graph
@@ -141,7 +142,7 @@ become examples automatically.
 
 ## Retention and deletion
 
-TODO: delete the current conversation by the identity's original expiry. A second conversation
+Delete the current conversation by the identity's original expiry. A second conversation
 gets only the remaining time. `New chat`, `Delete chat`, a valid deletion request or closure
 of the demo removes it earlier. Losing the cookie or closing a tab is not a deletion signal.
 One conversation can have many checkpoints; remove all of them.
@@ -167,7 +168,7 @@ Disable only Aegra's independent background sweeper: it skips active runs and do
 Redis or demo accounting, so it cannot perform the whole procedure safely by itself.
 A small demo task coordinates these extra steps and invokes native pruning at Aegra startup,
 before accepting or recovering expired work, then periodically through an Aegra lifespan
-task with a configurable interval. The same routine backs a planned `demo-cleanup --expired`
+task with a configurable interval. The same routine backs `demo-cleanup --expired`
 or `demo-cleanup --identity <id>` operator command. No extra Compose service or admin UI is needed.
 
 Chat deletion retains admission accounting: the aggregate count for the current Berlin day
@@ -176,7 +177,7 @@ count, current thread reference and any pending-deletion bookkeeping. Clear the 
 after deletion; remove expired identity records after cleanup. Messages and addresses do not
 belong in quota records.
 
-TODO: use private, non-cacheable responses; exclude chat content from backups and persistent
+Use private, non-cacheable responses; exclude chat content from backups and persistent
 frontend caches. Keep chat bodies and source text out of logs and disable external tracing.
 Necessary security log metadata has a separate retention limit below. Test expiry, interrupted
 deletion and restart recovery; record actual deletion timing in the launch checklist.
@@ -184,8 +185,8 @@ Provider retention is separate from deletion on our server.
 
 ## Demo limits
 
-TODO: implement these configurable defaults in `src/out_of_frame/config.py`. This table is
-the source for numeric demo limits; the page and notices use the configured values.
+Configurable defaults belong in `src/out_of_frame/config.py`. This table is the source for
+numeric demo limits; the page and notices use the configured values.
 
 | Setting | Default |
 |---|---|
@@ -210,7 +211,7 @@ admissions. No fingerprinting is planned. Existing limits on model output, sourc
 objects, Tavily tool calls and retries remain. Separate provider budgets are set at launch;
 there is no custom daily money or token ledger.
 
-TODO: the proxy exposes only needed routes, accepts text or a resume answer, and fixes the
+The proxy exposes only needed routes, accepts text or a resume answer, and fixes the
 assistant, `multitask_strategy=reject`, `on_disconnect=continue` and `durability=sync`.
 For retries it selects the latest checkpoint. Reject client execution overrides, state edits,
 branching, stateless runs and arbitrary thread creation; the page also disables regeneration.
@@ -218,7 +219,7 @@ Aegra handlers validate the contract, but
 [cannot rewrite all run fields](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/api/runs.py),
 so request construction stays in Next.js.
 
-TODO: Next.js checks live-run regional eligibility before forwarding requests to providers.
+Next.js checks live-run regional eligibility before forwarding requests to providers.
 Use a trusted hosting signal or a local IP-country database; select the source, update process
 and licence when choosing the host. Never trust a country header supplied by the browser.
 Unsupported or unknown regions get recorded examples. Provider-policy checks belong in the
@@ -226,8 +227,8 @@ Unsupported or unknown regions get recorded examples. Provider-policy checks bel
 
 ## Implementation checks
 
-TODO: start with a free integration check using a stubbed model and sources: a question,
-server restart, answer through the SDK, and a finished report. Then cover:
+The integration check uses a stubbed model and sources: a question, server restart,
+answer through the SDK, and a finished report. Further checks cover:
 
 - disconnection and worker crash during research, recovery and duplicate final-message prevention;
 - visitor isolation, spoofed identity/execution parameters, CSRF and filtered browser responses;

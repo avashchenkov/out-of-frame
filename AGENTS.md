@@ -42,8 +42,11 @@ co-author trailers.
 - Write plain international English: short sentences, common words, no idioms. Many readers
   are not native speakers. Keep prose brief.
 - The README describes only what already exists.
-- In docs and code, mark anything planned but not done yet with `TODO:`, so that a search
-  finds it. The roadmap is the exception: it is the plan itself.
+- Track implementation plans and completion in `docs/roadmap.md`. Architecture docs and ADRs
+  record design and decisions; update them when the design changes, without task statuses.
+  Launch checklists define requirements; track their completion in the roadmap too.
+- Use `TODO:` for specific unfinished work in code or eval tasks, not for unimplemented
+  design requirements throughout the documentation.
 
 ## Development
 
@@ -53,7 +56,7 @@ Python 3.14 with uv. Add dependencies with `uv add` and run commands with `uv ru
   keys.
 - Ask before any run that calls a paid API, the model or web search, with a cost estimate.
 - Agent runtime settings live in `src/out_of_frame/config.py` and the environment; never
-  hard-code them. TODO: move evaluation-only settings to `evals/config.py`, outside the
-  runtime package, with their example environment in `evals/.env.example`.
+  hard-code them. Keep evaluation-only settings outside the runtime package, in
+  `evals/config.py`, with their example environment in `evals/.env.example`.
 - Hand work to another agent or model, such as Codex or Grok, only when the user asks. It works
   read-only and does not hand the work on.

@@ -26,8 +26,8 @@ by admission limits and separate provider budgets. Only the page is open to the 
   Redis enables Aegra's built-in worker recovery and holds temporary stream events.
   PostgreSQL keeps server records and checkpoints.
 
-TODO: implement the decision in demo steps 6 to 8. Next.js manages the cookie, serves examples,
-constructs allowed run requests and filters browser responses. Aegra's demo handlers enforce
+Next.js manages the cookie, serves examples, constructs allowed run requests and filters
+browser responses. Aegra's demo handlers enforce
 ownership and admission. Visitor conversations and reports remain private.
 
 ## Alternatives
@@ -45,11 +45,8 @@ ownership and admission. Visitor conversations and reports remain private.
 
 ## Consequences
 
-TODO: the implementation must account for these changes:
-
 - Agent Chat UI needs LangChain messages in `messages`. Append the finished report once,
   keep `report` for the CLI and judges, and preserve loading of old `{role, text}` runs.
-  Update [the agent state description](../architecture.md#the-state) with that implementation.
 - Questions use `interrupt()`; answers resume a saved checkpoint. Stream progress and saved
   service-failure notices alongside the report. Reconnect to a run after browser disconnection.
 - Each visitor has a separate pseudonymous identity. Set its cookie on the first admitted

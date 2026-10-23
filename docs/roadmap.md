@@ -4,6 +4,9 @@ The intended order to the MVP, and the demo after it. Each step names its result
 Detail the next step before starting it; leave later implementation details open. Change the
 order when a run reveals a reason, and keep the next step clear here.
 
+Track implementation and launch progress here. Architecture docs, ADRs and launch checklists
+define the design, decisions and requirements; they do not track task completion.
+
 For each new behaviour, prepare its eval cases and success criteria before implementing it.
 For code, write a failing test, implement the behaviour and refactor. Extend the eval harness
 only as needed. Each step ends with the tests and eval tasks that can run by then, with
@@ -435,7 +438,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    user's messages, the later ones first, and the report model writes in it. A model call translates the texts that code adds, with placeholders that code fills in, so that no value of the run passes
    through the translation. The eval tasks stay in English, so the judges and their calibration do not
    change.
-5. **The demo architecture, before implementation.** Define the services, private access,
+5. ✅ **The demo architecture, before implementation.** Define the services, private access,
    run flow, static examples, limits and retention in the [demo architecture](demo-architecture.md).
    Align [ADR 4](adr/0004-demo-aegra-and-agent-chat-ui.md) and separate the
    [launch checklist](demo-launch-checklist.md) from the technical design.
