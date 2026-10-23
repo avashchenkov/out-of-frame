@@ -24,6 +24,7 @@ from unittest import mock
 from langchain_core.callbacks import get_usage_metadata_callback
 from pydantic_core import to_jsonable_python
 
+from evals import dialogue
 from evals.calibrate import check_calibrated
 from evals.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from evals.graders import judges
@@ -120,7 +121,7 @@ def run_agent(
                         saved["draft"] = update["report"]
             question = agent.find_question(agent.build_graph(), config)
             if question is not None:  # the judges need a run that the first message completes
-                raise agent.UnansweredQuestionError(question)
+                raise dialogue.UnansweredQuestionError(question)
         except (Exception, KeyboardInterrupt) as error:
             saved["error"] = traceback.format_exc()
             stopped = error

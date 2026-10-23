@@ -25,7 +25,7 @@ import out_of_frame.investigation
 import out_of_frame.prompt_injection
 import out_of_frame.report
 import out_of_frame.triage
-from evals import judge
+from evals import dialogue, judge
 from evals.calibrate import check_calibrated
 from evals.config import JUDGE_EFFORT, JUDGE_MAX_TOKENS, JUDGE_MODEL
 from evals.graders.end_to_end import (
@@ -222,8 +222,8 @@ def run_input_loop(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Tria
     failure = None
     with mock.patch.object(geocoding, "call_nominatim", replay):
         try:
-            agent.run(inputs.messages, date, web_search, input_only=True, config=config)
-        except (agent.UnansweredQuestionError, UnrecordedRequestError) as error:  # its failure
+            dialogue.run(inputs.messages, date, web_search, input_only=True, config=config)
+        except (dialogue.UnansweredQuestionError, UnrecordedRequestError) as error:  # its failure
             failure = repr(error)
     state = RunState.model_validate(graph.get_state(config).values)
     transcript: list[dict] = [message.model_dump() for message in state.messages]

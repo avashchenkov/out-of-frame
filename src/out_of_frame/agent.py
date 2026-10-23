@@ -1,7 +1,6 @@
 """One run of the agent, from the user's first message to the report: the LangGraph graph of
 docs/architecture.md#one-run."""
 
-import datetime as dt
 import itertools
 import logging
 import uuid
@@ -12,7 +11,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
-from langgraph.types import Command, Send, interrupt
+from langgraph.types import Send, interrupt
 
 from out_of_frame import (
     conversation,
@@ -29,7 +28,6 @@ from out_of_frame.config import INVESTIGATIONS_AT_ONCE
 from out_of_frame.investigation import Context
 from out_of_frame.record import Record
 from out_of_frame.state import Address, MapObject, Message, ObjectSourceKind, RunState
-from out_of_frame.web_search import WebSearch
 
 log = logging.getLogger(__name__)
 
@@ -44,35 +42,6 @@ class ObjectToInvestigate(Record):
 
 # The steps that research starts with, in parallel, once the input is complete.
 RESEARCH_STARTS = ["get_map_objects", "get_plans", "plan_journeys"]
-
-
-class UnansweredQuestionError(Exception):
-    """The agent asked a question after the user's replies had run out."""
-
-
-def run(
-    messages: list[str],
-    date: dt.date,
-    web_search: WebSearch,
-    input_only: bool = False,
-    config: RunnableConfig | None = None,
-) -> RunState:
-    """A run without a person: the first message starts it, and each next one answers the
-    agent's next question, as in the evals. With input_only, the run stops once the input is
-    complete, before research starts, as in the input loop suite. A caller that gives the
-    run's thread can read the state where the run stopped, even after an error."""
-    graph, config = build_graph(), config or start_thread()
-    command: RunState | Command = start(messages[0])
-    stop = RESEARCH_STARTS if input_only else None
-    for reply in [*messages[1:], None]:
-        graph.invoke(command, config, context=Context(date, web_search), interrupt_before=stop)
-        question = find_question(graph, config)
-        if question is None:
-            break
-        if reply is None:
-            raise UnansweredQuestionError(question)
-        command = Command(resume=reply)
-    return RunState.model_validate(graph.get_state(config).values)
 
 
 def start(message: str) -> RunState:

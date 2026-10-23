@@ -8,6 +8,8 @@ import threading
 import pytest
 from langchain_core.messages import AIMessage, ToolMessage
 
+from evals import dialogue
+from evals.dialogue import UnansweredQuestionError
 from evals.load import FIXTURES
 from out_of_frame import (
     agent,
@@ -22,7 +24,6 @@ from out_of_frame import (
     transit,
     triage,
 )
-from out_of_frame.agent import UnansweredQuestionError
 from out_of_frame.config import BPLAN_WFS_URL, NOMINATIM_URL, OVERPASS_URL
 from out_of_frame.conversation import Change, ExtractedDestination
 from out_of_frame.geocoding import GeocodingError
@@ -180,7 +181,7 @@ def test_a_user_who_writes_german_gets_the_report_in_german(monkeypatch):
     writer = FakeWriter()
     monkeypatch.setattr(report, "build_report_model", lambda: writer)
     stub_the_translation(monkeypatch, GERMAN)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
     assert state.language == "German"
     assert "Write the whole report in German" in writer.requests[0][0].content
     assert state.report is not None and state.report.startswith(f"# Was liegt um {FREIHEIT_22}")
@@ -189,7 +190,7 @@ def test_a_user_who_writes_german_gets_the_report_in_german(monkeypatch):
 def test_every_industrial_object_is_investigated_in_parallel(monkeypatch):
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
     assert state.property is not None and state.property.coordinates == Coordinates(
         lat=52.5292863, lon=13.2357896
     )
@@ -223,7 +224,7 @@ def test_an_object_that_triage_cannot_settle_is_investigated(monkeypatch):
     objects = read_fixture("overpass/freiheit-22.json")
     stub_the_sources(monkeypatch, overpass=[objects, addresses])
     stub_the_models(monkeypatch, TRIAGE_UNCLEAR)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
     railways = {o.id for o in state.map_objects if triage.is_railway(o)}
     assert len(state.findings) == 11 and railways
     for found in state.findings:  # code settles the railways from the map
@@ -273,7 +274,7 @@ def test_only_the_page_the_finding_cites_reaches_the_run_state_and_the_report(mo
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)  # the finding cites web-1
     other = PageText("https://example.com/other", "Other GmbH works at Klärwerkstraße 1.")
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET, other]))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET, other]))
     assert {source.url for source in state.sources} == {
         NOMINATIM_URL,
         OVERPASS_URL,
@@ -287,7 +288,7 @@ def test_a_precise_address_in_the_first_message_starts_research_without_a_questi
     stub_the_models(monkeypatch)
     stub_the_sources(monkeypatch)
     asked = stub_the_conversation(monkeypatch)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch())
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch())
     assert asked == [] and state.messages == [Message(role="user", text=FREIHEIT_22)]
     assert state.property == Address(
         text=FREIHEIT_22,
@@ -303,7 +304,7 @@ def test_the_agent_asks_until_the_address_resolves_then_goes_on(monkeypatch):
         monkeypatch, {"Freiheit, Berlin": "freiheit-street.json", FREIHEIT_22: "freiheit-22.json"}
     )
     asked = stub_the_conversation(monkeypatch, {"Hello": None})
-    state = agent.run(["Hello", "Freiheit, Berlin", FREIHEIT_22], DATE, FakeWebSearch())
+    state = dialogue.run(["Hello", "Freiheit, Berlin", FREIHEIT_22], DATE, FakeWebSearch())
     # Each question once: on resume the run goes on from the pause, not from the question.
     assert asked == [
         ["The user has not given the property's address."],
@@ -331,7 +332,7 @@ def test_a_reply_without_an_address_leaves_the_address_as_it_was(monkeypatch):
     )
     asked = stub_the_conversation(monkeypatch, {"Which one do you need?": None})
     messages = ["Freiheit, Berlin", "Which one do you need?", FREIHEIT_22]
-    state = agent.run(messages, DATE, FakeWebSearch())
+    state = dialogue.run(messages, DATE, FakeWebSearch())
     street = ["'Freiheit, Berlin' matches only a street or an area, not one building."]
     assert asked == [street, street]  # the address was geocoded again and is still a street
     assert state.property is not None and state.property.text == FREIHEIT_22
@@ -363,7 +364,7 @@ def test_the_agent_asks_where_the_user_travels_and_when_then_goes_on(monkeypatch
         "At 8:00 and 16:30.": Change(property_address=None, destinations=[times]),
     }
     monkeypatch.setattr(conversation, "extract", lambda state: changes[state.messages[-1].text])
-    state = agent.run([*changes], DATE, FakeWebSearch())
+    state = dialogue.run([*changes], DATE, FakeWebSearch())
     assert asked == [
         ["The user has not said where they travel regularly, if anywhere."],
         [
@@ -412,7 +413,7 @@ def test_the_agent_asks_where_the_user_travels_and_when_then_goes_on(monkeypatch
 def test_a_question_after_the_replies_have_run_out_fails_the_run(monkeypatch):
     stub_the_sources(monkeypatch, {"Freiheit, Berlin": "freiheit-street.json"})
     with pytest.raises(UnansweredQuestionError, match="Question 1"):
-        agent.run(["Freiheit, Berlin"], DATE, FakeWebSearch())
+        dialogue.run(["Freiheit, Berlin"], DATE, FakeWebSearch())
 
 
 def test_a_nominatim_failure_stops_the_run(monkeypatch):
@@ -421,12 +422,12 @@ def test_a_nominatim_failure_stops_the_run(monkeypatch):
 
     monkeypatch.setattr(geocoding, "call_nominatim", fail)
     with pytest.raises(GeocodingError):
-        agent.run([FREIHEIT_22], DATE, FakeWebSearch())
+        dialogue.run([FREIHEIT_22], DATE, FakeWebSearch())
 
 
 def test_a_map_failure_is_recorded_and_the_run_goes_on(monkeypatch):
     stub_the_sources(monkeypatch, overpass=[MapError("busy")])
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch())
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch())
     assert state.failures == ["map"]
     assert state.map_objects == [] and state.findings == []
     assert state.report is not None  # which says that the map part is missing
@@ -453,7 +454,7 @@ def test_every_plan_is_investigated_without_triage_or_addresses(monkeypatch):
         return investigate(map_object, source_kind, date, web_search)
 
     monkeypatch.setattr(investigation, "investigate", keep_the_kind)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
     assert len(triaged) == 1  # the Klärwerk: code settles the railways, as without plans
     assert {id: kind for id, kind in kinds.items() if kind == "plans"} == dict.fromkeys(
         PLANS, "plans"
@@ -468,7 +469,7 @@ def test_every_plan_is_investigated_without_triage_or_addresses(monkeypatch):
 def test_a_plans_failure_is_recorded_and_the_run_goes_on(monkeypatch):
     stub_the_sources(monkeypatch, wfs=plans.PlansError("busy"))
     stub_the_models(monkeypatch)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
     assert state.failures == ["plans"]
     assert len(state.map_objects) == 11 and len(state.findings) == 11  # the map part stays
     assert state.report is not None
@@ -479,7 +480,7 @@ def test_without_their_addresses_the_objects_are_still_investigated(monkeypatch)
         monkeypatch, overpass=[read_fixture("overpass/freiheit-22.json"), MapError("busy")]
     )
     stub_the_models(monkeypatch)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch([SNIPPET]))
     assert state.failures == []  # the map part of the report stays
     assert all(o.addresses == [] for o in state.map_objects)
     assert len([found for found in state.findings if found.map_object_id in INDUSTRY]) == 5
@@ -488,7 +489,7 @@ def test_without_their_addresses_the_objects_are_still_investigated(monkeypatch)
 def test_a_web_search_failure_leaves_the_objects_unidentified(monkeypatch):
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch(fails=True))
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch(fails=True))
     investigated = [found for found in state.findings if found.map_object_id in INDUSTRY]
     assert sorted(investigated, key=lambda f: f.map_object_id) == [
         Finding.unidentified(id) for id in sorted(INDUSTRY)
@@ -516,7 +517,7 @@ def test_one_failed_investigation_leaves_the_others_their_findings(monkeypatch):
 
     stub_the_sources(monkeypatch)
     stub_the_models(monkeypatch)
-    state = agent.run([FREIHEIT_22], DATE, FailingOnce([SNIPPET], fails=True))
+    state = dialogue.run([FREIHEIT_22], DATE, FailingOnce([SNIPPET], fails=True))
     outcomes = sorted(found.outcome for found in state.findings if found.map_object_id in INDUSTRY)
     assert outcomes == ["identified"] * 4 + ["unidentified"]
     assert state.failures == ["web search"] and len(state.sources) == 7  # 3 responses, 4 pages
@@ -539,7 +540,7 @@ def test_with_no_object_to_investigate_the_report_is_still_written(monkeypatch):
     objects["elements"] = elements[:1] + elements[starts[1] :]  # no industry
     stub_the_sources(monkeypatch, overpass=[objects])  # and no query for addresses
     stub_the_models(monkeypatch)  # triage settles every object
-    state = agent.run([FREIHEIT_22], DATE, FakeWebSearch())
+    state = dialogue.run([FREIHEIT_22], DATE, FakeWebSearch())
     assert len(state.map_objects) == 6 and len(state.findings) == 6
     assert sorted(source.id for source in state.sources) == [
         "bplan-wfs-1",
