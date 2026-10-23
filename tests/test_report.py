@@ -8,6 +8,7 @@ import httpx
 import pytest
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableLambda
+from markdown_it import MarkdownIt
 
 from out_of_frame import report
 from out_of_frame.config import REPORT_ATTEMPTS
@@ -236,11 +237,11 @@ def test_wrong_citations_in_every_draft_stop_the_run(monkeypatch):
         write(monkeypatch, STATE, *drafts)
 
 
-def test_with_no_objects_the_report_has_no_links(monkeypatch):
+def test_with_no_objects_only_the_licence_is_linked(monkeypatch):
     state = RunState(property=Address(text="Freiheit 22, 13597 Berlin"))
     text, writer = write(monkeypatch, state)
     assert "No object of the checked kinds was found" in writer.requests[0][-1].content
-    assert "](" not in text and text.endswith(report.OSM_CREDIT)
+    assert text.count("](") == 1 and text.endswith(report.OSM_CREDIT)
 
 
 def journey(id: str, direction, outcome, minutes: float | None = None) -> Journey:
@@ -496,3 +497,24 @@ def test_a_failed_translation_call_leaves_the_texts_in_english(monkeypatch):
 
     monkeypatch.setattr(report, "build_translation_model", lambda: RunnableLambda(fail))
     assert report.translate_texts("German") == ENGLISH
+
+
+def test_user_labels_render_as_text_and_required_credits_stay_clickable():
+    malicious = "[Prize](https://example.com) <script>alert(1)</script>\n# Another heading"
+    state = RunState(
+        property=Address(text=malicious),
+        destinations=[
+            Destination(id="work", name=malicious, leave_home=dt.time(7), leave_place=dt.time(18))
+        ],
+        journeys=[journey("work", "there", "no route"), journey("work", "back", "no route")],
+    )
+    rendered = MarkdownIt("commonmark").render(report.fill_references("No objects.", state))
+    assert '<a href="https://example.com"' not in rendered
+    assert "<script>" not in rendered
+    assert rendered.count("<h1>") == 1
+    assert rendered.count("[Prize](https://example.com)") == 2
+    assert (
+        '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+        in rendered
+    )
+    assert '<a href="https://transitous.org/sources/">Transitous and its sources</a>' in rendered

@@ -2,6 +2,7 @@
 see docs/architecture.md#grounding, and adds its own texts, in the user's language."""
 
 import datetime as dt
+import html
 import logging
 import re
 import string
@@ -25,9 +26,9 @@ CITATIONS = re.compile(r"\[[^\[\]\s]+\](?:[ \t]*\[[^\[\]\s]+\])*")  # [osm-way-1
 BRACKETS = re.compile(r"\[([^\[\]]*)\]")  # any [...]
 LINK = re.compile(r"\]\(|\]:|(?:https?://|www\.)\S*")  # a Markdown link, or a URL of any form
 # The credits that the licences require, word for word, so they are never translated.
-OSM_CREDIT = "Map data © OpenStreetMap contributors: https://www.openstreetmap.org/copyright"
+OSM_CREDIT = "Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright)"
 TRANSITOUS_CREDIT = (
-    "Journeys planned with Transitous and its sources: https://transitous.org/sources/"
+    "Journeys planned with [Transitous and its sources](https://transitous.org/sources/)"
 )
 # The fields in which the B-Plan WFS links a plan's own documents, the most useful first: the
 # plan's drawing, the page of its procedure and the page of its public display.
@@ -252,7 +253,7 @@ def fill_references(draft: str, state: RunState, texts: ReportTexts | None = Non
 
     text = CITATIONS.sub(cite, draft).strip()
     assert state.property is not None  # research starts only once the property is resolved
-    title = texts.title.format(address=state.property.text)
+    title = texts.title.format(address=escape_text(state.property.text))
     lines = [f"# {title}", "", texts.language_model_note, "", text, ""]
     lines += [*describe_journeys(state, texts), f"## {texts.about_heading}", ""]
     lines += [describe_scope(texts), ""]
@@ -273,7 +274,7 @@ def describe_journeys(state: RunState, texts: ReportTexts) -> list[str]:
         leave_home, leave_place = destination.leave_home, destination.leave_place
         assert leave_home is not None and leave_place is not None  # see conversation.find_missing
         line = texts.journey.format(
-            destination=destination.name,
+            destination=escape_text(destination.name),
             leave_home=f"{leave_home:%H:%M}",
             there=describe_journey(journeys["there"], texts),
             leave_place=f"{leave_place:%H:%M}",
@@ -325,12 +326,22 @@ def write_links(links: dict[str, list[str]]) -> str:
     parts = []
     for name, urls in links.items():
         if len(urls) > 1:
-            parts.append(f"{name}: " + ", ".join(f"[{n}]({url})" for n, url in enumerate(urls, 1)))
+            parts.append(
+                f"{escape_text(name)}: "
+                + ", ".join(f"[{n}]({url})" for n, url in enumerate(urls, 1))
+            )
         else:
-            parts.append(f"[{name}]({urls[0]})" if urls else name)
+            parts.append(f"[{escape_text(name)}]({urls[0]})" if urls else escape_text(name))
     return ("; " if any(len(urls) > 1 for urls in links.values()) else ", ").join(parts)
 
 
 def escape_url(url: str) -> str:
     """The URL with its spaces and brackets encoded, so that it cannot end a Markdown link."""
     return url.replace(" ", "%20").replace("(", "%28").replace(")", "%29")
+
+
+def escape_text(text: str) -> str:
+    """A user label stays on one line as literal Markdown text, never a link or HTML."""
+    text = " ".join(text.split())
+    text = html.escape(text, quote=False)
+    return re.sub(r"([\\`*_{}\[\]()#+|~>])", r"\\\1", text)
