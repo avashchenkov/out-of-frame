@@ -105,3 +105,23 @@ def test_messages_and_answers_match_the_aegra_request_schema():
     for text in (None, "", " ", 123, "a" * (config.DEMO_MESSAGE_CHARS + 1)):
         with pytest.raises(HTTPException):
             contract.run_request(text=text)
+
+
+def test_client_execution_settings_are_rejected():
+    from aegra_api.models import RunCreate
+
+    from out_of_frame.demo import auth
+
+    body = contract.run_request(text="Hello")
+    auth.validate_run(RunCreate(**body).model_dump())
+    auth.validate_run(RunCreate(**contract.run_request(text="Answer", resume=True)).model_dump())
+    for key, value in (
+        ("context", {"date": "yesterday"}),
+        ("checkpoint_id", str(uuid4())),
+        ("interrupt_after", "*"),
+        ("stream_subgraphs", True),
+        ("durability", "exit"),
+        ("assistant_id", "other"),
+    ):
+        with pytest.raises(HTTPException):
+            auth.validate_run(RunCreate(**(body | {key: value})).model_dump())

@@ -33,6 +33,12 @@ PostgreSQL persists server records and checkpoints; Aegra v0.10.8
 [requires it](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/core/database.py).
 The setup lives in `demo/`.
 
+Demo table creation is a deployment step in `demo/db/`, outside the runtime package and
+image. Apply it before starting Aegra; the server does not create or change the demo schema.
+Run Aegra's own migrations separately with `RUN_MIGRATIONS_ON_STARTUP=false` on the server.
+Aegra 0.10.8 still performs its built-in LangGraph checkpoint/store setup at startup; it has
+no setting to disable that part.
+
 Redis runs on the same VPS without RDB snapshots or AOF persistence, and without a
 persistent data volume. PostgreSQL holds the work needed for recovery after Redis restarts.
 Aegra's replay buffer already expires
