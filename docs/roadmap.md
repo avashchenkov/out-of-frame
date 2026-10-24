@@ -487,7 +487,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    - ✅ A small buildable chat layout in `demo/frontend/`, with live input disabled.
    - ✅ Proxy reads with signed-cookie checks and filtered JSON responses.
    - ✅ Filtered event streams and cursor-based reconnection to existing runs.
-   - Add admission, cookie issuance, deletion and origin/CSRF checks for mutations.
+   - ✅ Admission, cookie issuance, deletion and origin/CSRF checks for mutations.
    - Connect the private chat, then add recorded examples and notice pages in separate
      reviewable changes.
 
