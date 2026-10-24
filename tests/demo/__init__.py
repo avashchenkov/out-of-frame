@@ -1,1 +1,1 @@
-"""Checks specific to the portfolio demo."""
+"""Checks specific to the demo application."""

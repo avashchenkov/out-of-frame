@@ -1,1 +1,1 @@
-"""Portfolio demo, outside the reusable agent package."""
+"""Demo application, outside the reusable agent package."""

@@ -19,10 +19,10 @@ def block_thread(thread_id: str) -> None:
         _blocked_threads.add(thread_id)
 
 
-def has_active_nodes(thread_id: str) -> bool:
-    """Include sync nodes still running after their async caller was cancelled."""
+def has_active_nodes(thread_id: str | None = None) -> bool:
+    """Include cancelled callers' sync nodes, for one thread or the whole process."""
     with _lock:
-        return _active_nodes[thread_id] != 0
+        return bool(_active_nodes) if thread_id is None else _active_nodes[thread_id] != 0
 
 
 def wrap_node(context):

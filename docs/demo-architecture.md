@@ -29,6 +29,11 @@ Only the Web UI service is publicly reachable. It adapts Agent Chat UI and adds 
 API proxy in Next.js. Aegra, PostgreSQL and Redis use the private container network.
 One Aegra container runs `aegra serve` with `REDIS_BROKER_ENABLED=true`, using its
 [built-in worker recovery](https://github.com/aegra/aegra/blob/v0.10.8/docs/guides/worker-architecture.mdx#crash-recovery).
+The demo uses one Aegra process, with its worker tasks in the same process, so admission
+and cancellation share one coordinator. A PostgreSQL session lock rejects a second process
+at startup. This guards against accidental duplicate starts, not database failover. Stop Aegra
+before restarting PostgreSQL, and restart Aegra after unexpected database connection loss
+before starting another instance. The deployment does not use replicas or rolling updates.
 PostgreSQL persists server records and checkpoints; Aegra v0.10.8
 [requires it](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/core/database.py).
 The setup lives in `demo/`.

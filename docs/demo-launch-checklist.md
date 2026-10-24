@@ -82,7 +82,7 @@ flow against outgoing requests:
   reject browser-supplied country headers. Unknown/unsupported regions get examples.
   Disclose the IP-country check; no passport or nationality collection is planned.
 - Check applicable territorial requirements for live access. The initial scope is
-  an adult technical portfolio demo without advertising, data sales or country-specific
+  a demo for adult technical users without advertising, data sales or country-specific
   consumer marketing. Provider support alone does not establish legal clearance everywhere.
 
 ## Deployment and verification
