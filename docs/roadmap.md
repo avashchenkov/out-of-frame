@@ -484,6 +484,10 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Show remaining submissions, message limits, clear refusal reasons and the author contact.
    Keep examples available when live input is unavailable.
 
+   Start with a small buildable chat layout in `demo/frontend/`, with live input disabled.
+   Then add the server proxy, connect the private chat, and add the recorded examples and
+   notice pages in separate reviewable changes.
+
    Show a queued notice for `pending` runs and switch to progress when execution starts.
    Reconnect without resubmitting, and keep deletion available while a run is queued.
 
