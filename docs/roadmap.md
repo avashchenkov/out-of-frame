@@ -442,7 +442,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    run flow, static examples, limits and retention in the [demo architecture](demo-architecture.md).
    Align [ADR 4](adr/0004-demo-aegra-and-agent-chat-ui.md) and separate the
    [launch checklist](demo-launch-checklist.md) from the technical design.
-6. **The agent as a service on Aegra.** Wrap the existing graph with PostgreSQL checkpoints
+6. ✅ **The agent as a service on Aegra.** Wrap the existing graph with PostgreSQL checkpoints
    and Redis recovery. Use LangChain messages, interrupt/resume and an explicit final-report
    marker; preserve the CLI, evals and old saved runs. Update the agent architecture with
    the message changes. Move the scripted dialogue runner and judge settings into `evals/`,
