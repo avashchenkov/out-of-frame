@@ -1,6 +1,7 @@
 "use client";
 
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
+import { SiteFooter } from "../site-footer";
 import { SiteHeader } from "../site-header";
 import { ConversationMessages } from "./messages";
 import type { ChatMessage } from "../../lib/private-chat";
@@ -88,6 +89,7 @@ export function Thread({
           </p>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

@@ -493,7 +493,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    - ✅ Start notice, configured limits, submissions and manual retries in the interface.
    - ✅ New-chat and deletion controls with confirmation and preserved usage counters.
    - ✅ Five recorded examples with research dates, viewable without a private session.
-   - Add notice pages in a separate reviewable change.
+   - ✅ Service terms, Privacy notice and Impressum pages, linked from the footer and start notice.
 
    Show a queued notice for `pending` runs and switch to progress when execution starts.
    Reconnect without resubmitting, and keep deletion available while a run is queued.

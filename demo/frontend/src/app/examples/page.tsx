@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteFooter } from "../../components/site-footer";
 import { SiteHeader } from "../../components/site-header";
 import { recordedExamples } from "../../lib/recorded-examples";
 
@@ -35,6 +36,7 @@ export default function Examples() {
           ))}
         </ul>
       </main>
+      <SiteFooter />
     </>
   );
 }

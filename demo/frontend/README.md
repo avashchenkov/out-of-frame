@@ -29,6 +29,12 @@ with live input disabled. The reviewed visible messages are in
 Live and recorded reports share a Markdown renderer that drops raw HTML, shows images as
 text and keeps only explicit Markdown links clickable.
 
+The footer on every page links to the service terms at `/terms`, the Privacy notice at
+`/privacy` and the Impressum at `/impressum`. The start notice links to the terms and the
+Privacy notice. These pages set no cookie. They read the operator's name, postal address,
+contact email and hosting provider from the server environment, and the configured limits
+from the backend on the server; without the backend they describe the limits without numbers.
+
 Use Node.js 24 and npm. From this directory:
 
 ```sh

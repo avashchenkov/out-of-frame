@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { PrivateChat } from "../lib/private-chat";
 import type { DemoLimits } from "../lib/chat-input";
@@ -37,14 +38,16 @@ export function ChatInput({
       <section className="start-notice" aria-label="Before your first message">
         <p>
           English-language AI demo for adults. Use public places and fictional
-          travel plans. Start requests a free, limited AI report. Availability
-          is not guaranteed. Reports give facts, not advice to buy or rent.
-          Check the sources.
+          travel plans. Start requests a free AI report under the{" "}
+          <Link href="/terms">service terms</Link> and the limits shown here.
+          Availability is not guaranteed. Reports give facts, not advice to buy
+          or rent.
         </p>
         <p>
-          We process your messages, addresses and journey times using Anthropic,
-          Nominatim, Overpass, Berlin B-Plan WFS, Transitous and Tavily. Other
-          visitors cannot see your chat or report.
+          We process your messages, addresses and journey times using Anthropic
+          and the services listed in our{" "}
+          <Link href="/privacy">Privacy notice</Link>. Other visitors cannot see
+          your chat or report.
         </p>
         <p>
           An essential cookie keeps access and allows up to{" "}
@@ -56,6 +59,7 @@ export function ChatInput({
           names and sensitive personal details. New chat or Delete chat removes
           the current chat and report earlier.
         </p>
+        <p>AI results can be wrong: check the sources.</p>
         <button
           type="button"
           disabled={disabled}

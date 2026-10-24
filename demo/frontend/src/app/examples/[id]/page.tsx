@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SiteFooter } from "../../../components/site-footer";
 import { SiteHeader } from "../../../components/site-header";
 import { ConversationMessages } from "../../../components/thread/messages";
 import { recordedExamples } from "../../../lib/recorded-examples";
@@ -42,6 +43,7 @@ export default async function Example({
           </aside>
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }
