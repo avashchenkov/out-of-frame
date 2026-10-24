@@ -191,8 +191,9 @@ Disable only Aegra's independent background sweeper: it skips active runs and do
 Redis or demo accounting, so it cannot perform the whole procedure safely by itself.
 A small demo task coordinates these extra steps and invokes native pruning at Aegra startup,
 before accepting or recovering expired work, then periodically through an Aegra lifespan
-task with a configurable interval. The same routine backs `python -m demo.backend.cli --expired`
-or `python -m demo.backend.cli --identity <id>` operator command. No extra Compose service or admin UI is needed.
+task with a configurable interval. No separate cleanup command, operator API or admin UI
+is needed. For a manual deletion request or demo closure, stop the backend and discard
+all demo PostgreSQL and Redis data.
 
 Chat deletion retains admission accounting: the aggregate count for the current Berlin day
 and the identity counter until its fixed expiry. Keep only random ID, expiry, admitted-chat

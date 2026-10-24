@@ -14,7 +14,6 @@ CUSTOM_ROUTES = {
     "/demo/chat": {"POST", "DELETE"},
     "/demo/retry": {"POST"},
     "/demo/session": {"GET"},
-    "/demo/cleanup": {"POST"},
     "/demo/limits": {"GET"},
 }
 THREAD_READ = re.compile(r"/threads/(?P<thread_id>[^/]+)(?:/state|/runs/[^/]+(?:/join|/stream)?)?")
@@ -47,7 +46,7 @@ class PrivateDemoAccess:
             if not (method in CUSTOM_ROUTES.get(path, ()) or thread_read or run_create):
                 raise HTTPException(403, "route_disabled")
             identity = headers.get("x-demo-identity", "")
-            if path not in ("/demo/cleanup", "/demo/limits"):
+            if path != "/demo/limits":
                 try:
                     UUID(identity)
                 except ValueError:
@@ -79,7 +78,7 @@ class PrivateDemoAccess:
                 return await receive()
 
             async with AsyncExitStack() as mutation_lock:
-                if method in ("POST", "DELETE") and path != "/demo/cleanup":
+                if method in ("POST", "DELETE"):
                     await mutation_lock.enter_async_context(storage.locked(identity))
 
                 async def private_response(event):

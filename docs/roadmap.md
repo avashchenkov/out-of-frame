@@ -452,7 +452,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Keep demo tests in `tests/demo/`, with infrastructure checks in its `integration/` folder.
 
    Implement cookie ownership, atomic admission limits, one current conversation per
-   identity, and coordinated cancellation/deletion with scheduled and operator cleanup.
+   identity, and coordinated cancellation/deletion with automatic expiry cleanup.
    Retain admission counters after chat deletion. Add explicit Markdown licence links and
    escape user text in reports, checking affected tests and graders. Start with the stubbed
    restart/resume integration check; cover the remaining
@@ -467,6 +467,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    the [integration runner](../demo/testing.md), with explicit approval before using the
    operator's Docker daemon. After the HTTP service is committed, package the backend in
    Docker before starting the Web UI. Keep tests, evals and deployment input out of its image.
+
+   Cookie issuance in browser responses, origin/CSRF checks and response filtering belong
+   to the Web UI proxy in step 7. Backend image checks belong to packaging before that step.
 7. **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
    report, progress and fixed service-failure notices, plus reviewed recorded examples.
    The Next.js proxy constructs allowed requests, filters all browser responses and checks

@@ -134,6 +134,7 @@ def test_missing_proxy_credentials_or_identity_are_rejected(boundary, headers):
         ("/threads/current-chat/state", "POST"),
         ("/threads/current-chat/history", "GET"),
         ("/demo/cleanup", "GET"),
+        ("/demo/cleanup", "POST"),
         ("/demo/limits", "POST"),
         ("/demo/session", "DELETE"),
     ],
@@ -173,11 +174,10 @@ def test_chunked_body_limit_applies_before_delegation(boundary):
     "path,method,headers",
     [
         ("/demo/limits", "GET", {"x-demo-key": "a" * 32}),
-        ("/demo/cleanup", "POST", {"x-demo-key": "a" * 32, "x-demo-csrf": "1"}),
         ("/ready", "GET", {}),
     ],
 )
-def test_bootstrap_operator_cleanup_and_health_need_no_identity(boundary, path, method, headers):
+def test_bootstrap_and_health_need_no_identity(boundary, path, method, headers):
     app, downstream = boundary
     assert asyncio.run(request(app, path, method, headers=headers))[0]["status"] == 200
     downstream.assert_awaited_once()

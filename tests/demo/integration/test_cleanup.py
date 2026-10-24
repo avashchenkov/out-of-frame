@@ -174,7 +174,7 @@ def test_busy_nodes_leave_deletion_pending_until_a_later_sweep(services, monkeyp
                 f"{settings.redis.REDIS_CHANNEL_PREFIX}cache:{run_id}"
             )
             monkeypatch.setattr(activity, "has_active_nodes", lambda thread: False)
-            assert await cleanup.sweep() == {"pending": 0}
+            await cleanup.sweep()
             await assert_removed(thread_id, run_id)
 
     asyncio.run(scenario())
@@ -231,7 +231,7 @@ def test_retry_keeps_run_ids_when_native_delete_commits_then_fails(services, mon
             # The native run rows are gone; only the pending record remembers their buffers.
             await seed_buffers(run_id)
             monkeypatch.setattr(cleanup, "delete_thread", native_delete)
-            assert await cleanup.sweep() == {"pending": 0}
+            await cleanup.sweep()
             await assert_removed(thread_id, run_id)
 
     asyncio.run(scenario())
@@ -242,7 +242,7 @@ def test_sweep_drops_expired_identity_but_keeps_other_chats(services):
         async with services():
             expired, thread_id, run_id = await seed_chat(expired=True)
             current, current_thread, _ = await seed_chat()
-            assert await cleanup.sweep() == {"pending": 0}
+            await cleanup.sweep()
             await assert_removed(thread_id, run_id)
             assert await storage.identity_row(expired) is None
             assert (await storage.identity_row(current))["thread_id"] == current_thread

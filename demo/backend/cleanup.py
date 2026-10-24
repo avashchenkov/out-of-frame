@@ -106,27 +106,21 @@ async def erase(identity: str) -> bool:
     return True
 
 
-async def sweep(identity: str | None = None):
-    """Retry pending/expired chats, or delete one operator-selected identity's chat."""
+async def sweep():
+    """Delete expired chats and retry pending deletions."""
     async with db_manager.engine.connect() as conn:
         rows = (
             (
                 await conn.execute(
-                    text(
-                        "SELECT identity FROM demo_identity WHERE "
-                        + ("identity=:id" if identity else "expires_at<=now() OR deleting")
-                    ),
-                    {"id": identity},
+                    text("SELECT identity FROM demo_identity WHERE expires_at<=now() OR deleting")
                 )
             )
             .scalars()
             .all()
         )
-    pending = 0
     for visitor in rows:
         async with storage.locked(visitor):
-            if not await erase(visitor):
-                pending += 1
+            await erase(visitor)
     async with db_manager.engine.begin() as conn:
         await conn.execute(
             text(
@@ -137,4 +131,3 @@ async def sweep(identity: str | None = None):
         await conn.execute(
             text("DELETE FROM demo_day WHERE day < (now() AT TIME ZONE 'Europe/Berlin')::date")
         )
-    return {"pending": pending}

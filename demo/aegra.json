@@ -1,0 +1,6 @@
+{
+  "graphs": {"agent": "./backend/graph_factory.py:create_graph"},
+  "auth": {"path": "demo.backend.auth:auth", "disable_studio_auth": false},
+  "http": {"app": "demo.backend.app:app", "cors": {"allow_origins": [], "allow_credentials": false}},
+  "checkpointer": {"durability": "sync"}
+}
