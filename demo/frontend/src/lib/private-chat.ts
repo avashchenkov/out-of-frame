@@ -11,6 +11,8 @@ export type PrivateChat = {
   failures: string[];
   status: string;
   active: boolean;
+  canAnswer?: boolean;
+  canRetry?: boolean;
   expiresAt?: string;
   submissionsRemaining?: number;
 };
@@ -127,6 +129,15 @@ export async function readPrivateChat(
       ),
       status,
       active,
+      canAnswer:
+        !active &&
+        !current.complete &&
+        !["error", "timeout"].includes(current.status ?? "") &&
+        !!(state.interrupts?.length || state.next?.includes("wait_for_answer")),
+      canRetry:
+        !active &&
+        !current.complete &&
+        ["error", "timeout"].includes(current.status ?? ""),
       expiresAt: current.expires_at,
       submissionsRemaining: current.submissions_remaining,
     };

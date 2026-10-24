@@ -1,7 +1,7 @@
 # Web UI
 
 The Next.js interface lives here, separate from the Python agent and demo backend.
-It restores the browser's private conversation and report, with live input disabled.
+It restores the browser's private conversation and report. Live input is disabled by default.
 Queued and running chats refresh automatically. Returning to the page or selecting
 Reload chat reads the current server state without starting a run. Source-failure notices
 and remaining submissions are restored too. Chat content stays in memory, without browser
@@ -10,6 +10,10 @@ The session includes the latest run ID. The page attaches to its filtered SSE st
 the browser's EventSource, with native cursor-based reconnection. Events show fixed progress
 notices and trigger a current-state read, so old replay events cannot replace newer messages.
 Periodic reads also track queued runs and recover state when replay is no longer available.
+When enabled, a start notice precedes the first input. The page uses server-configured
+message and submission limits, sends answers to saved questions, and offers an explicit
+retry after a failed run. It never automatically repeats a submission. An uncertain result
+requires Reload chat before another submission; confirmed quota refusals show fixed reasons.
 
 Use Node.js 24 and npm. From this directory:
 
@@ -69,7 +73,9 @@ codes, including the relevant quota or deletion refusal.
 
 `OUT_OF_FRAME_DEMO_LIVE_ENABLED` defaults to `false`: submissions and retries return
 `live_unavailable` until enabled after the launch checklist. Private reads and deletion
-remain available. The chat page's input is still disabled.
+remain available.
+The page uses the same flag. Complete the launch checklist and notice pages before enabling
+it. Set `OUT_OF_FRAME_DEMO_CONTACT_EMAIL` to the public author contact.
 
 Frontend boundary tests live in `tests/demo/frontend/` and use Node's built-in test runner
 with stubbed backend responses. They need no API keys, database or Docker.

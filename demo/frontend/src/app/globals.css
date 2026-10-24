@@ -152,6 +152,21 @@ fieldset:disabled button {
   font-size: 0.8rem;
   line-height: 1.5;
 }
+.input-note,
+.start-notice {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.start-notice {
+  max-height: 38dvh;
+  overflow-y: auto;
+}
+.composer button:not(:disabled),
+.start-notice button {
+  background: var(--accent);
+  color: white;
+}
 .composer {
   display: flex;
   flex-wrap: wrap;

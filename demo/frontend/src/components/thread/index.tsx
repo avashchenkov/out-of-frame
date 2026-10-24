@@ -4,6 +4,7 @@ import Link from "next/link";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { MarkdownText } from "./markdown-text";
 import type { ChatMessage } from "../../lib/private-chat";
+import type { ReactNode } from "react";
 
 function ScrollToBottom() {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
@@ -22,12 +23,16 @@ export function Thread({
   failures,
   submissionsRemaining,
   onReload,
+  busy,
+  children,
 }: {
   messages: ChatMessage[];
   notice: string;
   failures: string[];
   submissionsRemaining?: number;
   onReload: () => void;
+  busy: boolean;
+  children: ReactNode;
 }) {
   return (
     <div className="chat-shell">
@@ -90,7 +95,7 @@ export function Thread({
           <p id="chat-availability" role="status">
             {notice}
           </p>
-          <button type="button" onClick={onReload}>
+          <button type="button" disabled={busy} onClick={onReload}>
             Reload chat
           </button>
           {submissionsRemaining !== undefined && (
@@ -98,22 +103,10 @@ export function Thread({
               Submissions remaining: {submissionsRemaining}
             </p>
           )}
-          <fieldset
-            className="composer"
-            disabled
-            aria-describedby="chat-availability"
-          >
-            <label htmlFor="message">Your message</label>
-            <textarea
-              id="message"
-              placeholder="Enter a Berlin address or paste a listing…"
-              rows={3}
-            />
-            <button type="button">Send</button>
-          </fieldset>
+          {children}
           <p className="report-note">
-            Live input is not available yet. Reports describe facts. They do not
-            recommend whether to buy or rent.
+            Reports describe facts. They do not recommend whether to buy or
+            rent.
           </p>
         </div>
       </main>

@@ -95,6 +95,8 @@ test("queued, running, failed and completed chats use server completion", async 
     const chat = await readPrivateChat(new AbortController().signal, fetchPage);
     assert.equal(chat.active, active);
     assert.match(chat.status, notice);
+    assert.equal(chat.canRetry, status === "error" && !complete);
+    assert.equal(chat.canAnswer, !active && !complete && status !== "error");
   }
 });
 
