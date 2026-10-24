@@ -6,6 +6,10 @@ Queued and running chats refresh automatically. Returning to the page or selecti
 Reload chat reads the current server state without starting a run. Source-failure notices
 and remaining submissions are restored too. Chat content stays in memory, without browser
 storage. The page clears it when access expires or a read fails.
+The session includes the latest run ID. The page attaches to its filtered SSE stream using
+the browser's EventSource, with native cursor-based reconnection. Events show fixed progress
+notices and trigger a current-state read, so old replay events cannot replace newer messages.
+Periodic reads also track queued runs and recover state when replay is no longer available.
 
 Use Node.js 24 and npm. From this directory:
 

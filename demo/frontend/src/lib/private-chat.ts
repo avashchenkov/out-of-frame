@@ -6,6 +6,7 @@ export type ChatMessage = {
 
 export type PrivateChat = {
   threadId: string | null;
+  runId?: string;
   messages: ChatMessage[];
   failures: string[];
   status: string;
@@ -25,6 +26,7 @@ const FAILURE_NOTICES: Record<string, string> = {
 
 type Session = {
   thread_id: string | null;
+  run_id?: string;
   status?: string;
   complete?: boolean;
   deleting?: boolean;
@@ -33,12 +35,14 @@ type Session = {
 };
 
 export class ChatReadError extends Error {
+  readonly inaccessible: boolean;
   constructor(inaccessible: boolean) {
     super(
       inaccessible
         ? "This chat is no longer available in this browser."
         : "The chat could not be loaded. Please try again.",
     );
+    this.inaccessible = inaccessible;
   }
 }
 
@@ -78,6 +82,7 @@ export async function readPrivateChat(
     const current: Session = await get("session");
     if (
       current.thread_id !== session.thread_id ||
+      current.run_id !== session.run_id ||
       current.deleting ||
       current.status !== session.status ||
       current.complete !== session.complete ||
@@ -110,6 +115,7 @@ export async function readPrivateChat(
 
     return {
       threadId: current.thread_id,
+      runId: UUID.test(current.run_id ?? "") ? current.run_id : undefined,
       messages: (state.values?.messages ?? []).map(
         (message: ChatMessage, index: number) => ({
           ...message,

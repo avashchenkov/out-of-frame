@@ -171,6 +171,7 @@ async def session_info(user: Annotated[User, Depends(require_auth)]):
     )
     return {
         "thread_id": thread_id,
+        "run_id": latest.run_id if latest else None,
         "complete": done,
         "status": latest.status if latest else None,
         "expires_at": row["expires_at"].isoformat(),

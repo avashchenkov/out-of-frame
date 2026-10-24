@@ -488,8 +488,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    - ✅ Proxy reads with signed-cookie checks and filtered JSON responses.
    - ✅ Filtered event streams and cursor-based reconnection to existing runs.
    - ✅ Admission, cookie issuance, deletion and origin/CSRF checks for mutations.
-   - Connect the private chat, then add recorded examples and notice pages in separate
-     reviewable changes.
+   - ✅ Restore the private conversation, report, run status and remaining submissions.
+   - Connect live progress and submissions, then add recorded examples and notice pages
+     in separate reviewable changes.
 
    Show a queued notice for `pending` runs and switch to progress when execution starts.
    Reconnect without resubmitting, and keep deletion available while a run is queued.

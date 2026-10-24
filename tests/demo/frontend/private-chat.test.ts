@@ -6,8 +6,10 @@ import {
 } from "../../../demo/frontend/src/lib/private-chat.ts";
 
 const ID = "11111111-1111-4111-8111-111111111111";
+const RUN = "22222222-2222-4222-8222-222222222222";
 const SESSION = {
   thread_id: ID,
+  run_id: RUN,
   status: "interrupted",
   complete: false,
   expires_at: "2100-01-01T00:00:00Z",
@@ -60,9 +62,24 @@ test("reload restores visible messages, failures and remaining submissions", asy
   assert.equal(chat.messages[1].content, "Where do you travel?");
   assert.equal(new Set(chat.messages.map((message) => message.id)).size, 2);
   assert.equal(chat.submissionsRemaining, 6);
+  assert.equal(chat.runId, RUN);
   assert.match(chat.failures[0], /Development plans could not be loaded/);
   assert.equal(chat.status, "Waiting for your answer.");
   assert.equal(chat.active, false);
+});
+
+test("a different latest run discards a snapshot even with unchanged counters", async () => {
+  const changed = { ...SESSION, run_id: ID };
+  const { fetchPage } = responses(
+    SESSION,
+    STATE,
+    changed,
+    changed,
+    STATE,
+    changed,
+  );
+  const chat = await readPrivateChat(new AbortController().signal, fetchPage);
+  assert.equal(chat.runId, ID);
 });
 
 test("queued, running, failed and completed chats use server completion", async () => {
