@@ -479,15 +479,15 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    to the Web UI proxy in step 7. Backend image checks belong to packaging before that step.
 7. **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
    report, progress and fixed service-failure notices, plus reviewed recorded examples.
-   The Next.js proxy constructs allowed requests, filters all browser responses and checks
-   regional eligibility. Disable unused history, branching, editing and regeneration.
+   The Next.js proxy constructs allowed requests and filters all browser responses.
+   Disable unused history, branching, editing and regeneration.
    Show remaining submissions, message limits, clear refusal reasons and the author contact.
    Keep examples available when live input is unavailable.
 
    - ✅ A small buildable chat layout in `demo/frontend/`, with live input disabled.
    - ✅ Proxy reads with signed-cookie checks and filtered JSON responses.
-   - Add filtered event streams and cursor-based reconnection to existing runs.
-   - Add admission, cookie issuance, deletion and origin/CSRF and region checks for mutations.
+   - ✅ Filtered event streams and cursor-based reconnection to existing runs.
+   - Add admission, cookie issuance, deletion and origin/CSRF checks for mutations.
    - Connect the private chat, then add recorded examples and notice pages in separate
      reviewable changes.
 
@@ -506,8 +506,8 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Verify the package and image separately from the development/CI environment.
 
    Complete the [launch checklist](demo-launch-checklist.md): operator details, notices,
-   provider terms and budgets, trusted region checks, HTTPS, retention and cleanup.
-   Choose budget amounts and the country data source with the deployment settings.
+   provider terms and budgets, HTTPS, retention and cleanup.
+   Choose budget amounts with the deployment settings.
    Finish with a live conversation after approval of its estimated cost. Enable live input
    only after these checks pass; recorded examples can be served earlier.
 9. **The README in its final form:** a CI badge and a link to the demo; the design choices,

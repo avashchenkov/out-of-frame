@@ -2,7 +2,7 @@
 
 Meet these requirements before enabling live input. Until then, serve only the reviewed
 recorded examples. The [demo architecture](demo-architecture.md) defines behaviour and limits.
-This checklist covers the deployed settings and notices; it is not a worldwide legal clearance.
+This checklist covers the deployed settings and notices.
 Track completion in the [roadmap](roadmap.md#after-the-mvp-the-demo).
 
 ## Operator and visitor information
@@ -21,7 +21,7 @@ Track completion in the [roadmap](roadmap.md#after-the-mvp-the-demo).
   service agreement. A Start button requests the service; it is not blanket consent to every
   use of data. Confirm the agreement's validity and the need for the return window using the
   [EDPB guidelines](https://www.edpb.europa.eu/system/files/documents/files/file1/edpb_guidelines-art_6-1-b-adopted_after_public_consultation_en.pdf).
-  Assess quota records, region checks and security logs separately under Article 6(1)(f),
+  Assess quota records and security logs separately under Article 6(1)(f),
   with a brief necessity and balancing record. Visitor content is not reused for examples,
   evals or improvement.
 - Justify the identity cookie's purpose and duration for private access and the
@@ -46,7 +46,7 @@ Track completion in the [roadmap](roadmap.md#after-the-mvp-the-demo).
   applicable [AI Act Article 50](https://ai-act-service-desk.ec.europa.eu/en/ai-act/article-50)
   obligations, including output marking where applicable.
 
-## Providers and regions
+## Providers
 
 Name the actual deployed endpoints/providers in the Privacy notice and check this data
 flow against outgoing requests:
@@ -74,16 +74,6 @@ flow against outgoing requests:
   prohibits personal/confidential submissions: use public-place queries, without names or
   private notes. Asking for fictional scenarios does not itself filter payloads. Check
   [Tavily's terms](https://www.tavily.com/terms) and the other [source conditions](sources.md#data-rights).
-- Check the provider region/export policies effective at deployment. Anthropic's
-  [commercial terms, D.2 and M.8](https://www.anthropic.com/legal/commercial-terms) cover end users;
-  check its [API region list](https://platform.claude.com/docs/en/api/supported-regions) and
-  regional exceptions. Record the chosen country signal or local database, licence and update
-  process; enforce it in Next.js before live requests. Validate the trusted proxy boundary and
-  reject browser-supplied country headers. Unknown/unsupported regions get examples.
-  Disclose the IP-country check; no passport or nationality collection is planned.
-- Check applicable territorial requirements for live access. The initial scope is
-  a demo for adult technical users without advertising, data sales or country-specific
-  consumer marketing. Provider support alone does not establish legal clearance everywhere.
 
 ## Deployment and verification
 

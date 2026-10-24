@@ -101,7 +101,7 @@ their submission limit. Keep examples, saved reports and deletion available.
 One conversation is one Aegra thread. The initial message and each answer start separate
 runs on that thread:
 
-1. Next.js checks the cookie and region, constructs the permitted request, and Aegra checks
+1. Next.js checks the cookie, constructs the permitted request, and Aegra checks
    ownership and reserves quota before execution.
 2. The graph adds its question to `messages` and pauses with `interrupt()`. The next answer
    resumes the saved checkpoint with `Command(resume=...)`.
@@ -256,12 +256,6 @@ Aegra handlers validate the contract, but
 [cannot rewrite all run fields](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/api/runs.py),
 so request construction stays in Next.js.
 
-Next.js checks live-run regional eligibility before forwarding requests to providers.
-Use a trusted hosting signal or a local IP-country database; select the source, update process
-and licence when choosing the host. Never trust a country header supplied by the browser.
-Unsupported or unknown regions get recorded examples. Provider-policy checks belong in the
-[launch checklist](demo-launch-checklist.md#providers-and-regions).
-
 ## Implementation checks
 
 The integration check uses a stubbed model and sources: a question, server restart,
@@ -274,7 +268,7 @@ answer through the SDK, and a finished report. Further checks cover:
   without resubmission and deletion while queued;
 - replacement, expiry and deletion during a run, cancellation timeout, delayed writes and retries;
 - report escaping, clickable credits and saved failure notices after reload;
-- region checks and the examples-only fallback; package and image separation from eval code.
+- package and image separation from eval code.
 
 Check two separate browser sessions and a narrow screen. A live run needs approval of its
 estimated cost.
