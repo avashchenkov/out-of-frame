@@ -86,6 +86,16 @@ Show remaining submissions and the message-length limit. On refusal, explain the
 limit and reset, if any; keep examples, saved reports and deletion available.
 Offer a dedicated author contact for questions, feedback, data requests or an arranged demo.
 
+Use these refusal messages without quota numbers:
+
+- `identity_chats_exhausted`: "You have reached your usage limit. Contact the author for
+  further access." Link to the author contact; do not suggest a daily reset for this limit.
+- `daily_chats_exhausted`: "Today's limit for new chats has been reached. Please try again
+  tomorrow." Show the next Berlin-midnight reset in the visitor's local time.
+
+Both limits apply to new conversations. Existing admitted conversations can continue within
+their submission limit. Keep examples, saved reports and deletion available.
+
 ## From a message to a report
 
 One conversation is one Aegra thread. The initial message and each answer start separate

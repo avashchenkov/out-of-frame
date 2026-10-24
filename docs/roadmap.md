@@ -461,6 +461,12 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
 
    Configure one executing run across all visitors with Aegra's native worker settings.
    Verify native queue processing and that input interrupts release the execution slot.
+
+   Prepare disposable Compose test infrastructure before backend packaging: isolated
+   PostgreSQL and Redis, local ports, and cleanup on success or failure. Run checks through
+   the [integration runner](../demo/testing.md), with explicit approval before using the
+   operator's Docker daemon. After the HTTP service is committed, package the backend in
+   Docker before starting the Web UI. Keep tests, evals and deployment input out of its image.
 7. **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
    report, progress and fixed service-failure notices, plus reviewed recorded examples.
    The Next.js proxy constructs allowed requests, filters all browser responses and checks

@@ -122,5 +122,8 @@ notice, Impressum and author contact accessible. Insert the configured values fr
 > see our Privacy notice. Avoid names and sensitive personal details.
 > AI results can be wrong: check the sources.
 
-When admission is refused, show the specific reason and reset where applicable, followed
-by: "Explore the examples, or contact the author with questions or to arrange a demonstration."
+When admission is refused, use the [quota messages](demo-architecture.md#visitor-and-access):
+the identity limit directs visitors to the author; the daily limit asks them to try tomorrow
+and shows the reset time. Do not put quota numbers in these messages. Keep examples, saved
+reports and deletion available. Other refusal reasons must also be clear and offer the
+author contact where useful.
