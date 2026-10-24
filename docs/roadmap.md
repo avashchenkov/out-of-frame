@@ -465,7 +465,8 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Prepare disposable Compose test infrastructure before backend packaging: isolated
    PostgreSQL and Redis, local ports, and cleanup on success or failure. Run checks through
    the [integration runner](../demo/testing.md), with explicit approval before using the
-   operator's Docker daemon. After the HTTP service is committed, package the backend in
+   operator's Docker daemon. Use the same runner and Compose file for integration checks
+   in CI. After the HTTP service is committed, package the backend in
    Docker before starting the Web UI. Keep tests, evals and deployment input out of its image.
 
    Cookie issuance in browser responses, origin/CSRF checks and response filtering belong

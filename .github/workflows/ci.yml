@@ -24,4 +24,8 @@ jobs:
       - name: Format
         run: uv run ruff format --check .
       - name: Tests, graders and task format
-        run: uv run pytest
+        run: uv run --no-env-file --offline --no-sync pytest --ignore=tests/demo/integration
+      - name: Demo integration checks
+        run: |
+          docker compose --env-file /dev/null --file demo/compose.test.yaml pull
+          uv run --no-env-file --offline --no-sync python tests/demo/run_integration.py

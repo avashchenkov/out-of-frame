@@ -36,3 +36,6 @@ The project name begins with `oof-test-`. Do not use global Docker prune command
 Python tests and Aegra test processes run in the project's local environment. This file
 configures test infrastructure only; backend image packaging and deployment are separate
 roadmap work. Test code and database deployment input do not belong in the runtime image.
+
+GitHub Actions uses the same Compose file and runner. CI downloads the images explicitly
+before the integration step; ordinary tests run separately, without database services.
