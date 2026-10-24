@@ -3,7 +3,12 @@ import { visibleResponse } from "./visible-response.ts";
 import type { ReadKind } from "./visible-response.ts";
 import { eventStream, validEventId } from "./event-stream.ts";
 
-type ProxyConfig = { origin: string; backend: URL; secret: string };
+export type ProxyConfig = {
+  origin: string;
+  backend: URL;
+  secret: string;
+  liveEnabled?: boolean;
+};
 
 export function proxyConfig(env: NodeJS.ProcessEnv): ProxyConfig {
   const origin = new URL(env.OUT_OF_FRAME_DEMO_ORIGIN ?? "");
@@ -21,7 +26,12 @@ export function proxyConfig(env: NodeJS.ProcessEnv): ProxyConfig {
       throw new Error("Invalid proxy URL");
   }
   if (secret.length < 32) throw new Error("Invalid proxy secret");
-  return { origin: origin.origin, backend, secret };
+  return {
+    origin: origin.origin,
+    backend,
+    secret,
+    liveEnabled: env.OUT_OF_FRAME_DEMO_LIVE_ENABLED === "true",
+  };
 }
 
 function route(
@@ -53,12 +63,14 @@ const PRIVATE_HEADERS = {
   Vary: "Cookie, Origin, Sec-Fetch-Site",
 };
 
-function json(data: unknown, status = 200) {
+export function privateJson(data: unknown, status = 200) {
   return Response.json(data, {
     status,
     headers: PRIVATE_HEADERS,
   });
 }
+
+const json = privateJson;
 
 export function disabledRoute() {
   return json({ error: "route_disabled" }, 405);

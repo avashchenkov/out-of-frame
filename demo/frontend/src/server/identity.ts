@@ -10,6 +10,11 @@ export function readIdentity(cookieHeader: string | null, secret: string) {
   if (matches.length !== 1) return null;
 
   const token = matches[0].slice(COOKIE_NAME.length + 1);
+  return verifyIdentity(token, secret);
+}
+
+export function verifyIdentity(token: unknown, secret: string) {
+  if (typeof token !== "string") return null;
   const parts = token.split(".");
   if (parts.length !== 3) return null;
   const [identity, expiry, signature] = parts;

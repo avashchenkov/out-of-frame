@@ -21,7 +21,7 @@ npm test
 npm run format:check
 ```
 
-## Private API reads
+## Private API
 
 Configure the server with the values in [.env.example](.env.example).
 `OUT_OF_FRAME_DEMO_ORIGIN` is the public website origin; it is not taken from forwarded
@@ -41,8 +41,27 @@ The proxy constructs backend credentials, checks request origins and filters JSO
 Streams expose visible messages, fixed progress names, failures, IDs and terminal status.
 Comments become fixed keepalives. Disconnect closes only the stream connection; it does
 not cancel the run. Cookie expiry closes the connection too. Responses are private and
-non-cacheable; upstream headers and raw errors stay private. Mutation and history routes
-remain disabled. Live input remains disabled.
+non-cacheable; upstream headers and raw errors stay private. History routes remain disabled.
+
+The proxy also supports these mutations. Send the configured website `Origin` and
+`X-Demo-CSRF: 1`; POST bodies use `Content-Type: application/json`:
+
+| Route                    | Body                             | Behaviour                                                            |
+| ------------------------ | -------------------------------- | -------------------------------------------------------------------- |
+| `POST chat`              | `{"text":"...","replace":false}` | Start a private chat; `replace: true` deletes the current chat first |
+| `POST threads/{id}/runs` | `{"text":"..."}`                 | Answer a saved question                                              |
+| `POST retry`             | `{}`                             | Retry from the checkpoint selected by the backend                    |
+| `DELETE chat`            | Empty                            | Delete the current chat, retaining quota records                     |
+
+The first admitted chat sets the signed HttpOnly, Secure, SameSite=Lax cookie with the
+backend's fixed expiry. Later chats, answers, retries and deletion do not renew or remove it.
+Refused admission sets no cookie. Run settings are constructed by the server, and unknown
+input fields are rejected. The backend enforces ownership and quotas. Errors expose fixed
+codes, including the relevant quota or deletion refusal.
+
+`OUT_OF_FRAME_DEMO_LIVE_ENABLED` defaults to `false`: submissions and retries return
+`live_unavailable` until enabled after the launch checklist. Private reads and deletion
+remain available. The chat page's input is still disabled.
 
 Frontend boundary tests live in `tests/demo/frontend/` and use Node's built-in test runner
 with stubbed backend responses. They need no API keys, database or Docker.
