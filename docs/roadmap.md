@@ -458,12 +458,18 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    restart/resume integration check; cover the remaining
    [implementation checks](demo-architecture.md#implementation-checks), including quotas,
    recovery, deletion races and exclusion of source texts from browser responses.
+
+   Configure one executing run across all visitors with Aegra's native worker settings.
+   Verify native queue processing and that input interrupts release the execution slot.
 7. **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
    report, progress and fixed service-failure notices, plus reviewed recorded examples.
    The Next.js proxy constructs allowed requests, filters all browser responses and checks
    regional eligibility. Disable unused history, branching, editing and regeneration.
    Show remaining submissions, message limits, clear refusal reasons and the author contact.
    Keep examples available when live input is unavailable.
+
+   Show a queued notice for `pending` runs and switch to progress when execution starts.
+   Reconnect without resubmitting, and keep deletion available while a run is queued.
 
    Keep the interface in English. Before input, show the service terms and short notice:
    private access, the essential cookie, retention on our server, external providers and loss

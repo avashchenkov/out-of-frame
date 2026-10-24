@@ -60,6 +60,8 @@ async def lifespan(app):
         raise RuntimeError(
             "Demo requires Redis and coordinated TTL cleanup, without the independent sweeper"
         )
+    if settings.worker.WORKER_COUNT != 1 or settings.worker.N_JOBS_PER_WORKER != 1:
+        raise RuntimeError("Demo requires WORKER_COUNT=1 and N_JOBS_PER_WORKER=1")
     if (
         min(
             config.DEMO_DAILY_CHATS,

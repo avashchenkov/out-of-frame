@@ -198,8 +198,9 @@ Provider retention is separate from deletion on our server.
 
 ## Demo limits
 
-Configurable demo defaults belong in `demo/backend/config.py`. This table is the source for
-numeric demo limits; the page and notices use the configured values.
+Configurable demo defaults belong in `demo/backend/config.py`; worker settings use Aegra's
+environment variables. This table is the source for numeric demo limits; the page and
+notices use the configured values.
 
 | Setting | Default |
 |---|---|
@@ -209,7 +210,19 @@ numeric demo limits; the page and notices use the configured values.
 | User submissions per conversation | 7 in total, including the first message, answers and manual retries |
 | User message length | 2,000 characters |
 | Active runs per conversation | 1 |
+| Executing runs across all visitors | 1 (`WORKER_COUNT=1`, `N_JOBS_PER_WORKER=1`) |
 | Necessary security log metadata | Up to 24 hours |
+
+Use Aegra's existing Redis queue for other admitted runs. They stay `pending` until the
+worker is free, then start automatically. Completion, an error or an input interrupt releases
+the slot; waiting for a user's answer does not occupy it. Admission consumes quota once;
+waiting, refresh and reconnect do not submit another run or consume another slot.
+
+While a run is `pending`, show: "Service is busy. Your request is queued and will start
+automatically." Switch to progress when it starts. Keep queued work visible after refresh
+and allow chat deletion while waiting. Do not add a separate queue, automatic resubmission,
+queue positions or time estimates. This bounds parallel workflows, not provider requests
+or tokens per minute; verify Anthropic limits for a single workflow at launch.
 
 Aegra's demo access handlers enforce limits independently of the page. Small demo tables in
 PostgreSQL keep identity/chat counters and the aggregate daily count. Reserve both new-chat
@@ -246,6 +259,8 @@ answer through the SDK, and a finished report. Further checks cover:
 - disconnection and worker crash during research, recovery and duplicate final-message prevention;
 - visitor isolation, spoofed identity/execution parameters, CSRF and filtered browser responses;
 - concurrent admissions and tabs, exhausted input, overlong messages and quota persistence;
+- a busy worker, queued runs starting after completion or input interruption, reconnect
+  without resubmission and deletion while queued;
 - replacement, expiry and deletion during a run, cancellation timeout, delayed writes and retries;
 - report escaping, clickable credits and saved failure notices after reload;
 - region checks and the examples-only fallback; package and image separation from eval code.

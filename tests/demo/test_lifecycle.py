@@ -21,6 +21,7 @@ def service(monkeypatch):
         observability=SimpleNamespace(OTEL_TARGETS="", OTEL_CONSOLE_EXPORT=False),
         db=SimpleNamespace(DB_ECHO_LOG=False),
         redis=SimpleNamespace(REDIS_BROKER_ENABLED=True),
+        worker=SimpleNamespace(WORKER_COUNT=1, N_JOBS_PER_WORKER=1),
     )
     monkeypatch.setattr(lifecycle, "settings", settings)
     monkeypatch.setattr(config, "DEMO_PROXY_SECRET", "test-secret-with-at-least-32-characters")
@@ -59,7 +60,7 @@ def service(monkeypatch):
 
 @pytest.mark.parametrize(
     "invalid",
-    ["secret", "auth", "sql_logging", "redis", "ttl", "limit", "tracing"],
+    ["secret", "auth", "sql_logging", "redis", "ttl", "limit", "tracing", "workers", "jobs"],
 )
 def test_invalid_settings_fail_before_database_access(service, monkeypatch, invalid):
     match invalid:
@@ -77,6 +78,10 @@ def test_invalid_settings_fail_before_database_access(service, monkeypatch, inva
             monkeypatch.setattr(config, "DEMO_SUBMISSIONS", 0)
         case "tracing":
             monkeypatch.setenv("LANGSMITH_TRACING", "true")
+        case "workers":
+            service.settings.worker.WORKER_COUNT = 2
+        case "jobs":
+            service.settings.worker.N_JOBS_PER_WORKER = 2
 
     async def scenario():
         with pytest.raises(RuntimeError):
