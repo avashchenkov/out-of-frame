@@ -3,6 +3,7 @@
 import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { reportMarkdownComponents } from "../../lib/report-markdown";
 
 function MarkdownTextImpl({ children }: { children: string }) {
   return (
@@ -10,14 +11,7 @@ function MarkdownTextImpl({ children }: { children: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         skipHtml
-        components={{
-          a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              {children}
-            </a>
-          ),
-          img: ({ alt }) => <span>{alt}</span>,
-        }}
+        components={reportMarkdownComponents(children)}
       >
         {children}
       </ReactMarkdown>

@@ -491,8 +491,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    - ✅ Restore the private conversation, report, run status and remaining submissions.
    - ✅ Live progress and reconnection without resubmitting a run.
    - ✅ Start notice, configured limits, submissions and manual retries in the interface.
-   - Add new-chat and deletion controls, then recorded examples and notice pages in
-     separate reviewable changes.
+   - ✅ New-chat and deletion controls with confirmation and preserved usage counters.
+   - ✅ Five recorded examples with research dates, viewable without a private session.
+   - Add notice pages in a separate reviewable change.
 
    Show a queued notice for `pending` runs and switch to progress when execution starts.
    Reconnect without resubmitting, and keep deletion available while a run is queued.

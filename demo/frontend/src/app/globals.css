@@ -71,6 +71,43 @@ fieldset:disabled button {
   color: var(--muted);
   font-size: 0.875rem;
 }
+.site-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+.examples-main {
+  width: min(100%, 50rem);
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+.examples-main > h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.2;
+}
+.example-note {
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+.example-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.example-list li {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: white;
+}
+.example-list h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
 .chat-main {
   display: flex;
   flex: 1;
@@ -256,6 +293,7 @@ fieldset:disabled button {
 @media (max-width: 480px) {
   .site-header {
     padding: 1rem;
+    flex-wrap: wrap;
   }
   .conversation-content {
     padding: 1.5rem 1rem;

@@ -21,6 +21,14 @@ with exhausted quotas or disabled live input, including during queued or running
 Deletion keeps the cookie and usage counters. Pending deletion remains visible and can be
 requested again; the page does not report success before the server confirms it.
 
+The Examples link opens five recorded requests and reports at `/examples`. Each report shows
+its original research date; it was regenerated from archived findings without new research.
+These static pages do not read a private session or call the backend and remain available
+with live input disabled. The reviewed visible messages are in
+`src/data/recorded-examples.json`, without graph state or source-page bodies.
+Live and recorded reports share a Markdown renderer that drops raw HTML, shows images as
+text and keeps only explicit Markdown links clickable.
+
 Use Node.js 24 and npm. From this directory:
 
 ```sh

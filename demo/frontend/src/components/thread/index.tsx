@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
-import { MarkdownText } from "./markdown-text";
+import { SiteHeader } from "../site-header";
+import { ConversationMessages } from "./messages";
 import type { ChatMessage } from "../../lib/private-chat";
 import type { ReactNode } from "react";
 
@@ -36,13 +36,7 @@ export function Thread({
 }) {
   return (
     <div className="chat-shell">
-      <header className="site-header">
-        <Link href="/" className="brand" aria-label="Out of Frame home">
-          <span className="brand-mark" aria-hidden="true" />
-          Out of Frame
-        </Link>
-        <span className="coverage">Berlin</span>
-      </header>
+      <SiteHeader />
 
       <main className="chat-main">
         <StickToBottom
@@ -62,23 +56,7 @@ export function Thread({
                 </p>
               </section>
             ) : (
-              <section aria-label="Conversation" className="messages">
-                {messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={`message message-${message.type}`}
-                    aria-label={
-                      message.type === "human" ? "You" : "Out of Frame"
-                    }
-                  >
-                    {message.type === "human" ? (
-                      <p className="human-text">{message.content}</p>
-                    ) : (
-                      <MarkdownText>{message.content}</MarkdownText>
-                    )}
-                  </article>
-                ))}
-              </section>
+              <ConversationMessages messages={messages} />
             )}
             {failures.length > 0 && (
               <aside aria-label="Unavailable sources">
