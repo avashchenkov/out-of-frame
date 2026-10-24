@@ -1,6 +1,7 @@
 import { readIdentity, UUID } from "./identity.ts";
 import { visibleResponse } from "./visible-response.ts";
 import type { ReadKind } from "./visible-response.ts";
+import { eventStream, validEventId } from "./event-stream.ts";
 
 type ProxyConfig = { origin: string; backend: URL; secret: string };
 
@@ -23,28 +24,39 @@ export function proxyConfig(env: NodeJS.ProcessEnv): ProxyConfig {
   return { origin: origin.origin, backend, secret };
 }
 
-function route(path: string[]): { kind: ReadKind; upstream: string } | null {
+function route(
+  path: string[],
+): { kind: ReadKind | "stream"; upstream: string } | null {
   if (path.length === 1 && (path[0] === "limits" || path[0] === "session")) {
     return { kind: path[0], upstream: `/demo/${path[0]}` };
   }
   if (path[0] !== "threads" || !UUID.test(path[1] ?? "")) return null;
-  let kind: ReadKind;
+  let kind: ReadKind | "stream";
   if (path.length === 2) kind = "thread";
   else if (path.length === 3 && path[2] === "state") kind = "state";
   else if (path.length === 4 && path[2] === "runs" && UUID.test(path[3]))
     kind = "run";
+  else if (
+    path.length === 5 &&
+    path[2] === "runs" &&
+    UUID.test(path[3]) &&
+    path[4] === "stream"
+  )
+    kind = "stream";
   else return null;
   return { kind, upstream: `/${path.join("/")}` };
 }
 
+const PRIVATE_HEADERS = {
+  "Cache-Control": "private, no-store",
+  "X-Content-Type-Options": "nosniff",
+  Vary: "Cookie, Origin, Sec-Fetch-Site",
+};
+
 function json(data: unknown, status = 200) {
   return Response.json(data, {
     status,
-    headers: {
-      "Cache-Control": "private, no-store",
-      "X-Content-Type-Options": "nosniff",
-      Vary: "Cookie, Origin, Sec-Fetch-Site",
-    },
+    headers: PRIVATE_HEADERS,
   });
 }
 
@@ -78,10 +90,31 @@ export async function readProxy(
       return json({ thread_id: null });
     return json({ error: "invalid_identity" }, 401);
   }
+  const lastEventId = request.headers.get("last-event-id");
+  if (
+    target.kind === "stream" &&
+    lastEventId !== null &&
+    !validEventId(lastEventId, path[3])
+  )
+    return json({ error: "invalid_event_id" }, 422);
+  const connection = new AbortController();
+  const headerTimer = setTimeout(() => connection.abort(), 10_000);
+  let expiryTimer: ReturnType<typeof setTimeout> | undefined;
+  const disconnect = () => {
+    clearTimeout(headerTimer);
+    clearTimeout(expiryTimer);
+    connection.abort();
+  };
+  let streaming = false;
   try {
     const headers = new Headers({ "x-demo-key": config.secret });
     if (identity && target.kind !== "limits")
-      headers.set("x-demo-identity", identity);
+      headers.set("x-demo-identity", identity.identity);
+    if (target.kind === "stream") {
+      headers.set("accept", "text/event-stream");
+      if (lastEventId !== null) headers.set("last-event-id", lastEventId);
+    }
+    const signal = AbortSignal.any([request.signal, connection.signal]);
     const response = await fetchBackend(
       new URL(target.upstream, config.backend),
       {
@@ -89,7 +122,7 @@ export async function readProxy(
         headers,
         cache: "no-store",
         redirect: "error",
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(10_000)]),
+        signal,
       },
     );
     if (!response.ok) {
@@ -98,9 +131,59 @@ export async function readProxy(
         ? json({ error: "chat_not_found" }, 404)
         : json({ error: "service_unavailable" }, 502);
     }
-    return json(visibleResponse(target.kind, await response.json()));
+    if (target.kind === "stream") {
+      clearTimeout(headerTimer);
+      if (
+        !response.body ||
+        response.headers
+          .get("content-type")
+          ?.split(";")[0]
+          .trim()
+          .toLowerCase() !== "text/event-stream"
+      ) {
+        await response.body?.cancel();
+        return unavailable();
+      }
+      const lifetime = (identity?.expires ?? 0) * 1000 - Date.now();
+      if (lifetime <= 0) {
+        await response.body.cancel();
+        return json({ error: "invalid_identity" }, 401);
+      }
+      expiryTimer = setTimeout(
+        () => connection.abort(),
+        Math.min(Math.max(0, lifetime), 2_147_483_647),
+      );
+      expiryTimer.unref();
+      streaming = true;
+      return new Response(
+        eventStream(
+          response.body,
+          path[3],
+          identity?.expires ?? 0,
+          signal,
+          disconnect,
+        ),
+        {
+          headers: {
+            ...PRIVATE_HEADERS,
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "X-Accel-Buffering": "no",
+          },
+        },
+      );
+    }
+    const data: unknown = await response.json();
+    if (
+      target.kind !== "limits" &&
+      identity &&
+      Date.now() >= identity.expires * 1000
+    )
+      return json({ error: "invalid_identity" }, 401);
+    return json(visibleResponse(target.kind, data));
   } catch {
     return unavailable();
+  } finally {
+    if (!streaming) disconnect();
   }
 }
 

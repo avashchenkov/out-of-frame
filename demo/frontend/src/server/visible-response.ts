@@ -126,3 +126,35 @@ export function visibleResponse(kind: ReadKind, raw: unknown): ObjectValue {
     ...pick(data, ["expires_at"], isDate),
   };
 }
+
+const PROGRESS = new Set([
+  "get_map_objects",
+  "get_plans",
+  "plan_journeys",
+  "triage_objects",
+  "investigate_object",
+  "write_report",
+]);
+
+export function visibleEvent(event: string, raw: unknown): ObjectValue | null {
+  const data = object(raw);
+  if (event === "values") return values(data);
+  if (event === "updates") {
+    const nodes = Object.keys(data).filter((node) => PROGRESS.has(node));
+    return nodes.length
+      ? Object.fromEntries(nodes.map((node) => [node, { progress: node }]))
+      : null;
+  }
+  if (event === "metadata") return pick(data, ["run_id", "thread_id"], isId);
+  if (event === "error") return { error: "run_failed" };
+  if (event === "end") {
+    return {
+      status: ["success", "error", "interrupted", "timeout"].includes(
+        String(data.status),
+      )
+        ? data.status
+        : "error",
+    };
+  }
+  return null;
+}

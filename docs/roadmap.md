@@ -485,8 +485,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Keep examples available when live input is unavailable.
 
    - ✅ A small buildable chat layout in `demo/frontend/`, with live input disabled.
-   - Add proxy reads with signed-cookie checks and filtered JSON responses. Then add
-     admission, origin/CSRF and region checks for mutations, plus filtered event streams.
+   - ✅ Proxy reads with signed-cookie checks and filtered JSON responses.
+   - Add filtered event streams and cursor-based reconnection to existing runs.
+   - Add admission, cookie issuance, deletion and origin/CSRF and region checks for mutations.
    - Connect the private chat, then add recorded examples and notice pages in separate
      reviewable changes.
 

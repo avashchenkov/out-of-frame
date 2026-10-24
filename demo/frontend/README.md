@@ -33,9 +33,16 @@ The `/api/demo/` proxy allows `GET limits`, `GET session`, `GET threads/{id}`,
 backend-compatible signed identity cookie; Aegra checks chat ownership. A cookie-free
 session read returns an empty session. Reads never issue or renew cookies.
 
-The proxy constructs backend credentials, checks request origins and filters JSON responses.
-It returns private, non-cacheable responses and fixed errors. Mutation, history and streaming
-routes are disabled. Live input remains disabled.
+`GET threads/{id}/runs/{runId}/stream` attaches to an existing run. Send its last received
+`Last-Event-ID` to replay missed events. The cursor must belong to that run. This uses Aegra's
+existing stream and replay buffer; attaching never submits another run.
+
+The proxy constructs backend credentials, checks request origins and filters JSON and SSE.
+Streams expose visible messages, fixed progress names, failures, IDs and terminal status.
+Comments become fixed keepalives. Disconnect closes only the stream connection; it does
+not cancel the run. Cookie expiry closes the connection too. Responses are private and
+non-cacheable; upstream headers and raw errors stay private. Mutation and history routes
+remain disabled. Live input remains disabled.
 
 Frontend boundary tests live in `tests/demo/frontend/` and use Node's built-in test runner
 with stubbed backend responses. They need no API keys, database or Docker.

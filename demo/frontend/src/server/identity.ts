@@ -21,5 +21,5 @@ export function readIdentity(cookieHeader: string | null, secret: string) {
     .update(`${identity}.${expiry}`)
     .digest();
   if (!timingSafeEqual(expected, Buffer.from(signature, "hex"))) return null;
-  return identity;
+  return { identity, expires: Number(expiry) };
 }

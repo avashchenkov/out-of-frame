@@ -27,7 +27,10 @@ function request(path: string, headers: HeadersInit = {}, method = "GET") {
 }
 
 test("cookies match Python signatures and reject forgery, expiry and ambiguity", (t) => {
-  assert.equal(readIdentity(`other=1; oof_identity=${TOKEN}`, SECRET), ID);
+  assert.deepEqual(readIdentity(`other=1; oof_identity=${TOKEN}`, SECRET), {
+    identity: ID,
+    expires: 4102444800,
+  });
   for (const token of [
     TOKEN.slice(0, -1),
     TOKEN.replace(ID, OTHER),
@@ -116,8 +119,8 @@ test("unknown routes, queries, methods, origins and identities never reach Aegra
     [request("threads"), ["threads"], 403],
     [request(`threads/${ID}/history`), ["threads", ID, "history"], 403],
     [
-      request(`threads/${ID}/runs/${OTHER}/stream`),
-      ["threads", ID, "runs", OTHER, "stream"],
+      request(`threads/${ID}/runs/${OTHER}/cancel`),
+      ["threads", ID, "runs", OTHER, "cancel"],
       403,
     ],
     [request("limits?checkpoint_id=anything"), ["limits"], 403],
@@ -234,4 +237,21 @@ test("server configuration rejects missing settings and ambiguous URLs", () => {
     proxyConfig({ ...env, OUT_OF_FRAME_DEMO_PROXY_SECRET: "short" }),
   );
   assert.throws(() => proxyConfig({}));
+});
+
+test("a private JSON read cannot return content after identity expiry", async (t) => {
+  let now = 4102444799000;
+  t.mock.method(Date, "now", () => now);
+  const fetchBackend: typeof fetch = async () => {
+    now = 4102444801000;
+    return Response.json({ thread_id: ID, status: "success" });
+  };
+  const response = await readProxy(
+    request(`threads/${ID}`),
+    ["threads", ID],
+    CONFIG,
+    fetchBackend,
+  );
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: "invalid_identity" });
 });
