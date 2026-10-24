@@ -7,6 +7,9 @@ Track completion in the [roadmap](roadmap.md#after-the-mvp-the-demo).
 
 ## Operator and visitor information
 
+Public contact: Artur Vashchenkov,
+[outofframe.contact@proton.me](mailto:outofframe.contact@proton.me).
+
 - Supply the operator's real name, serviceable postal address and dedicated contact
   email for the Impressum. A forwarding alias keeps the personal inbox private but does not
   replace the name or address. Check the applicable DDG/MStV particulars against the
