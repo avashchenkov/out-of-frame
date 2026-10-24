@@ -1,5 +1,5 @@
-import { Thread } from "../components/thread";
+import { PrivateChat } from "../components/private-chat";
 
 export default function Home() {
-  return <Thread messages={[]} />;
+  return <PrivateChat />;
 }

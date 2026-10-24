@@ -1,0 +1,129 @@
+export type ChatMessage = {
+  id: string;
+  type: "human" | "ai";
+  content: string;
+};
+
+export type PrivateChat = {
+  threadId: string | null;
+  messages: ChatMessage[];
+  failures: string[];
+  status: string;
+  active: boolean;
+  expiresAt?: string;
+  submissionsRemaining?: number;
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const FAILURE_NOTICES: Record<string, string> = {
+  map: "The map could not be loaded, so the report may be incomplete.",
+  plans:
+    "Development plans could not be loaded, so the report may be incomplete.",
+  transit: "The journey planner failed, so some journeys are unavailable.",
+  "web search": "Web search failed, so an object may stay unidentified.",
+};
+
+type Session = {
+  thread_id: string | null;
+  status?: string;
+  complete?: boolean;
+  deleting?: boolean;
+  expires_at?: string;
+  submissions_remaining?: number;
+};
+
+export class ChatReadError extends Error {
+  constructor(inaccessible: boolean) {
+    super(
+      inaccessible
+        ? "This chat is no longer available in this browser."
+        : "The chat could not be loaded. Please try again.",
+    );
+  }
+}
+
+export async function readPrivateChat(
+  signal: AbortSignal,
+  fetchPage: typeof fetch = fetch,
+): Promise<PrivateChat> {
+  async function get(path: string) {
+    const response = await fetchPage(`/api/demo/${path}`, {
+      method: "GET",
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]),
+    });
+    if (!response.ok)
+      throw new ChatReadError([401, 404].includes(response.status));
+    return response.json();
+  }
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const session: Session = await get("session");
+    const empty: PrivateChat = {
+      threadId: null,
+      messages: [],
+      failures: [],
+      status: "No private chat in this browser.",
+      active: false,
+    };
+    if (session.thread_id === null) {
+      return session.deleting
+        ? { ...empty, status: "Chat deletion is in progress.", active: true }
+        : empty;
+    }
+    if (!UUID.test(session.thread_id)) throw new ChatReadError(false);
+    const state = await get(`threads/${session.thread_id}/state`);
+    // A different tab may have deleted or replaced the chat while state was loading.
+    const current: Session = await get("session");
+    if (
+      current.thread_id !== session.thread_id ||
+      current.deleting ||
+      current.status !== session.status ||
+      current.complete !== session.complete ||
+      current.submissions_remaining !== session.submissions_remaining
+    )
+      continue;
+    if (
+      !current.expires_at ||
+      !Number.isFinite(Date.parse(current.expires_at)) ||
+      Date.parse(current.expires_at) <= Date.now()
+    )
+      throw new ChatReadError(true);
+
+    const active = ["pending", "running", "busy"].includes(
+      current.status ?? "",
+    );
+    let status = "Chat paused.";
+    if (current.complete) status = "Report complete.";
+    else if (current.status === "pending")
+      status =
+        "Service is busy. Your request is queued and will start automatically.";
+    else if (active) status = "The agent is working on your request.";
+    else if (["error", "timeout"].includes(current.status ?? ""))
+      status = "The run stopped. Your conversation has been saved.";
+    else if (
+      state.interrupts?.length ||
+      state.next?.includes("wait_for_answer")
+    )
+      status = "Waiting for your answer.";
+
+    return {
+      threadId: current.thread_id,
+      messages: (state.values?.messages ?? []).map(
+        (message: ChatMessage, index: number) => ({
+          ...message,
+          id: `${message.id ?? "message"}-${index}`,
+        }),
+      ),
+      failures: (state.values?.failures ?? []).flatMap((code: string) =>
+        FAILURE_NOTICES[code] ? [FAILURE_NOTICES[code]] : [],
+      ),
+      status,
+      active,
+      expiresAt: current.expires_at,
+      submissionsRemaining: current.submissions_remaining,
+    };
+  }
+  throw new ChatReadError(false);
+}

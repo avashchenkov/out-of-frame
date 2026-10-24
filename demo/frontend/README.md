@@ -1,7 +1,11 @@
 # Web UI
 
 The Next.js interface lives here, separate from the Python agent and demo backend.
-It currently shows the chat layout with live input disabled.
+It restores the browser's private conversation and report, with live input disabled.
+Queued and running chats refresh automatically. Returning to the page or selecting
+Reload chat reads the current server state without starting a run. Source-failure notices
+and remaining submissions are restored too. Chat content stays in memory, without browser
+storage. The page clears it when access expires or a read fails.
 
 Use Node.js 24 and npm. From this directory:
 

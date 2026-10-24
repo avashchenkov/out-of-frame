@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import { MarkdownText } from "./markdown-text";
-
-export type ChatMessage = {
-  id: string;
-  type: "human" | "ai";
-  content: string;
-};
+import type { ChatMessage } from "../../lib/private-chat";
 
 function ScrollToBottom() {
   const { isAtBottom, scrollToBottom } = useStickToBottomContext();
@@ -21,7 +16,19 @@ function ScrollToBottom() {
   );
 }
 
-export function Thread({ messages }: { messages: ChatMessage[] }) {
+export function Thread({
+  messages,
+  notice,
+  failures,
+  submissionsRemaining,
+  onReload,
+}: {
+  messages: ChatMessage[];
+  notice: string;
+  failures: string[];
+  submissionsRemaining?: number;
+  onReload: () => void;
+}) {
   return (
     <div className="chat-shell">
       <header className="site-header">
@@ -68,14 +75,29 @@ export function Thread({ messages }: { messages: ChatMessage[] }) {
                 ))}
               </section>
             )}
+            {failures.length > 0 && (
+              <aside aria-label="Unavailable sources">
+                {failures.map((failure) => (
+                  <p key={failure}>{failure}</p>
+                ))}
+              </aside>
+            )}
           </StickToBottom.Content>
           <ScrollToBottom />
         </StickToBottom>
 
         <div className="composer-area">
           <p id="chat-availability" role="status">
-            Live chat is not available yet.
+            {notice}
           </p>
+          <button type="button" onClick={onReload}>
+            Reload chat
+          </button>
+          {submissionsRemaining !== undefined && (
+            <p className="report-note">
+              Submissions remaining: {submissionsRemaining}
+            </p>
+          )}
           <fieldset
             className="composer"
             disabled
@@ -90,8 +112,8 @@ export function Thread({ messages }: { messages: ChatMessage[] }) {
             <button type="button">Send</button>
           </fieldset>
           <p className="report-note">
-            Reports describe facts. They do not recommend whether to buy or
-            rent.
+            Live input is not available yet. Reports describe facts. They do not
+            recommend whether to buy or rent.
           </p>
         </div>
       </main>
