@@ -490,8 +490,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    - ✅ Admission, cookie issuance, deletion and origin/CSRF checks for mutations.
    - ✅ Restore the private conversation, report, run status and remaining submissions.
    - ✅ Live progress and reconnection without resubmitting a run.
-   - Connect submissions, then add recorded examples and notice pages
-     in separate reviewable changes.
+   - ✅ Start notice, configured limits, submissions and manual retries in the interface.
+   - Add new-chat and deletion controls, then recorded examples and notice pages in
+     separate reviewable changes.
 
    Show a queued notice for `pending` runs and switch to progress when execution starts.
    Reconnect without resubmitting, and keep deletion available while a run is queued.

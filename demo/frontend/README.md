@@ -14,6 +14,12 @@ When enabled, a start notice precedes the first input. The page uses server-conf
 message and submission limits, sends answers to saved questions, and offers an explicit
 retry after a failed run. It never automatically repeats a submission. An uncertain result
 requires Reload chat before another submission; confirmed quota refusals show fixed reasons.
+New chat opens a replacement draft and warns that its first message deletes the current
+chat and report. The server checks admission limits first, so a quota refusal keeps the old
+chat. Cancel new chat returns to it. Delete chat requires confirmation and remains available
+with exhausted quotas or disabled live input, including during queued or running work.
+Deletion keeps the cookie and usage counters. Pending deletion remains visible and can be
+requested again; the page does not report success before the server confirms it.
 
 Use Node.js 24 and npm. From this directory:
 

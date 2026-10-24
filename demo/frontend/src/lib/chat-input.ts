@@ -6,9 +6,10 @@ export type DemoLimits = {
   daily_reset: string;
 };
 
+export const IDENTITY_LIMIT_NOTICE =
+  "You have reached your usage limit. Contact the author for further access.";
 const REFUSALS: Record<string, string> = {
-  identity_chats_exhausted:
-    "You have reached your usage limit. Contact the author for further access.",
+  identity_chats_exhausted: IDENTITY_LIMIT_NOTICE,
   daily_chats_exhausted:
     "Today's limit for new chats has been reached. Please try again tomorrow.",
   submissions_exhausted: "The submission limit for this chat has been reached.",
@@ -70,29 +71,62 @@ export async function readDemoLimits(
 }
 
 export async function submitChat(
-  action: "new" | "answer" | "retry",
+  action: "new" | "replace" | "answer" | "retry",
   text: string,
   threadId: string | null,
   signal: AbortSignal,
   fetchPage: typeof fetch = fetch,
 ) {
   const path =
-    action === "new"
+    action === "new" || action === "replace"
       ? "chat"
       : action === "retry"
         ? "retry"
         : `threads/${encodeURIComponent(threadId ?? "")}/runs`;
-  let response: Response;
+  return chatRequest(
+    path,
+    action === "retry"
+      ? {}
+      : action === "replace"
+        ? { text, replace: true }
+        : { text },
+    signal,
+    fetchPage,
+  );
+}
+
+export async function deleteChat(
+  signal: AbortSignal,
+  fetchPage: typeof fetch = fetch,
+) {
+  const response = await chatRequest("chat", undefined, signal, fetchPage);
   try {
-    response = await fetchPage(`/api/demo/${path}`, {
-      method: "POST",
+    if ((await response.json()).deleted !== true)
+      throw new Error("not_deleted");
+  } catch {
+    throw new ChatSubmitError(undefined, true);
+  }
+}
+
+async function chatRequest(
+  path: string,
+  body: Record<string, unknown> | undefined,
+  signal: AbortSignal,
+  fetchPage: typeof fetch,
+) {
+  try {
+    const response = await fetchPage(`/api/demo/${path}`, {
+      method: body === undefined ? "DELETE" : "POST",
       credentials: "same-origin",
       cache: "no-store",
-      headers: { "Content-Type": "application/json", "X-Demo-CSRF": "1" },
-      body: JSON.stringify(action === "retry" ? {} : { text }),
+      headers:
+        body === undefined
+          ? { "X-Demo-CSRF": "1" }
+          : { "Content-Type": "application/json", "X-Demo-CSRF": "1" },
+      body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.any([signal, AbortSignal.timeout(35_000)]),
     });
-    if (response.ok) return;
+    if (response.ok) return response;
     const data = await response.json();
     throw new ChatSubmitError(
       typeof data.error === "string" ? data.error : undefined,

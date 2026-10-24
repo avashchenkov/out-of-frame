@@ -14,6 +14,7 @@ const SESSION = {
   complete: false,
   expires_at: "2100-01-01T00:00:00Z",
   submissions_remaining: 6,
+  chats_remaining: 1,
 };
 const STATE = {
   values: {
@@ -62,6 +63,7 @@ test("reload restores visible messages, failures and remaining submissions", asy
   assert.equal(chat.messages[1].content, "Where do you travel?");
   assert.equal(new Set(chat.messages.map((message) => message.id)).size, 2);
   assert.equal(chat.submissionsRemaining, 6);
+  assert.equal(chat.chatsRemaining, 1);
   assert.equal(chat.runId, RUN);
   assert.match(chat.failures[0], /Development plans could not be loaded/);
   assert.equal(chat.status, "Waiting for your answer.");
@@ -110,13 +112,31 @@ test("replacement or deletion in another tab discards the old snapshot", async (
   const chat = await readPrivateChat(new AbortController().signal, fetchPage);
   assert.equal(chat.threadId, null);
   assert.deepEqual(chat.messages, []);
-  const deleting = responses({ thread_id: null, deleting: true });
+  const deleting = responses({
+    thread_id: null,
+    deleting: true,
+    chats_remaining: 0,
+  });
   const pending = await readPrivateChat(
     new AbortController().signal,
     deleting.fetchPage,
   );
   assert.equal(pending.active, true);
+  assert.equal(pending.deleting, true);
+  assert.equal(pending.chatsRemaining, 0);
   assert.deepEqual(pending.messages, []);
+});
+
+test("deleting a chat preserves the identity quota and expiry in an empty session", async () => {
+  const { fetchPage } = responses({
+    thread_id: null,
+    chats_remaining: 0,
+    expires_at: SESSION.expires_at,
+  });
+  const chat = await readPrivateChat(new AbortController().signal, fetchPage);
+  assert.deepEqual(chat.messages, []);
+  assert.equal(chat.chatsRemaining, 0);
+  assert.equal(chat.expiresAt, SESSION.expires_at);
 });
 
 test("a run ending during a read reloads state before declaring completion", async () => {

@@ -5,7 +5,13 @@ import { Thread } from "./thread";
 import type { PrivateChat as Chat } from "../lib/private-chat";
 import { watchPrivateChat } from "../lib/watch-private-chat";
 import { ChatInput } from "./chat-input";
-import { ChatSubmitError, readDemoLimits, submitChat } from "../lib/chat-input";
+import {
+  ChatSubmitError,
+  IDENTITY_LIMIT_NOTICE,
+  deleteChat,
+  readDemoLimits,
+  submitChat,
+} from "../lib/chat-input";
 import type { DemoLimits } from "../lib/chat-input";
 
 export function PrivateChat({
@@ -20,7 +26,11 @@ export function PrivateChat({
   const [reload, setReload] = useState(0);
   const [limits, setLimits] = useState<DemoLimits | null>(null);
   const [limitsFailed, setLimitsFailed] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [operation, setOperation] = useState<"submit" | "delete" | null>(null);
+  const busy = operation !== null;
+  const [replaceFor, setReplaceFor] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const replacement = !!chat?.threadId && replaceFor === chat.threadId;
   const [locked, setLocked] = useState(false);
   const [error, setError] = useState<ChatSubmitError | null>(null);
   const [dailyReset, setDailyReset] = useState<string | null>(null);
@@ -59,38 +69,62 @@ export function PrivateChat({
   }, [error]);
 
   async function send(text: string, retry = false): Promise<boolean> {
-    if (
-      !liveEnabled ||
-      !limits ||
-      !chat ||
-      submission.current ||
-      locked ||
-      chat.active
-    )
+    if (!liveEnabled || !limits || !chat || submission.current || locked)
       return false;
-    if (
-      chat.threadId &&
-      (!(retry ? chat.canRetry : chat.canAnswer) || !chat.submissionsRemaining)
-    )
-      return false;
+    if (replacement) {
+      if (!(chat.chatsRemaining && chat.chatsRemaining > 0)) return false;
+    } else {
+      if (chat.active) return false;
+      if (
+        chat.threadId &&
+        (!(retry ? chat.canRetry : chat.canAnswer) ||
+          !chat.submissionsRemaining)
+      )
+        return false;
+    }
     if (
       !retry &&
       (!text.trim() || Array.from(text).length > limits.message_chars)
     )
       return false;
+    return performChange((signal) =>
+      submitChat(
+        replacement
+          ? "replace"
+          : retry
+            ? "retry"
+            : chat.threadId
+              ? "answer"
+              : "new",
+        text,
+        chat.threadId,
+        signal,
+      ),
+    );
+  }
+
+  async function remove() {
+    if (!chat || (!chat.threadId && !chat.deleting)) return;
+    setConfirmDelete(false);
+    await performChange((signal) => deleteChat(signal), true);
+  }
+
+  async function performChange(
+    action: (signal: AbortSignal) => Promise<unknown>,
+    deleting = false,
+  ): Promise<boolean> {
+    if (submission.current) return false;
     const controller = new AbortController();
     submission.current = controller;
-    setBusy(true);
+    setOperation(deleting ? "delete" : "submit");
     setError(null);
     setDailyReset(null);
     try {
-      await submitChat(
-        retry ? "retry" : chat.threadId ? "answer" : "new",
-        text,
-        chat.threadId,
-        controller.signal,
-      );
+      await action(controller.signal);
       if (controller.signal.aborted) return false;
+      setLocked(false);
+      setReplaceFor(null);
+      setConfirmDelete(false);
       setChat(null);
       setNotice("Loading your private chat…");
       setReload((value) => value + 1);
@@ -103,17 +137,22 @@ export function PrivateChat({
           : new ChatSubmitError(undefined, true);
       setError(failed);
       setLocked(failed.uncertain);
-      if (failed.code === "daily_chats_exhausted") {
+      if (failed.code === "daily_chats_exhausted" && limits) {
         setDailyReset(
           Date.parse(limits.daily_reset) > Date.now()
             ? new Date(limits.daily_reset).toLocaleString()
             : null,
         );
       }
+      if (failed.code === "deletion_pending") {
+        setReplaceFor(null);
+        setChat(null);
+        setReload((value) => value + 1);
+      }
       return false;
     } finally {
       submission.current = null;
-      if (!controller.signal.aborted) setBusy(false);
+      if (!controller.signal.aborted) setOperation(null);
     }
   }
 
@@ -137,13 +176,25 @@ export function PrivateChat({
   return (
     <Thread
       messages={chat?.messages ?? []}
-      notice={busy ? "Submitting your request…" : notice}
+      notice={
+        operation === "delete"
+          ? "Deleting your chat…"
+          : busy
+            ? "Submitting your request…"
+            : notice
+      }
       failures={chat?.failures ?? []}
       submissionsRemaining={
-        chat ? (chat.submissionsRemaining ?? limits?.submissions) : undefined
+        chat?.threadId && !replacement
+          ? chat.submissionsRemaining
+          : chat && !chat.deleting && chat.chatsRemaining !== 0
+            ? limits?.submissions
+            : undefined
       }
       onReload={() => {
         if (submission.current) return;
+        setReplaceFor(null);
+        setConfirmDelete(false);
         setLocked(false);
         setLimitsFailed(false);
         setError(null);
@@ -153,6 +204,80 @@ export function PrivateChat({
       }}
       busy={busy}
     >
+      {chat && (chat.threadId || chat.deleting) && (
+        <div className="chat-actions">
+          <button
+            type="button"
+            disabled={
+              busy ||
+              locked ||
+              !liveEnabled ||
+              chat.deleting ||
+              !chat.chatsRemaining
+            }
+            onClick={() => {
+              setConfirmDelete(false);
+              setReplaceFor(chat.threadId);
+            }}
+          >
+            New chat
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setConfirmDelete(true)}
+          >
+            Delete chat
+          </button>
+        </div>
+      )}
+      {confirmDelete && chat && (chat.threadId || chat.deleting) && (
+        <section aria-label="Confirm chat deletion" className="input-note">
+          <p>
+            Delete this browser&apos;s current chat and report? Running work
+            will stop. This cannot be undone. Usage limits and the access cookie
+            remain.
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              void remove();
+            }}
+          >
+            Confirm delete
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setConfirmDelete(false)}
+          >
+            Cancel
+          </button>
+        </section>
+      )}
+      {replacement && (
+        <section
+          aria-label="New chat replaces the current chat"
+          className="input-note"
+        >
+          <p>
+            Sending the first message of the new chat deletes the current chat
+            and report and stops any running work. A limit refusal keeps the
+            current chat.
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setReplaceFor(null)}
+          >
+            Cancel new chat
+          </button>
+        </section>
+      )}
+      {chat && !chat.threadId && chat.chatsRemaining === 0 && (
+        <p role="status">{IDENTITY_LIMIT_NOTICE}</p>
+      )}
       {error && (
         <p role="alert">
           {error.message}
@@ -163,9 +288,21 @@ export function PrivateChat({
       )}
       {liveEnabled && limits && chat ? (
         <ChatInput
-          chat={chat}
+          key={replacement ? "replacement" : (chat.threadId ?? "new")}
+          chat={
+            replacement
+              ? {
+                  ...chat,
+                  threadId: null,
+                  active: false,
+                  canRetry: false,
+                  canAnswer: false,
+                  submissionsRemaining: undefined,
+                }
+              : chat
+          }
           limits={limits}
-          busy={busy}
+          busy={busy || confirmDelete}
           locked={locked}
           onSend={send}
           onRetry={() => {

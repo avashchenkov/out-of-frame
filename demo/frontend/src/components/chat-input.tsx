@@ -25,7 +25,12 @@ export function ChatInput({
   const remaining = chat.threadId
     ? (chat.submissionsRemaining ?? 0)
     : limits.submissions;
-  const disabled = busy || locked || chat.active || remaining === 0;
+  const disabled =
+    busy ||
+    locked ||
+    chat.active ||
+    remaining === 0 ||
+    (!chat.threadId && chat.chatsRemaining === 0);
 
   if (!chat.threadId && !started)
     return (
@@ -48,7 +53,8 @@ export function ChatInput({
           Starting another chat does not extend this period. Clearing cookies
           loses access but does not delete server data. Minimal quota records
           remain until the cookie expires. Provider retention differs. Avoid
-          names and sensitive personal details.
+          names and sensitive personal details. New chat or Delete chat removes
+          the current chat and report earlier.
         </p>
         <button
           type="button"

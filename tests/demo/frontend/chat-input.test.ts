@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   ChatSubmitError,
+  deleteChat,
   readDemoLimits,
   submitChat,
 } from "../../../demo/frontend/src/lib/chat-input.ts";
@@ -33,6 +34,68 @@ test("the page uses configured limits without fallback numbers", async () => {
     await assert.rejects(
       readDemoLimits(signal(), async () => Response.json(data)),
     );
+  }
+});
+
+test("replacement uses one admission request and leaves deletion to the server", async () => {
+  const calls: string[] = [];
+  await assert.rejects(
+    submitChat(
+      "replace",
+      "A new scenario",
+      "old-thread",
+      signal(),
+      async (url, options) => {
+        calls.push(`${options?.method} ${url}`);
+        assert.deepEqual(JSON.parse(String(options?.body)), {
+          text: "A new scenario",
+          replace: true,
+        });
+        return Response.json(
+          { error: "daily_chats_exhausted" },
+          { status: 429 },
+        );
+      },
+    ),
+    ChatSubmitError,
+  );
+  assert.deepEqual(calls, ["POST /api/demo/chat"]);
+});
+
+test("explicit deletion sends no input, execution overrides or cookie edits", async () => {
+  let calls = 0;
+  await deleteChat(signal(), async (url, options) => {
+    calls++;
+    assert.equal(url, "/api/demo/chat");
+    assert.equal(options?.method, "DELETE");
+    assert.equal(options?.body, undefined);
+    assert.equal(options?.credentials, "same-origin");
+    assert.deepEqual(options?.headers, { "X-Demo-CSRF": "1" });
+    return Response.json({ deleted: true });
+  });
+  assert.equal(calls, 1);
+});
+
+test("pending or ambiguous deletion is never reported as success or repeated", async () => {
+  for (const kind of ["pending", "malformed", "incomplete", "network"]) {
+    let calls = 0;
+    await assert.rejects(
+      deleteChat(signal(), async () => {
+        calls++;
+        if (kind === "network") throw new Error("PRIVATE_ERROR");
+        if (kind === "pending")
+          return Response.json({ error: "deletion_pending" }, { status: 409 });
+        if (kind === "incomplete") return Response.json({ deleted: false });
+        return new Response("PRIVATE_ERROR");
+      }),
+      (error: unknown) =>
+        error instanceof ChatSubmitError &&
+        !error.message.includes("PRIVATE") &&
+        (kind === "pending"
+          ? error.code === "deletion_pending"
+          : error.uncertain),
+    );
+    assert.equal(calls, 1);
   }
 });
 

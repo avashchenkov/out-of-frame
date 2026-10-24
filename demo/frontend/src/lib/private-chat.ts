@@ -15,6 +15,8 @@ export type PrivateChat = {
   canRetry?: boolean;
   expiresAt?: string;
   submissionsRemaining?: number;
+  chatsRemaining?: number;
+  deleting?: boolean;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -34,6 +36,7 @@ type Session = {
   deleting?: boolean;
   expires_at?: string;
   submissions_remaining?: number;
+  chats_remaining?: number;
 };
 
 export class ChatReadError extends Error {
@@ -72,10 +75,17 @@ export async function readPrivateChat(
       failures: [],
       status: "No private chat in this browser.",
       active: false,
+      chatsRemaining: session.chats_remaining,
+      expiresAt: session.expires_at,
     };
     if (session.thread_id === null) {
       return session.deleting
-        ? { ...empty, status: "Chat deletion is in progress.", active: true }
+        ? {
+            ...empty,
+            status: "Chat deletion is in progress.",
+            active: true,
+            deleting: true,
+          }
         : empty;
     }
     if (!UUID.test(session.thread_id)) throw new ChatReadError(false);
@@ -140,6 +150,7 @@ export async function readPrivateChat(
         ["error", "timeout"].includes(current.status ?? ""),
       expiresAt: current.expires_at,
       submissionsRemaining: current.submissions_remaining,
+      chatsRemaining: current.chats_remaining,
     };
   }
   throw new ChatReadError(false);
