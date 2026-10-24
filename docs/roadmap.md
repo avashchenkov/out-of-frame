@@ -448,6 +448,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    the message changes. Move the scripted dialogue runner and judge settings into `evals/`,
    with separate example environment files.
 
+   Keep demo server code and settings in `demo/backend/`, outside the agent package.
+   Keep demo tests in `tests/demo/`, with infrastructure checks in its `integration/` folder.
+
    Implement cookie ownership, atomic admission limits, one current conversation per
    identity, and coordinated cancellation/deletion with scheduled and operator cleanup.
    Retain admission counters after chat deletion. Add explicit Markdown licence links and

@@ -58,5 +58,7 @@ Python 3.14 with uv. Add dependencies with `uv add` and run commands with `uv ru
 - Agent runtime settings live in `src/out_of_frame/config.py` and the environment; never
   hard-code them. Keep evaluation-only settings outside the runtime package, in
   `evals/config.py`, with their example environment in `evals/.env.example`.
+- Keep demo-only code and settings in `demo/backend/`, outside `src/out_of_frame/`.
+  Keep all demo tests in `tests/demo/`, with infrastructure checks in its `integration/` folder.
 - Hand work to another agent or model, such as Codex or Grok, only when the user asks. It works
   read-only and does not hand the work on.

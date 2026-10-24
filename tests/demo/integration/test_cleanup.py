@@ -19,12 +19,11 @@ from fastapi import HTTPException
 from langgraph.graph import END, START, StateGraph
 from sqlalchemy import text
 
-from out_of_frame import config
-from out_of_frame.demo import activity, auth, cleanup, storage
+from demo.backend import activity, auth, cleanup, config, storage
 
 DATABASE = os.environ.get("OUT_OF_FRAME_TEST_DATABASE_URL")
 REDIS = os.environ.get("OUT_OF_FRAME_TEST_REDIS_URL")
-ROOT = Path(__file__).parents[2]
+ROOT = Path(__file__).parents[3]
 pytestmark = pytest.mark.skipif(
     not DATABASE or not REDIS, reason="needs disposable PostgreSQL/Redis"
 )

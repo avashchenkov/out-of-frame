@@ -8,14 +8,15 @@ import structlog
 from aegra_api.settings import settings
 from aegra_api.utils.setup_logging import get_logging_config
 
-from out_of_frame.demo.logging import PrivateErrors, install
+from demo.backend.logging import PrivateErrors, install
 
 MARKER = "PRIVATE_ADDRESS_OR_SOURCE_TEXT"
 
 
-def test_error_logs_drop_source_text_and_exception_payloads():
+@pytest.mark.parametrize("logger_name", ["out_of_frame.geocoding", "demo.backend.cleanup"])
+def test_error_logs_drop_source_text_and_exception_payloads(logger_name):
     record = logging.LogRecord(
-        "out_of_frame.geocoding",
+        logger_name,
         logging.WARNING,
         __file__,
         1,

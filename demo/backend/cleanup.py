@@ -18,8 +18,7 @@ from aegra_api.settings import settings
 from fastapi import HTTPException
 from sqlalchemy import select, text, update
 
-from out_of_frame import config
-from out_of_frame.demo import activity, auth, storage
+from demo.backend import activity, auth, config, storage
 
 
 async def erase(identity: str) -> bool:

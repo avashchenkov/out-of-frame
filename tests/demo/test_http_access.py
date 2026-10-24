@@ -7,9 +7,8 @@ from uuid import uuid4
 
 import pytest
 
-from out_of_frame import config
-from out_of_frame.demo import storage
-from out_of_frame.demo.http_access import MAX_REQUEST_BYTES, PrivateDemoAccess
+from demo.backend import config, storage
+from demo.backend.http_access import MAX_REQUEST_BYTES, PrivateDemoAccess
 
 IDENTITY = str(uuid4())
 HEADERS = {"x-demo-key": "a" * 32, "x-demo-identity": IDENTITY, "x-demo-csrf": "1"}

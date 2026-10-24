@@ -6,8 +6,8 @@ from zoneinfo import ZoneInfo
 from langchain_core.runnables import RunnableConfig
 from langgraph_sdk.runtime import ServerRuntime
 
+from demo.backend import activity, storage
 from out_of_frame.agent import compile_graph
-from out_of_frame.demo import activity, storage
 from out_of_frame.investigation import Context
 from out_of_frame.web_search import TavilyWebSearch
 

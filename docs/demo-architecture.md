@@ -48,9 +48,11 @@ Explicit chat deletion also removes its Redis data immediately after workers sto
 
 The scripted dialogue runner and judge settings belong in `evals/`, with settings in
 `evals/config.py` and examples in `evals/.env.example`.
-Keep agent settings in `src/out_of_frame/config.py` and the root `.env.example`; Next.js
-server settings use environment variables. The agent must not import eval code or read judge
-settings. Tests and evals call the normal runtime code from outside the package.
+Keep agent settings in `src/out_of_frame/config.py` and the root `.env.example`.
+Demo server code and settings live in `demo/backend/`, outside the reusable agent package;
+Next.js server settings use environment variables. All demo tests live in `tests/demo/`,
+with infrastructure checks in `tests/demo/integration/`. The agent imports neither demo nor
+eval code and reads neither demo nor judge settings. Tests and evals call the agent from outside.
 The backend image contains only the agent, demo server and runtime dependencies. Exclude
 tests, evals, fixtures, development tools, `.env` and `evals/results/`; pass secrets at runtime.
 
@@ -174,8 +176,8 @@ Disable only Aegra's independent background sweeper: it skips active runs and do
 Redis or demo accounting, so it cannot perform the whole procedure safely by itself.
 A small demo task coordinates these extra steps and invokes native pruning at Aegra startup,
 before accepting or recovering expired work, then periodically through an Aegra lifespan
-task with a configurable interval. The same routine backs `demo-cleanup --expired`
-or `demo-cleanup --identity <id>` operator command. No extra Compose service or admin UI is needed.
+task with a configurable interval. The same routine backs `python -m demo.backend.cli --expired`
+or `python -m demo.backend.cli --identity <id>` operator command. No extra Compose service or admin UI is needed.
 
 Chat deletion retains admission accounting: the aggregate count for the current Berlin day
 and the identity counter until its fixed expiry. Keep only random ID, expiry, admitted-chat
@@ -191,7 +193,7 @@ Provider retention is separate from deletion on our server.
 
 ## Demo limits
 
-Configurable defaults belong in `src/out_of_frame/config.py`. This table is the source for
+Configurable demo defaults belong in `demo/backend/config.py`. This table is the source for
 numeric demo limits; the page and notices use the configured values.
 
 | Setting | Default |

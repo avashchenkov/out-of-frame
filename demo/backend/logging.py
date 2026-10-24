@@ -10,7 +10,7 @@ PRIVATE_ERROR = "Demo operation failed; inspect status and fixed failure codes"
 
 class PrivateErrors(logging.Filter):
     def filter(self, record):
-        private = record.name.startswith(("out_of_frame", "aegra_api"))
+        private = record.name.startswith(("out_of_frame", "demo.backend", "aegra_api"))
         transport = record.name.startswith(
             ("httpx", "httpcore", "urllib3", "anthropic", "tavily", "sqlalchemy")
         )

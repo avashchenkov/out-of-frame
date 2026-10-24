@@ -14,7 +14,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 from langgraph.store.memory import InMemoryStore
 
-from out_of_frame.demo import activity, graph_factory
+from demo.backend import activity, graph_factory
 
 
 class State(TypedDict):

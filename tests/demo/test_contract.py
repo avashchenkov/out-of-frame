@@ -8,8 +8,7 @@ import pytest
 from fastapi import HTTPException
 from langchain_core.messages import AIMessage
 
-from out_of_frame import config
-from out_of_frame.demo import contract
+from demo.backend import config, contract
 
 MARKER = "PRIVATE_SOURCE_TEXT_MUST_NOT_REACH_THE_BROWSER"
 
@@ -110,7 +109,7 @@ def test_messages_and_answers_match_the_aegra_request_schema():
 def test_client_execution_settings_are_rejected():
     from aegra_api.models import RunCreate
 
-    from out_of_frame.demo import auth
+    from demo.backend import auth
 
     body = contract.run_request(text="Hello")
     auth.validate_run(RunCreate(**body).model_dump())

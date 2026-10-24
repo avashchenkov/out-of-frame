@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 
-from out_of_frame.demo import auth, contract, storage
+from demo.backend import auth, contract, storage
 
 CUSTOM_ROUTES = {
     "/demo/chat": {"POST", "DELETE"},

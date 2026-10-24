@@ -12,8 +12,7 @@ from fastapi import HTTPException
 from langgraph_sdk import Auth
 from sqlalchemy import select, text
 
-from out_of_frame import config
-from out_of_frame.demo import contract, storage
+from demo.backend import config, contract, storage
 
 internal = ContextVar("demo_internal", default=False)
 prepaid = ContextVar("demo_prepaid", default=False)

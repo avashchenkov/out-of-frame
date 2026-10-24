@@ -7,8 +7,7 @@ from uuid import uuid4
 import pytest
 from fastapi import HTTPException
 
-from out_of_frame import config
-from out_of_frame.demo import auth, storage
+from demo.backend import auth, config, storage
 
 
 def test_only_the_trusted_proxy_can_assert_an_identity(monkeypatch):

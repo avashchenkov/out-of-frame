@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
-from out_of_frame import config
+from demo.backend import config
 from out_of_frame.cli import PROGRESS
 
 COOKIE_NAME = "oof_identity"
