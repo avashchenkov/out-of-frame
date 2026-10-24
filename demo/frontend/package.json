@@ -12,8 +12,10 @@
     "start": "next start --hostname 127.0.0.1",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "typecheck:tests": "tsc --project ../../tests/demo/frontend/tsconfig.json",
+    "test": "node --test ../../tests/demo/frontend/*.test.ts",
+    "format": "prettier --write . ../../tests/demo/frontend",
+    "format:check": "prettier --check . ../../tests/demo/frontend"
   },
   "dependencies": {
     "next": "16.4.3",

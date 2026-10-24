@@ -1,0 +1,10 @@
+{
+  "extends": "../../../demo/frontend/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "types": ["node"],
+    "typeRoots": ["../../../demo/frontend/node_modules/@types"]
+  },
+  "include": ["*.test.ts"],
+  "exclude": []
+}
