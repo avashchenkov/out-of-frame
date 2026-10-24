@@ -1,0 +1,54 @@
+# Private backend services. The Web UI joins this network in the next implementation step.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: out_of_frame
+      POSTGRES_DB: out_of_frame
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the demo environment}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U out_of_frame -d out_of_frame"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  backend:
+    image: out-of-frame-backend:local
+    build:
+      context: ..
+      dockerfile: demo/Dockerfile
+    env_file: ${OUT_OF_FRAME_DEMO_ENV_FILE:-.env}
+    environment:
+      DATABASE_URL: postgresql://out_of_frame:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the demo environment}@postgres:5432/out_of_frame
+      REDIS_URL: redis://redis:6379/0
+      RUN_MIGRATIONS_ON_STARTUP: "false"
+      REDIS_BROKER_ENABLED: "true"
+      WORKER_COUNT: "1"
+      N_JOBS_PER_WORKER: "1"
+      CRON_ENABLED: "false"
+      LANGSMITH_TRACING: "false"
+      OTEL_TARGETS: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:2026/ready', timeout=3).close()"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+volumes:
+  postgres_data:

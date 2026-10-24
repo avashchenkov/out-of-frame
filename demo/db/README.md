@@ -3,6 +3,10 @@
 Create the demo tables before starting the server. This directory is deployment input;
 it is not part of the installed agent package or the backend runtime image.
 
+For Compose, use the migration container command and PostgreSQL client command in
+[the backend instructions](../README.md#docker-compose). Neither command starts the server;
+the SQL is passed to PostgreSQL through standard input, without a runtime image copy.
+
 From `demo/`, with `DATABASE_URL` set and the PostgreSQL client installed:
 
 ```sh

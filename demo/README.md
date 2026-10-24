@@ -8,10 +8,52 @@ directly.
 
 ## Run
 
+### Docker Compose
+
+From `demo/`, copy `.env.example` to `.env` and fill in the database password, proxy secret
+and API keys. Use a URL-safe database password, such as the output of `openssl rand -hex 32`.
+The environment file stays on the host; it is never a build input. Agent overrides from
+the root example can be added to this file. Compose sets database URLs with the private
+service names `postgres` and `redis`.
+
+Build the image, start the databases, then prepare their schema separately:
+
+```sh
+docker compose --env-file .env build backend
+docker compose --env-file .env up -d --wait postgres redis
+docker compose --env-file .env run --rm --no-deps backend aegra db upgrade
+docker compose --env-file .env exec -T postgres \
+  psql -U out_of_frame -d out_of_frame --set ON_ERROR_STOP=1 --single-transaction < db/schema.sql
+docker compose --env-file .env up -d --wait backend
+```
+
+Do the preparation before the first start and after an Aegra upgrade, with the backend
+stopped. The SQL is safe to apply again. There is no custom setup command in the server.
+Aegra's standard CLI and bundled migrations remain upstream dependencies; our deployment
+SQL stays outside the image.
+
+The runtime image installs the agent as a package with locked dependencies, without an
+editable source checkout. It runs as a non-root user. Project tests, evals, fixtures, uv,
+Ruff, pytest, secrets and deployment SQL are excluded. The root `.dockerignore` allows only
+backend build inputs; a separate build stage keeps source and build tools out of the final image.
+
+No service publishes a host port. Only containers in the Compose network can reach Aegra
+on port 2026. The Web UI will join this network in the interface step. This Compose file
+does not yet provide a public website. PostgreSQL uses a persistent named volume; Redis
+uses memory without RDB/AOF. No automatic container restart policy is configured.
+
+Use `docker compose --env-file .env down` to stop the services and keep PostgreSQL data.
+For a full data reset, stop the backend first, then run
+`docker compose --env-file .env down --volumes`; this deletes all conversations and quotas.
+Do not use the disposable [test Compose](testing.md) for stored conversations.
+
+### Local Python process
+
 Install with `uv sync --locked --extra demo`. Provide PostgreSQL and Redis, without Redis
 RDB/AOF persistence. Configure the agent keys from the root `.env.example` and the service
-settings from [`.env.example`](.env.example) in the service environment. No judge keys or eval
-settings are needed. No live run is part of startup.
+settings from [`.env.example`](.env.example) in the service environment. Set `DATABASE_URL`
+and `REDIS_URL` to those services explicitly; Compose supplies them only inside containers.
+No judge keys or eval settings are needed. No live run is part of startup.
 
 Apply the [database deployment steps](db/README.md) before starting the service. Demo DDL
 stays outside the runtime package; the server does not create its admission tables.

@@ -469,6 +469,12 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    in CI. After the HTTP service is committed, package the backend in
    Docker before starting the Web UI. Keep tests, evals and deployment input out of its image.
 
+   Use `demo/compose.yaml` for the private backend, persistent PostgreSQL and memory-only
+   Redis. Build the agent as an installed package in a non-root image. Run Aegra migrations
+   and apply `demo/db/schema.sql` separately before starting the server. Keep the disposable
+   test Compose for integration checks. Verify image contents and Compose startup without
+   external API calls before moving to step 7.
+
    Cookie issuance in browser responses, origin/CSRF checks and response filtering belong
    to the Web UI proxy in step 7. Backend image checks belong to packaging before that step.
 7. **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
