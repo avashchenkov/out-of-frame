@@ -205,8 +205,9 @@ count, current thread reference and any pending-deletion bookkeeping. Clear the 
 after deletion; remove expired identity records after cleanup. Messages and addresses do not
 belong in quota records.
 
-Use private, non-cacheable responses; exclude chat content from backups and persistent
-frontend caches. Keep chat bodies and source text out of logs and disable external tracing.
+Use private, non-cacheable responses and no persistent frontend caches. The demo is
+temporary and has no backups. Keep chat bodies and source text out of logs and disable
+external tracing.
 Necessary security log metadata has a separate retention limit below. Caddy's access log
 keeps the client IP, time, request line and status, without headers or cookies; the host
 journal keeps container logs for up to 24 hours. Test expiry, interrupted
@@ -251,8 +252,9 @@ submission can still start research if input is complete. Read requests are free
 
 Clearing cookies can bypass the per-identity fairness limit; the global limit still bounds
 admissions. No fingerprinting is planned. Existing limits on model output, source length,
-objects, Tavily tool calls and retries remain. Separate provider budgets are set at launch;
-there is no custom daily money or token ledger.
+objects, Tavily tool calls and retries remain. The demo uses the author's existing
+provider keys, which serve only this project; the demo limits bound the spend, and revoking
+a key stops it. There is no custom daily money or token ledger.
 
 The proxy exposes only needed routes, accepts text or a resume answer, and fixes the
 assistant, `multitask_strategy=reject`, `on_disconnect=continue` and `durability=sync`.

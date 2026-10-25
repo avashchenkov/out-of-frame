@@ -510,8 +510,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Verify the package and image separately from the development/CI environment.
 
    Complete the [launch checklist](demo-launch-checklist.md): operator details, notices,
-   provider terms and budgets, HTTPS, retention and cleanup.
-   Choose budget amounts with the deployment settings.
+   provider terms, HTTPS, retention and cleanup.
    Finish with a live conversation after approval of its estimated cost. Enable live input
    only after these checks pass; recorded examples can be served earlier.
 

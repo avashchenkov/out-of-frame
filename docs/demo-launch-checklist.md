@@ -83,15 +83,12 @@ flow against outgoing requests:
 - Set HTTPS and runtime secrets; verify only the Web UI is publicly reachable. Build
   and inspect the package and image without eval code, judge settings or development tools.
 - Configure deletion and security-log retention from the architecture. Verify Redis
-  has no persistence, external tracing is off, private content is not cached or backed up,
-  and logs contain no messages or source texts. Measure cleanup timing, including recovery
-  after downtime, and make the notice match it.
-- Set separate demo budgets: a monthly cap in a dedicated
-  [Anthropic workspace](https://platform.claude.com/docs/en/api/rate-limits#setting-lower-limits-for-workspaces)
-  and a credit cap on a dedicated Tavily key, with pay-as-you-go overage disabled.
-  Choose amounts with the author and verify them; keep eval usage separate. Tavily's
-  [usage API](https://docs.tavily.com/documentation/api-reference/endpoint/usage) exposes the
-  key and plan limits. A provider cap may stop an admitted chat before a report.
+  has no persistence, external tracing is off, private content is not cached, there are
+  no backups, and logs contain no messages or source texts. Measure cleanup timing,
+  including recovery after downtime, and make the notice match it.
+- Use the author's existing Anthropic and Tavily keys; they serve only this project.
+  The demo limits bound the spend, and revoking a key stops it. A provider error may stop
+  an admitted chat before a report.
 - Pass the architecture's [implementation checks](demo-architecture.md#implementation-checks),
   review the static examples and final notices, and complete the approved live trial.
 
