@@ -517,7 +517,8 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
 
    - ✅ The Web UI image, Caddy for HTTPS, host setup and release scripts, checked locally.
      Images are built locally and copied to the server, which has 1 GB of memory.
-   - Prepare the server, point the domain and serve the recorded examples over HTTPS.
+   - ✅ The server prepared; the recorded examples served over HTTPS at
+     <https://outofframe.hooraytalk.com>, with live input off.
    - Complete the launch checklist, then the approved live trial.
 9. **The README in its final form:** a CI badge and a link to the demo; the design choices,
    one line each; what is out of scope; the legal frame and a link to the data sources and
