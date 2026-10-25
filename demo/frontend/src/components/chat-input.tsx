@@ -37,8 +37,8 @@ export function ChatInput({
     return (
       <section className="start-notice" aria-label="Before your first message">
         <p>
-          English-language AI demo for adults. Use public places and fictional
-          travel plans. Start requests a free AI report under the{" "}
+          An AI demo in English, for users aged 18 or over. Use public places
+          and fictional travel plans. Start requests a free AI report under the{" "}
           <Link href="/terms">service terms</Link> and the limits shown here.
           Availability is not guaranteed. Reports give facts, not advice to buy
           or rent.

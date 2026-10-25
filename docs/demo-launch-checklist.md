@@ -100,7 +100,7 @@ notice, Impressum and author contact accessible. Insert the configured values fr
 [Demo limits](demo-architecture.md#demo-limits); this text is only the first information layer.
 `View examples` stays available without live input.
 
-> English-language AI demo for adults. Use public places and fictional travel plans.
+> An AI demo in English, for users aged 18 or over. Use public places and fictional travel plans.
 > Start requests a free AI report under the displayed service terms and limits.
 > We process your messages, addresses and journey times using Anthropic and the services
 > listed in our Privacy notice. Other visitors cannot see your chat or report.
