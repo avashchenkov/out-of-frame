@@ -477,7 +477,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
 
    Cookie issuance in browser responses, origin/CSRF checks and response filtering belong
    to the Web UI proxy in step 7. Backend image checks belong to packaging before that step.
-7. **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
+7. ✅ **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
    report, progress and fixed service-failure notices, plus reviewed recorded examples.
    The Next.js proxy constructs allowed requests and filters all browser responses.
    Disable unused history, branching, editing and regeneration.
@@ -504,7 +504,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Label New chat as deleting the current conversation and offer Delete chat separately.
    Render reports safely with working source and licence links. Leaving the page keeps the
    run active. Check separate browser sessions, a narrow screen and filtered network payloads.
-8. **Deployment on one VPS.** Docker Compose runs Next.js, Aegra, PostgreSQL and Redis,
+8. ✅ **Deployment on one VPS.** Docker Compose runs Next.js, Aegra, PostgreSQL and Redis,
    with only Next.js public. PostgreSQL persists; Redis has no disk persistence. Pass secrets
    at runtime and build the backend image without project tests, evals or development tools.
    Verify the package and image separately from the development/CI environment.
@@ -521,7 +521,10 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    - ✅ Transfer safeguards in the Privacy notice: Anthropic's DPA with the EU Standard
      Contractual Clauses; Tavily receives no visitor identifiers. A
      [legitimate interest record](demo-legitimate-interest.md) for quotas and security logs.
-   - Complete the launch checklist, then the approved live trial.
+   - ✅ Launch checklist and live trial on 2026-10-25: a report with working links and
+     Delete chat, which removed the thread, runs, checkpoints and Redis data and kept only
+     the quota counters. Live input is on. The 30-day expiry was not observed on the
+     server; the integration checks cover it.
 9. **The README in its final form:** a CI badge and a link to the demo; the design choices,
    one line each; what is out of scope; the legal frame and a link to the data sources and
    their rights in [sources.md](sources.md); and how it was built, one paragraph on the agents
