@@ -342,31 +342,30 @@ Haiku 5.5 is medium. The judges stayed at their calibrated extra-high effort.
 
 ## Evidence and code references
 
-This audit is intended for Git. Raw eval runs remain local in the already ignored
-`evals/results/` directory; links to them work only in a checkout that retains those files.
-The dated run names preserve provenance without committing retrieved pages or transcripts.
+Raw eval runs stay local in the ignored `evals/results/` directory, since they hold the pages
+the agent read. The run files are named below for provenance.
 Code links show the checkout's version; the execution review used `7005abe`.
 
 - [Search control findings](../../spikes/search-depth/findings-2026-10-16.md)
 - [Search control script](../../spikes/search-depth/spike.py)
-- [E1, three trials](../../evals/results/2026-10-18T18-11-27-679981Z.jsonl)
-- [E2–E5, three trials](../../evals/results/2026-10-18T18-29-57-344038Z.jsonl)
-- [F12 grounding run](../../evals/results/2026-10-19T00-17-45-422034Z.jsonl)
-- [F10 after the explicit rule](../../evals/results/2026-10-19T00-12-48-377180Z.jsonl)
+- E1, three trials (`2026-10-18T18-11-27-679981Z.jsonl`)
+- E2–E5, three trials (`2026-10-18T18-29-57-344038Z.jsonl`)
+- F12 grounding run (`2026-10-19T00-17-45-422034Z.jsonl`)
+- F10 after the explicit rule (`2026-10-19T00-12-48-377180Z.jsonl`)
 - Step 10.9, finding at medium, high and extra-high:
-  [medium](../../evals/results/2026-10-20T17-03-08-002408Z.jsonl),
-  [high](../../evals/results/2026-10-20T17-03-08-209948Z.jsonl),
-  [extra-high](../../evals/results/2026-10-20T17-03-08-235563Z.jsonl)
-- Step 10.9, Enough: [medium](../../evals/results/2026-10-20T17-06-00-183067Z.jsonl),
-  [high](../../evals/results/2026-10-20T17-06-57-909735Z.jsonl),
-  [extra-high](../../evals/results/2026-10-20T17-09-02-214176Z.jsonl)
+  medium (`2026-10-20T17-03-08-002408Z.jsonl`),
+  high (`2026-10-20T17-03-08-209948Z.jsonl`),
+  extra-high (`2026-10-20T17-03-08-235563Z.jsonl`)
+- Step 10.9, Enough: medium (`2026-10-20T17-06-00-183067Z.jsonl`),
+  high (`2026-10-20T17-06-57-909735Z.jsonl`),
+  extra-high (`2026-10-20T17-09-02-214176Z.jsonl`)
 - Step 10.9, report replay:
-  [medium](../../evals/results/2026-10-20T17-08-24-008008Z-replay.jsonl),
-  [high](../../evals/results/2026-10-20T17-08-24-157131Z-replay.jsonl),
-  [extra-high](../../evals/results/2026-10-20T17-11-36-236296Z-replay.jsonl),
-  [high with the clarified prompt](../../evals/results/2026-10-20T18-30-58-177959Z-replay.jsonl)
-- Step 10.9, controls at high: [triage](../../evals/results/2026-10-20T18-10-44-513659Z.jsonl),
-  [input loop](../../evals/results/2026-10-20T18-11-05-753610Z.jsonl)
+  medium (`2026-10-20T17-08-24-008008Z-replay.jsonl`),
+  high (`2026-10-20T17-08-24-157131Z-replay.jsonl`),
+  extra-high (`2026-10-20T17-11-36-236296Z-replay.jsonl`),
+  high with the clarified prompt (`2026-10-20T18-30-58-177959Z-replay.jsonl`)
+- Step 10.9, controls at high: triage (`2026-10-20T18-10-44-513659Z.jsonl`),
+  input loop (`2026-10-20T18-11-05-753610Z.jsonl`)
 - [Settings and limits](../../src/out_of_frame/config.py)
 - [Investigation loop, truncation and grounding fallback](../../src/out_of_frame/investigation.py)
 - [Single-page evidence and quote validation](../../src/out_of_frame/grounding.py)

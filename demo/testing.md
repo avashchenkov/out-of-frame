@@ -33,9 +33,9 @@ other Compose projects. Tests use fake model/source calls; no paid API keys are 
 If the runner is forcibly killed, use the emergency cleanup command printed at startup.
 The project name begins with `oof-test-`. Do not use global Docker prune commands.
 
-Python tests and Aegra test processes run in the project's local environment. This file
-configures test infrastructure only; backend image packaging and deployment are separate
-roadmap work. Test code and database deployment input do not belong in the runtime image.
+Python tests and Aegra test processes run in the project's local environment. The test
+Compose file holds test infrastructure only; the runtime image and deployment are described
+in the [demo README](README.md). The runtime image holds no test code or deployment SQL.
 
 GitHub Actions uses the same Compose file and runner. CI downloads the images explicitly
 before the integration step; ordinary tests run separately, without database services.

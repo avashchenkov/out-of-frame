@@ -19,7 +19,7 @@ flowchart LR
         API["Aegra<br/>access rules and existing graph"]
         DB[("PostgreSQL<br/>private conversations and checkpoints")]
         R[("Redis<br/>run queue and stream events")]
-        UI <-->|"LangGraph SDK"| API
+        UI <-->|"HTTP JSON and SSE"| API
         API <--> DB
         API <--> R
     end
@@ -31,8 +31,8 @@ Only the Web UI service is publicly reachable. It adapts Agent Chat UI and adds 
 API proxy in Next.js. Aegra, PostgreSQL and Redis use the private container network.
 Caddy on the same host terminates HTTPS and forwards requests to the Web UI; it is the only
 container with published ports.
-One Aegra container runs `aegra serve` with `REDIS_BROKER_ENABLED=true`, using its
-[built-in worker recovery](https://github.com/aegra/aegra/blob/v0.10.8/docs/guides/worker-architecture.mdx#crash-recovery).
+One Aegra container runs Aegra's API app under Uvicorn with `REDIS_BROKER_ENABLED=true`,
+using its [built-in worker recovery](https://github.com/aegra/aegra/blob/v0.10.8/docs/guides/worker-architecture.mdx#crash-recovery).
 The demo uses one Aegra process, with its worker tasks in the same process, so admission
 and cancellation share one coordinator. A PostgreSQL session lock rejects a second process
 at startup. This guards against accidental duplicate starts, not database failover. Stop Aegra
@@ -278,5 +278,4 @@ answer through the SDK, and a finished report. Further checks cover:
 - report escaping, clickable credits and saved failure notices after reload;
 - package and image separation from eval code.
 
-Check two separate browser sessions and a narrow screen. A live run needs approval of its
-estimated cost.
+Manual checks in a browser: two separate browser sessions and a narrow screen.

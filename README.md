@@ -123,9 +123,8 @@ as they are.
 The [demo](https://outofframe.hooraytalk.com) has two parts:
 
 - **Five recorded examples,** each with the date of its research, open to everyone without a
-  chat or limits. These are the only reports in the repository
-  ([recorded-examples.json](demo/frontend/src/data/recorded-examples.json)), and the author
-  reviewed each one before publishing it.
+  chat or limits. The author reviewed each one before publishing it; they are kept in
+  [recorded-examples.json](demo/frontend/src/data/recorded-examples.json).
 - **A private live chat** without sign-up. An essential cookie gives one browser access to
   its own chat, and no other visitor can open it. Daily and per-browser limits keep the cost
   bounded. Access ends 30 days after the first message, and automatic cleanup then deletes

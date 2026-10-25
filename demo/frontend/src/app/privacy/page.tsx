@@ -172,9 +172,10 @@ export default async function Privacy() {
         <h2>Retention</h2>
         <ul>
           <li>
-            Your current chat and report: on our server for up to {lifetime}{" "}
-            after your first message. A second chat gets only the remaining
-            time. New chat and Delete chat remove the current chat earlier.
+            Your current chat and report: on our server until {lifetime} after
+            your first message, then deleted by automatic cleanup soon after. A
+            second chat gets only the remaining time. New chat and Delete chat
+            remove the current chat earlier.
           </li>
           <li>Usage limit records: until the cookie expires.</li>
           <li>Security logs: up to 24 hours.</li>
@@ -193,7 +194,8 @@ export default async function Privacy() {
         </ul>
         <p>
           Clearing cookies loses access to your chat. It does not delete it
-          earlier; it is still removed by the original deadline.
+          earlier; automatic cleanup still deletes it after the original period
+          ends.
         </p>
 
         <h2>Your rights</h2>

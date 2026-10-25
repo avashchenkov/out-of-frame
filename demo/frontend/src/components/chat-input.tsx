@@ -51,13 +51,14 @@ export function ChatInput({
         </p>
         <p>
           An essential cookie keeps access and allows up to{" "}
-          {limits.identity_chats} chats. We keep your current chat on our server
-          for up to {limits.lifetime_days} days after your first message.
-          Starting another chat does not extend this period. Clearing cookies
-          loses access but does not delete server data. Minimal quota records
-          remain until the cookie expires. Provider retention differs. Avoid
-          names and sensitive personal details. New chat or Delete chat removes
-          the current chat and report earlier.
+          {limits.identity_chats} chats. Access to your current chat ends{" "}
+          {limits.lifetime_days} days after your first message, and automatic
+          cleanup then deletes it from our server. Starting another chat does
+          not extend this period. Clearing cookies loses access but does not
+          delete server data. Minimal quota records remain until the cookie
+          expires. Provider retention differs. Avoid names and sensitive
+          personal details. New chat or Delete chat removes the current chat and
+          report earlier.
         </p>
         <p>AI results can be wrong: check the sources.</p>
         <button

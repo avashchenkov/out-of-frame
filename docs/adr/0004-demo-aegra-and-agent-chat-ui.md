@@ -22,7 +22,8 @@ by admission limits. Only the page is open to the internet.
   and supports the LangGraph SDK.
 - **Frontend: LangChain's [Agent Chat UI](https://github.com/langchain-ai/agent-chat-ui),** a
   Next.js chat page under the MIT licence, cloned into `demo/` and adapted for this graph.
-- **Deployment:** one VPS with Docker Compose: Next.js, Aegra, PostgreSQL and Redis.
+- **Deployment:** one VPS with Docker Compose: Caddy, Next.js, Aegra, PostgreSQL and Redis.
+  Caddy is the reverse proxy in front of Next.js and serves HTTPS.
   Redis enables Aegra's built-in worker recovery and holds temporary stream events.
   PostgreSQL keeps server records and checkpoints.
 

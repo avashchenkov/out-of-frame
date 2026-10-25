@@ -4,21 +4,19 @@ import os
 from importlib.metadata import version
 
 # The agent's model, in every call but the prompt injection check, and how much it thinks before
-# it answers: at the default effort, medium on Haiku 5.5, its findings applied a rule one way in
-# one trial and another way in the next; at the extra-high effort it at times gave no finding,
-# and its report ran out of output tokens. An effort of "default" leaves it to the API.
+# it answers. High did best in the evals, see docs/evals/2026-10-21-mvp-eval-results.md. An
+# effort of "default" leaves it to the API.
 MODEL = os.environ.get("OUT_OF_FRAME_MODEL", "claude-haiku-5-5")
 EFFORT = os.environ.get("OUT_OF_FRAME_EFFORT", "high")
-# The output tokens of one answer, its thinking included: langchain's fallback of 4096, for a
-# model that it has no profile of, such as Haiku 5.5, can go on the thinking alone, as it did for
-# a report about some 15 objects.
+# The output tokens of one answer, its thinking included. Langchain's fallback of 4096 is too
+# few: the thinking for a report about some 15 objects can use it all.
 MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_MAX_TOKENS", "16000"))
 
 # The prompt injection check's own model, effort and output tokens: a classifier apart from the
 # agent's reasoning, which runs on every snippet and page.
 INJECTION_MODEL = os.environ.get("OUT_OF_FRAME_INJECTION_MODEL", "claude-haiku-5-5")
 INJECTION_EFFORT = os.environ.get("OUT_OF_FRAME_INJECTION_EFFORT", "default")
-# 4096, as the check had before it got its own settings, and passed its suites with.
+# The check passed its suites with 4096.
 INJECTION_MAX_TOKENS = int(os.environ.get("OUT_OF_FRAME_INJECTION_MAX_TOKENS", "4096"))
 
 # Tool calls in one investigation, Tavily searches and page reads together.

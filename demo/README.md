@@ -134,12 +134,12 @@ execution headers. A first request uses a fresh candidate UUID, without setting 
 - `DELETE /demo/chat` removes content without refunding quota. A `deletion_pending` response
   means work has not stopped yet; content is hidden and periodic cleanup retries.
 
-The proxy must apply the allowlists in `contract.visible_read` and `contract.visible_event`
-to every browser response and replay. Native Aegra responses contain internal state and are
-not browser responses. SSE keeps only top-level values, fixed progress and required IDs;
-message metadata, sources, draft reports and raw errors are excluded. JSON projections keep
-only visible messages, failure codes and the status needed to resume. Unknown routes/events
-are discarded. Implement and verify these projections in the Web UI proxy in roadmap step 7.
+Native Aegra responses contain internal state and never reach the browser. The Web UI proxy
+filters every browser response and replay through allowlists in
+[`visible-response.ts`](frontend/src/server/visible-response.ts). SSE keeps only top-level
+values, fixed progress and required IDs; message metadata, sources, draft reports and raw
+errors are excluded. JSON responses keep only visible messages, failure codes and the status
+needed to resume. Unknown routes and events are discarded.
 
 Limits and retention are defined in [the demo architecture](../docs/demo-architecture.md).
 A quota is reserved before execution, including failed or abandoned attempts. New chat does

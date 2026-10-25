@@ -465,7 +465,8 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    details, notices, provider terms, HTTPS, retention and cleanup; live input was turned on
    only after it and a live trial.
 
-   - ✅ The Web UI image, Caddy for HTTPS, host setup and release scripts, checked locally.
+   - ✅ The Web UI image, Caddy as the HTTPS reverse proxy, host setup and release scripts,
+     checked locally.
      Images are built locally and copied to the server, which has 1 GB of memory.
    - ✅ The server prepared; the recorded examples served over HTTPS at
      <https://outofframe.hooraytalk.com>, with live input off.
