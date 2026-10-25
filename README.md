@@ -2,9 +2,14 @@
 
 *The questions nobody showing you the home is obliged to ask.*
 
+[![CI](https://github.com/avashchenkov/out-of-frame/actions/workflows/ci.yml/badge.svg)](https://github.com/avashchenkov/out-of-frame/actions/workflows/ci.yml)
+
 An AI agent that checks a Berlin address for what a property listing leaves out: nearby
 industry, wastewater treatment plants, airports, major roads and railways, and planned
 development. Every finding it reports cites its source.
+
+**Demo: <https://outofframe.hooraytalk.com>**, with five recorded examples and a private chat
+without sign-up.
 
 ## What it does
 
@@ -26,6 +31,38 @@ from a web search quotes its page word for word, and fills in the references. Se
 
 A language model writes the report, and it can be wrong: check what matters to you against
 the sources it cites.
+
+## Design choices
+
+- **An agent only where it is needed.** The model directs its own steps only in the
+  investigation of an unclear object; the rest is a workflow fixed in code
+  ([ADR 2](docs/adr/0002-why-an-agent.md)).
+- **LangGraph** for the state, the pauses for user input and the parallel investigations
+  ([ADR 1](docs/adr/0001-langgraph.md)).
+- **Live sources, no index of our own:** no vector store or crawled copy of the web; the facts
+  about a place come from the map, the plans, the journey planner and web search during the
+  run ([ADR 3](docs/adr/0003-live-sources.md)).
+- **Grounded findings:** after a web search, code checks that the key facts of a finding
+  appear word for word in the page, map or plan data it cites. Each object in the report
+  links to its sources.
+- **A prompt injection check:** a separate model call checks each search result and page
+  before the investigation reads it.
+- **No MCP:** there are no clients outside the system to serve tools to. The two LLM tools,
+  search and extract, call Tavily through a small facade over its Python library: it fixes
+  the settings, passes on only URLs and text, and has a stub for tests. Tavily's MCP server
+  would only add the overhead of an MCP client and gain nothing.
+- **No baseline:** the choice of an agent for one step follows Anthropic's
+  [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents);
+  it was not measured against a simpler design.
+- **The demo on Aegra and Agent Chat UI,** self-hosted on one server
+  ([ADR 4](docs/adr/0004-demo-aegra-and-agent-chat-ui.md)).
+
+## Out of scope
+
+It reports facts and gives no advice: it does not say whether to buy or rent, gives no overall
+score and does not look at prices or rents. It covers Berlin only. It is not a product or a
+public service; the demo, with its daily limit, only shows how it works. See the
+[vision](docs/vision.md#out-of-scope).
 
 ## Run it
 
@@ -81,10 +118,40 @@ as they are.
 - [Eval architecture](docs/eval-architecture.md): what each suite measures and how it is
   graded, including the LLM judges and their calibration.
 
-## Status
+## The demo
 
-The MVP is done: the CLI and its evals. Next is a live demo, a web page without sign-up; see
-the [roadmap](docs/roadmap.md).
+The [demo](https://outofframe.hooraytalk.com) has two parts:
+
+- **Five recorded examples,** each with the date of its research, open to everyone without a
+  chat or limits. These are the only reports in the repository
+  ([recorded-examples.json](demo/frontend/src/data/recorded-examples.json)), and the author
+  reviewed each one before publishing it.
+- **A private live chat** without sign-up. An essential cookie gives one browser access to
+  its own chat, and no other visitor can open it. Daily and per-browser limits keep the cost
+  bounded. Access ends 30 days after the first message, and automatic cleanup then deletes
+  the chat from our server; New chat or Delete chat deletes it earlier. The providers keep
+  their own copies for their own periods. Visitor reports are never published and never
+  added to the repository.
+
+Like the CLI, each report says that a language model wrote it and that its facts should be
+checked against the sources it cites. The [demo architecture](docs/demo-architecture.md)
+covers the services, the limits and the retention; [demo/README.md](demo/README.md) covers
+running and deploying it.
+
+## Legal frame and data sources
+
+The agent reports facts with their sources and gives no advice. The demo has
+[service terms](https://outofframe.hooraytalk.com/terms), a
+[Privacy notice](https://outofframe.hooraytalk.com/privacy) and an
+[Impressum](https://outofframe.hooraytalk.com/impressum); the
+[launch checklist](docs/demo-launch-checklist.md) lists what they had to cover.
+
+The data comes from OpenStreetMap through Nominatim and Overpass (ODbL), Berlin's
+development plans (dl-de/zero-2.0), Transitous (non-commercial use only, open-source code and
+a link to its sources) and web pages found by Tavily, which keep the rights of their sites.
+Each report cites its sources and credits OpenStreetMap, and Transitous's sources when it
+has journeys. See
+[sources.md](docs/sources.md#data-rights).
 
 ## License
 

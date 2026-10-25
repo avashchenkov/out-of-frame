@@ -525,15 +525,14 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
      Delete chat, which removed the thread, runs, checkpoints and Redis data and kept only
      the quota counters. Live input is on. The 30-day expiry was not observed on the
      server; the integration checks cover it.
-9. **The README in its final form:** a CI badge and a link to the demo; the design choices,
+9. ✅ **The README in its final form:** a CI badge and a link to the demo; the design choices,
    one line each; what is out of scope; the legal frame and a link to the data sources and
-   their rights in [sources.md](sources.md); and how it was built, one paragraph on the agents
-   used and the author's role.
+   their rights in [sources.md](sources.md).
    - ✅ Two ADRs that record decisions made on 2026-09-21:
      [an agent for the investigation, a workflow for the rest](adr/0002-why-an-agent.md) and
      [live sources instead of an index of our own](adr/0003-live-sources.md).
-   - No MCP and no baseline: one line each, without an ADR.
-   - Explain the private live chat and the five recorded examples. Only the reviewed static
+   - ✅ No MCP and no baseline: one line each, without an ADR.
+   - ✅ Explain the private live chat and the five recorded examples. Only the reviewed static
      examples belong in the repository; never commit visitor reports. Each report says that
      a language model wrote it and its facts should be checked against the sources.
 

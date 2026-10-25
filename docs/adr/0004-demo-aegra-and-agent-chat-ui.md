@@ -13,7 +13,7 @@ the [launch checklist](../demo-launch-checklist.md) covers notices and deploymen
 The demo offers author-prepared recorded examples and a private chat without sign-up.
 It needs a server that runs the existing LangGraph graph, saves progress between messages
 and recovers interrupted work, plus a page for questions and reports. Public usage is bounded
-by admission limits and separate provider budgets. Only the page is open to the internet.
+by admission limits. Only the page is open to the internet.
 
 ## Decision
 
