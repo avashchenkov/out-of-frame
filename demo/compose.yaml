@@ -1,7 +1,8 @@
-# Private backend services. The Web UI joins this network in the next implementation step.
+# One-host deployment. Only Caddy publishes ports; it serves the Web UI over HTTPS.
 services:
   postgres:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: out_of_frame
       POSTGRES_DB: out_of_frame
@@ -15,6 +16,7 @@ services:
       retries: 12
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     tmpfs:
       - /data
@@ -25,6 +27,7 @@ services:
       retries: 12
   backend:
     image: out-of-frame-backend:local
+    restart: unless-stopped
     build:
       context: ..
       dockerfile: demo/Dockerfile
@@ -50,5 +53,47 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+  web:
+    image: out-of-frame-web:local
+    restart: unless-stopped
+    build:
+      context: frontend
+    # Only the Web UI settings; model and source keys stay in the backend.
+    environment:
+      OUT_OF_FRAME_DEMO_ORIGIN: https://${OUT_OF_FRAME_DEMO_DOMAIN:?Set OUT_OF_FRAME_DEMO_DOMAIN in the demo environment}
+      OUT_OF_FRAME_DEMO_BACKEND_URL: http://backend:2026
+      OUT_OF_FRAME_DEMO_PROXY_SECRET: ${OUT_OF_FRAME_DEMO_PROXY_SECRET:?Set OUT_OF_FRAME_DEMO_PROXY_SECRET in the demo environment}
+      OUT_OF_FRAME_DEMO_LIVE_ENABLED: ${OUT_OF_FRAME_DEMO_LIVE_ENABLED:-false}
+      OUT_OF_FRAME_DEMO_CONTACT_EMAIL: ${OUT_OF_FRAME_DEMO_CONTACT_EMAIL:-}
+      OUT_OF_FRAME_DEMO_OPERATOR_NAME: ${OUT_OF_FRAME_DEMO_OPERATOR_NAME:-}
+      OUT_OF_FRAME_DEMO_OPERATOR_ADDRESS: ${OUT_OF_FRAME_DEMO_OPERATOR_ADDRESS:-}
+      OUT_OF_FRAME_DEMO_HOSTING_PROVIDER: ${OUT_OF_FRAME_DEMO_HOSTING_PROVIDER:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/examples').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      OUT_OF_FRAME_DEMO_DOMAIN: ${OUT_OF_FRAME_DEMO_DOMAIN:?Set OUT_OF_FRAME_DEMO_DOMAIN in the demo environment}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

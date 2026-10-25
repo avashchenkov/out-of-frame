@@ -53,6 +53,10 @@ npm test
 npm run format:check
 ```
 
+The [Dockerfile](Dockerfile) builds Next.js standalone output: a non-root image with only the
+server and its runtime dependencies, without sources, tests or `.env`. The demo
+[Compose file](../compose.yaml) runs it behind Caddy.
+
 ## Private API
 
 Configure the server with the values in [.env.example](.env.example).

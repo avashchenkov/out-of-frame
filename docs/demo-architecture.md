@@ -14,6 +14,7 @@ The [launch checklist](demo-launch-checklist.md) defines the requirements for en
 flowchart LR
     B["Browser"]
     subgraph VPS["One VPS · Docker Compose"]
+        C["Caddy<br/>HTTPS and security log"]
         UI["Web UI<br/>adapted Agent Chat UI (Next.js)<br/>examples, private chat, API proxy"]
         API["Aegra<br/>access rules and existing graph"]
         DB[("PostgreSQL<br/>private conversations and checkpoints")]
@@ -22,11 +23,14 @@ flowchart LR
         API <--> DB
         API <--> R
     end
-    B <-->|"HTTPS"| UI
+    B <-->|"HTTPS"| C
+    C <--> UI
 ```
 
 Only the Web UI service is publicly reachable. It adapts Agent Chat UI and adds a server-side
 API proxy in Next.js. Aegra, PostgreSQL and Redis use the private container network.
+Caddy on the same host terminates HTTPS and forwards requests to the Web UI; it is the only
+container with published ports.
 One Aegra container runs `aegra serve` with `REDIS_BROKER_ENABLED=true`, using its
 [built-in worker recovery](https://github.com/aegra/aegra/blob/v0.10.8/docs/guides/worker-architecture.mdx#crash-recovery).
 The demo uses one Aegra process, with its worker tasks in the same process, so admission
@@ -203,7 +207,9 @@ belong in quota records.
 
 Use private, non-cacheable responses; exclude chat content from backups and persistent
 frontend caches. Keep chat bodies and source text out of logs and disable external tracing.
-Necessary security log metadata has a separate retention limit below. Test expiry, interrupted
+Necessary security log metadata has a separate retention limit below. Caddy's access log
+keeps the client IP, time, request line and status, without headers or cookies; the host
+journal keeps container logs for up to 24 hours. Test expiry, interrupted
 deletion and restart recovery; record actual deletion timing in the launch checklist.
 Provider retention is separate from deletion on our server.
 

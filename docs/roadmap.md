@@ -514,6 +514,11 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    Choose budget amounts with the deployment settings.
    Finish with a live conversation after approval of its estimated cost. Enable live input
    only after these checks pass; recorded examples can be served earlier.
+
+   - ✅ The Web UI image, Caddy for HTTPS, host setup and release scripts, checked locally.
+     Images are built locally and copied to the server, which has 1 GB of memory.
+   - Prepare the server, point the domain and serve the recorded examples over HTTPS.
+   - Complete the launch checklist, then the approved live trial.
 9. **The README in its final form:** a CI badge and a link to the demo; the design choices,
    one line each; what is out of scope; the legal frame and a link to the data sources and
    their rights in [sources.md](sources.md); and how it was built, one paragraph on the agents

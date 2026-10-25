@@ -37,15 +37,46 @@ editable source checkout. It runs as a non-root user. Project tests, evals, fixt
 Ruff, pytest, secrets and deployment SQL are excluded. The root `.dockerignore` allows only
 backend build inputs; a separate build stage keeps source and build tools out of the final image.
 
-No service publishes a host port. Only containers in the Compose network can reach Aegra
-on port 2026. The Web UI will join this network in the interface step. This Compose file
-does not yet provide a public website. PostgreSQL uses a persistent named volume; Redis
-uses memory without RDB/AOF. No automatic container restart policy is configured.
+The same Compose file runs the [Web UI](frontend/README.md) and Caddy. Only Caddy publishes
+host ports, 80 and 443; it gets an HTTPS certificate for `OUT_OF_FRAME_DEMO_DOMAIN` and
+forwards to the Web UI. Only containers in the Compose network can reach Aegra on port 2026.
+The Web UI receives only its own settings from the environment file, not the model or source
+keys. PostgreSQL and Caddy's certificates use persistent named volumes; Redis uses memory
+without RDB/AOF. Containers restart automatically after a failure or a host reboot.
 
 Use `docker compose --env-file .env down` to stop the services and keep PostgreSQL data.
 For a full data reset, stop the backend first, then run
 `docker compose --env-file .env down --volumes`; this deletes all conversations and quotas.
 Do not use the disposable [test Compose](testing.md) for stored conversations.
+
+### Deployment on a server
+
+The server only runs the images; it never builds them. The images are built on a
+development machine and copied over SSH, so a host with 1 GB of memory and a small disk is
+enough. At rest the services use about 400 MB of memory.
+
+[`deploy/bootstrap-host.sh`](deploy/bootstrap-host.sh) prepares a Debian or Ubuntu host once.
+Run it as root after adding an SSH key. It creates a `deploy` user with the same keys, turns
+off password and root login, allows only SSH, HTTP and HTTPS through the firewall, enables
+automatic security updates, installs Docker unless it is already there and adds 3 GB of swap
+unless swap exists. Container logs go to the system journal, which keeps them for up to
+24 hours.
+
+Point the domain's DNS record to the server. Create `~/out-of-frame/demo/.env` on the server
+from [`.env.example`](.env.example). Then, for the first start and each update, run from a
+clean checkout on the development machine:
+
+```sh
+demo/deploy/release.sh deploy@server
+```
+
+[`release.sh`](deploy/release.sh) builds both images for `linux/amd64`, copies them and the
+deployment files (Compose file, Caddyfile, database SQL and
+[`deploy.sh`](deploy/deploy.sh)) to the server, and runs `deploy.sh` there. That script
+stops the backend, applies the database steps above and starts all services. The Web UI
+keeps serving the examples while the backend is stopped. Caddy's access log holds the
+client IP, time, request line and status, without headers or cookies. Read it on the server
+with `docker compose logs caddy` from `~/out-of-frame/demo`.
 
 ### Local Python process
 

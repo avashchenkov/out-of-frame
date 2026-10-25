@@ -1,0 +1,24 @@
+# Public HTTPS entry point. Caddy obtains and renews the certificate for the domain.
+{
+	admin off
+}
+
+{$OUT_OF_FRAME_DEMO_DOMAIN} {
+	reverse_proxy web:3000
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	# Security log: client IP, time, request line and status, without headers or cookies.
+	log {
+		output stdout
+		format filter {
+			wrap json
+			request>headers delete
+			request>tls delete
+			request>remote_port delete
+			resp_headers delete
+			user_id delete
+		}
+	}
+}
