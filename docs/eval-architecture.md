@@ -60,7 +60,9 @@ results follow the edited data: in F1, the object ends unidentified even if its 
 known. Injection examples are generated,
 since no real page has the condition they need.
 
-Every model call has its own suite. A call task starts from a written state, such as a search
+Every model call of the research and the report has its own suite. Two calls added for the
+demo have code tests only: naming the user's language, and translating the texts that code
+adds to the report. A call task starts from a written state, such as a search
 history, and only that call's output is graded. A call task grades the model's own output,
 before code acts on it: the grounding check, the fallback at the cap, the reference filling.
 The input loop is also evaluated whole: its tasks differ in
@@ -110,9 +112,7 @@ question.
 The MVP builds the tasks in the MVP column of the
 [suite table](#two-levels-component-and-end-to-end), and the demo shows them. They are prepared
 in stages, before the behaviour each checks, in the order of the [roadmap](roadmap.md).
-Start with L1 and F1, then extend the tasks and harness with the agent. The other tasks stay
-designed here and are built only if an observed failure shows a need; no phase after the MVP
-is planned.
+The other tasks stay designed here and are built only if an observed failure shows a need.
 
 - **Judges:** support, interpretation and no verdict, the three that grade the end-to-end
   report; the last two also grade the report suite. Review early outputs by hand against their
@@ -650,5 +650,5 @@ credit.
 
 The data for a step are ready when its tasks have their inputs, user messages included,
 starting states and source responses where needed, expected results, and labels with evidence
-and dates. Define the types and statuses needed by that step in research_scope.yaml with
-its tasks. Complete the remaining MVP data before the final full run.
+and dates. The types and statuses that a step needs are defined in research_scope.yaml with
+its tasks.

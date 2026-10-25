@@ -502,7 +502,9 @@ world.
 Code retries each call to the model or a source a few times. If it still fails:
 
 - **The model or geocoding:** the run stops, and the user is asked to try again later. The
-  state is saved after each step, so the run then continues where it stopped.
+  state is saved after each step, so with a lasting checkpointer a retry continues where the
+  run stopped (see [the state](#the-state)). The CLI's checkpointer is in memory, so the CLI
+  starts a new run.
 - **The map or plan source:** that part of the report is missing, and the rest continues.
   The query for the addresses of the objects to investigate is the exception: they are
   investigated without addresses, the map part of the report stays, and nothing is added to

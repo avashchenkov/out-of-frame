@@ -89,9 +89,11 @@ services. Only the two keys are required; every other setting has a default in
 
 ## Evals
 
-The offline checks need no keys: tests, the code graders and the task format.
+The offline checks need no keys: tests, the code graders and the task format. The demo tests
+also need Aegra, from the `demo` extra:
 
 ```bash
+uv sync --extra demo
 uv run pytest
 ```
 
