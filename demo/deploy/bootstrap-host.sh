@@ -89,6 +89,15 @@ if [[ ! -s /etc/docker/daemon.json ]] || grep -q '"log-driver": "journald"' /etc
 else
   echo "Warning: /etc/docker/daemon.json has other settings. Add $daemon_json by hand." >&2
 fi
+# rsyslog would copy the journal to files kept longer than 24 hours. The other services are
+# not needed on a VPS and use memory.
+for unit in rsyslog.service snapd.service snapd.socket ModemManager.service udisks2.service \
+  multipathd.service multipathd.socket; do
+  if systemctl list-unit-files "$unit" --no-legend | grep -q .; then
+    # Static units cannot be disabled; stopping them is enough.
+    systemctl disable --now "$unit" 2>/dev/null || systemctl stop "$unit"
+  fi
+done
 
 # Swap: the services use about 400 MB at rest and more during a run.
 if ! swapon --show | grep -q .; then
