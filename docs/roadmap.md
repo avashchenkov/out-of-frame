@@ -518,6 +518,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
      Images are built locally and copied to the server, which has 1 GB of memory.
    - ✅ The server prepared; the recorded examples served over HTTPS at
      <https://outofframe.hooraytalk.com>, with live input off.
+   - ✅ Transfer safeguards in the Privacy notice: Anthropic's DPA with the EU Standard
+     Contractual Clauses; Tavily receives no visitor identifiers. A
+     [legitimate interest record](demo-legitimate-interest.md) for quotas and security logs.
    - Complete the launch checklist, then the approved live trial.
 9. **The README in its final form:** a CI badge and a link to the demo; the design choices,
    one line each; what is out of scope; the legal frame and a link to the data sources and

@@ -138,11 +138,35 @@ export default async function Privacy() {
             </tr>
           </tbody>
         </table>
-        {/* TODO: name the transfer safeguards after verifying provider roles,
-            terms and processor agreements for the deployed plans. */}
         <p>
-          Anthropic and Tavily are based in the United States, so this data is
-          transferred outside the European Economic Area.
+          Anthropic is based in the United States and processes this data on our
+          behalf under its{" "}
+          <a
+            href="https://www.anthropic.com/legal/data-processing-addendum"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Data Processing Addendum
+          </a>
+          . Its API offers no processing limited to the EU, so the data can be
+          processed in the United States or other countries outside the European
+          Economic Area. The transfer is protected by the EU Standard
+          Contractual Clauses in that addendum (Article 46(2)(c) GDPR).
+        </p>
+        <p>
+          Tavily is also based in the United States. It receives only searches
+          about map objects and plans near the address and the web pages to
+          read, never your messages, cookie or IP address, so we do not expect
+          these requests to identify you. Tavily uses them under its own{" "}
+          <a
+            href="https://www.tavily.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            privacy policy
+          </a>{" "}
+          and terms, which allow it to improve its services and AI models with
+          them.
         </p>
 
         <h2>Retention</h2>

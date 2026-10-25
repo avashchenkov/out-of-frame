@@ -25,7 +25,8 @@ Public contact: Artur Vashchenkov,
   use of data. Confirm the agreement's validity and the need for the return window using the
   [EDPB guidelines](https://www.edpb.europa.eu/system/files/documents/files/file1/edpb_guidelines-art_6-1-b-adopted_after_public_consultation_en.pdf).
   Assess quota records and security logs separately under Article 6(1)(f),
-  with a brief necessity and balancing record. Visitor content is not reused for examples,
+  with a brief necessity and balancing record: see the
+  [legitimate interest record](demo-legitimate-interest.md). Visitor content is not reused for examples,
   evals or improvement.
 - Justify the identity cookie's purpose and duration for private access and the
   conversation limit. Strictly necessary storage for an expressly requested service is exempt
