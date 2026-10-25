@@ -55,6 +55,15 @@ Python 3.14 with uv. Add dependencies with `uv add` and run commands with `uv ru
 - Never open, print or read `.env`; `.env.example` is fine. Tests and code graders run without
   keys.
 - Ask before any run that calls a paid API, the model or web search, with a cost estimate.
+  Ask before the demo integration checks too: they use the local Docker daemon.
+- Before a new behaviour, prepare its eval tasks and success criteria. For code, write a
+  failing test first.
+- Quote LLM judge scores only from judge versions that passed calibration. A change of the
+  report needs the judges' rubrics and calibration sets checked against it first.
+- Exploratory scripts live in `spikes/`, one folder per question, with a dated note of the
+  findings. They stay outside the tests and are not extended.
+- Only the reviewed recorded examples of the demo go into the repository. Never commit
+  visitor reports, or saved runs that hold the web pages the agent read.
 - Agent runtime settings live in `src/out_of_frame/config.py` and the environment; never
   hard-code them. Keep evaluation-only settings outside the runtime package, in
   `evals/config.py`, with their example environment in `evals/.env.example`.

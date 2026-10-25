@@ -1,27 +1,13 @@
 # Roadmap
 
-The intended order to the MVP, and the demo after it. Each step names its result and checks.
-Detail the next step before starting it; leave later implementation details open. Change the
-order when a run reveals a reason, and keep the next step clear here.
-
-Track implementation and launch progress here. Architecture docs, ADRs and launch checklists
-define the design, decisions and requirements; they do not track task completion.
-
-For each new behaviour, prepare its eval cases and success criteria before implementing it.
-For code, write a failing test, implement the behaviour and refactor. Extend the eval harness
-only as needed. Each step ends with the tests and eval tasks that can run by then, with
-failures recorded. Review the first findings and reports by hand against the judge rubrics;
-these grades go into the judges' calibration sets. Quote LLM judge scores only after
-calibration.
+The steps to the MVP, and the demo after it, in the order they were done. Each step names
+its result and its checks.
 
 1. ✅ **Repository setup.**
 2. ✅ **Research scope.** Each checked category with its radius and its source. Kept as
    data.
 3. ✅ **Spike.** How many objects of each category does Overpass return, and how many have no
-   name? This sets the investigation cap per category. Exploratory scripts live in `spikes/`, one
-   folder per question, each with a dated note of its findings:
-   [overpass-counts](../spikes/overpass-counts/findings-2026-09-25.md). The findings may change
-   the research scope. The scripts stay outside the checks and are never extended.
+   name? This sets the investigation cap per category.
 4. ✅ **First eval cases and a minimal runner.** Prepare L1: one unnamed map object from a
    candidate end-to-end address, with a type and status verified from real-world evidence.
    Prepare F1: a written investigation state with no usable evidence and the tool cap reached,
@@ -358,16 +344,10 @@ calibration.
        each effort, also replay fixed report inputs from saved runs, locally, since a saved run
        holds the pages it read and is not committed as a task, with passing reports as
        controls: check distances, inside/outside claims, legal status and citations, including
-       an uncited introduction.
-       If factual distortions or missing citations remain at the selected effort, clarify only
-       the report prompt as needed and replay the same inputs. Accept equivalent plain-language
-       wording; inspect flags for actual changes of fact. Do not
-       add coded rendering or new report validators for this fix. For part-to-whole and
-       time-scope errors, use saved inputs to locate the first wrong generalisation in the
-       Finding or report. Try effort first, then clarify the existing prompt at that step
-       only if needed. Separate subject/area/time fields for each fact and a new
-       Finding/report consistency checker are rejected for the MVP: the extra state and
-       validation work have no demonstrated need. Keep the existing architecture.
+       an uncited introduction. Where facts were still distorted, only the report prompt was
+       made clearer. Separate fields for the subject, area and time of each fact, and a new
+       check of the report against the findings, were rejected for the MVP: nothing showed a
+       need for them.
     10. ✅ A classification funnel: the type of an object or a plan settled by questions in a
        fixed order, from what can affect people nearby the most to the least, in place of the
        special rules added one by one. The status decision stays separate from this type
@@ -392,7 +372,7 @@ calibration.
        separate report fix. The other unselected
        candidates in the [quality audit](evals/2026-10-19-agent-quality-audit.md) are weighed
        only against the failures that this run still shows; they are not scheduled work.
-       Rejected MVP changes stay excluded. After the run, the labels whose fails it traced to
+       After the run, the labels whose fails it traced to
        a search that does not reliably reach the page, or to pages that do not settle the
        label, are left out too; and, as row 3 of the audit proposes, a finding that the
        grounding check rejects, or an answer without the Finding tool, gets one more try with
@@ -445,38 +425,23 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
 6. ✅ **The agent as a service on Aegra.** Wrap the existing graph with PostgreSQL checkpoints
    and Redis recovery. Use LangChain messages, interrupt/resume and an explicit final-report
    marker; preserve the CLI, evals and old saved runs. Update the agent architecture with
-   the message changes. Move the scripted dialogue runner and judge settings into `evals/`,
-   with separate example environment files.
+   the message changes. The scripted dialogue runner and the judge settings moved into
+   `evals/`, with their own example environment file.
 
-   Keep demo server code and settings in `demo/backend/`, outside the agent package.
-   Keep demo tests in `tests/demo/`, with infrastructure checks in its `integration/` folder.
+   Cookie ownership, atomic admission limits, one current conversation per identity, and
+   cancellation and deletion with automatic expiry cleanup; admission counters stay after a
+   chat is deleted. Reports got explicit Markdown licence links and escaped user text. One
+   run executes at a time across all visitors, with Aegra's own worker settings; a question
+   to the user frees the slot. The
+   [implementation checks](demo-architecture.md#implementation-checks) cover restart and
+   resume, quotas, recovery, deletion races and that no source text reaches the browser.
+   They run in a disposable Compose project through the
+   [integration runner](../demo/testing.md), locally and in CI.
 
-   Implement cookie ownership, atomic admission limits, one current conversation per
-   identity, and coordinated cancellation/deletion with automatic expiry cleanup.
-   Retain admission counters after chat deletion. Add explicit Markdown licence links and
-   escape user text in reports, checking affected tests and graders. Start with the stubbed
-   restart/resume integration check; cover the remaining
-   [implementation checks](demo-architecture.md#implementation-checks), including quotas,
-   recovery, deletion races and exclusion of source texts from browser responses.
-
-   Configure one executing run across all visitors with Aegra's native worker settings.
-   Verify native queue processing and that input interrupts release the execution slot.
-
-   Prepare disposable Compose test infrastructure before backend packaging: isolated
-   PostgreSQL and Redis, local ports, and cleanup on success or failure. Run checks through
-   the [integration runner](../demo/testing.md), with explicit approval before using the
-   operator's Docker daemon. Use the same runner and Compose file for integration checks
-   in CI. After the HTTP service is committed, package the backend in
-   Docker before starting the Web UI. Keep tests, evals and deployment input out of its image.
-
-   Use `demo/compose.yaml` for the private backend, persistent PostgreSQL and memory-only
-   Redis. Build the agent as an installed package in a non-root image. Run Aegra migrations
-   and apply `demo/db/schema.sql` separately before starting the server. Keep the disposable
-   test Compose for integration checks. Verify image contents and Compose startup without
-   external API calls before moving to step 7.
-
-   Cookie issuance in browser responses, origin/CSRF checks and response filtering belong
-   to the Web UI proxy in step 7. Backend image checks belong to packaging before that step.
+   `demo/compose.yaml` runs the private backend, persistent PostgreSQL and memory-only Redis.
+   The backend image installs the agent as a package, runs as a non-root user and holds no
+   tests, evals or deployment input. Aegra's migrations and `demo/db/schema.sql` are applied
+   separately before the server starts.
 7. ✅ **The web interface** in `demo/`, based on Agent Chat UI. Show the private conversation,
    report, progress and fixed service-failure notices, plus reviewed recorded examples.
    The Next.js proxy constructs allowed requests and filters all browser responses.
@@ -494,25 +459,11 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
    - ✅ New-chat and deletion controls with confirmation and preserved usage counters.
    - ✅ Five recorded examples with research dates, viewable without a private session.
    - ✅ Service terms, Privacy notice and Impressum pages, linked from the footer and start notice.
-
-   Show a queued notice for `pending` runs and switch to progress when execution starts.
-   Reconnect without resubmitting, and keep deletion available while a run is queued.
-
-   Keep the interface in English. Before input, show the service terms and short notice:
-   private access, the essential cookie, retention on our server, external providers and loss
-   of access after clearing cookies. Add accessible Privacy notice and Impressum links.
-   Label New chat as deleting the current conversation and offer Delete chat separately.
-   Render reports safely with working source and licence links. Leaving the page keeps the
-   run active. Check separate browser sessions, a narrow screen and filtered network payloads.
-8. ✅ **Deployment on one VPS.** Docker Compose runs Next.js, Aegra, PostgreSQL and Redis,
-   with only Next.js public. PostgreSQL persists; Redis has no disk persistence. Pass secrets
-   at runtime and build the backend image without project tests, evals or development tools.
-   Verify the package and image separately from the development/CI environment.
-
-   Complete the [launch checklist](demo-launch-checklist.md): operator details, notices,
-   provider terms, HTTPS, retention and cleanup.
-   Finish with a live conversation after approval of its estimated cost. Enable live input
-   only after these checks pass; recorded examples can be served earlier.
+8. ✅ **Deployment on one VPS.** Docker Compose runs Caddy, Next.js, Aegra, PostgreSQL and
+   Redis, with only Caddy public. PostgreSQL persists; Redis has no disk persistence. Secrets
+   are passed at runtime. The [launch checklist](demo-launch-checklist.md) covers operator
+   details, notices, provider terms, HTTPS, retention and cleanup; live input was turned on
+   only after it and a live trial.
 
    - ✅ The Web UI image, Caddy for HTTPS, host setup and release scripts, checked locally.
      Images are built locally and copied to the server, which has 1 GB of memory.
@@ -532,9 +483,4 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
      [an agent for the investigation, a workflow for the rest](adr/0002-why-an-agent.md) and
      [live sources instead of an index of our own](adr/0003-live-sources.md).
    - ✅ No MCP and no baseline: one line each, without an ADR.
-   - ✅ Explain the private live chat and the five recorded examples. Only the reviewed static
-     examples belong in the repository; never commit visitor reports. Each report says that
-     a language model wrote it and its facts should be checked against the sources.
-
-A change of the report reaches the judges: their rubrics and calibration sets are checked
-against it before results are quoted again.
+   - ✅ The private live chat and the five recorded examples.
