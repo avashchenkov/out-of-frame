@@ -15,7 +15,7 @@ Public contact: Artur Vashchenkov,
   replace the name or address. Check the applicable DDG/MStV particulars against the
   [German media regulators' guidance](https://www.die-medienanstalten.de/aufgaben/aufsicht/impressumspflicht/).
   Configure the public email through the page's server environment and keep it working for
-  questions, feedback and data requests. A contact form is not needed.
+  any question, including data requests. A contact form is not needed.
 - Show short service terms before Start: the operator provides a free, limited AI
   report and return access for the configured period. Explain availability, quotas, deletion
   and that the report gives facts, not advice to buy or rent. Make the terms accessible later

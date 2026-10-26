@@ -37,8 +37,8 @@ export default function Impressum() {
         )}
       </p>
       <p>
-        Write to this address for questions, feedback, data protection requests
-        or an arranged demo.
+        Write to this address with any question, including data protection
+        requests.
       </p>
     </main>
   );

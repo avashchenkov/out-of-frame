@@ -85,7 +85,7 @@ The interface is in English for an English-reading adult technical audience. Bef
 show the [start notice and service terms](demo-launch-checklist.md#before-the-first-message).
 Show remaining submissions and the message-length limit. On refusal, explain the relevant
 limit and reset, if any; keep examples, saved reports and deletion available.
-Offer a dedicated author contact for questions, feedback, data requests or an arranged demo.
+Offer a dedicated author contact for any question, including data requests.
 
 Use these refusal messages without quota numbers:
 
