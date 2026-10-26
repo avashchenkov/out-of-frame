@@ -73,7 +73,7 @@ export async function readPrivateChat(
       threadId: null,
       messages: [],
       failures: [],
-      status: "No private chat in this browser.",
+      status: "No chat in this browser.",
       active: false,
       chatsRemaining: session.chats_remaining,
       expiresAt: session.expires_at,

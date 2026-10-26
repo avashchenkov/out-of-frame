@@ -14,7 +14,7 @@ export function watchPrivateChat(
   let stopStream: (() => void) | undefined;
   let progress: string | null = null;
   let current: PrivateChat | null = null;
-  let status = "Loading your private chat…";
+  let status = "Loading your chat…";
 
   function schedule(delay: number) {
     if (disposed) return;

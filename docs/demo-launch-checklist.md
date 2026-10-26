@@ -95,7 +95,7 @@ flow against outgoing requests:
 
 ## Before the first message
 
-Place this short notice above `Start private chat`, with the service terms, Privacy
+Place this short notice above `Start chat`, with the service terms, Privacy
 notice, Impressum and author contact accessible. Insert the configured values from
 [Demo limits](demo-architecture.md#demo-limits); this text is only the first information layer.
 `View examples` stays available without live input.
