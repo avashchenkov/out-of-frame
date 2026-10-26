@@ -112,8 +112,8 @@ keep deletion available. Worker concurrency does not replace Anthropic's rate li
 
 ## Private proxy contract
 
-Only the Web UI server knows `OUT_OF_FRAME_DEMO_PROXY_SECRET`. It verifies the signed identity
-cookie and sends `x-demo-key`, `x-demo-identity` (the verified random UUID), and
+The Web UI server and the backend share `OUT_OF_FRAME_DEMO_PROXY_SECRET`; the browser never
+sees it. The Web UI verifies the signed identity cookie and sends `x-demo-key`, `x-demo-identity` (the verified random UUID), and
 `x-demo-csrf: 1` after its own origin/CSRF check. Never forward browser-supplied identity or
 execution headers. A first request uses a fresh candidate UUID, without setting a cookie yet.
 

@@ -62,11 +62,10 @@ The two unstable labels, each wrong in one trial of three:
 
 One more try for a rejected finding ran 5 times in the 15 trials and saved 3 findings.
 
-**Conclusion.** Every scored label passes, and wrong claims fell from 9 to 1. Two labels are
-unstable: a search that found another page, and a plan rule that the model applied wrongly
-once. Live search and the model vary from trial to trial, so one miss in three on a label is
-expected spread, not a failure of the agent; a person reviews the results either way. Within
-the limits below, the agent does what the MVP set out to do.
+**Conclusion.** Every scored label is correct in two trials of three at least, and wrong
+claims fell from 9 to 1. Two labels are unstable: a search found another page, and the model
+applied a plan rule wrongly once. Within the limits below, the agent does what the MVP set out
+to do.
 
 ## Held-out check
 
@@ -166,8 +165,8 @@ The failures after:
   the one that affects people nearby the most.
 - An unnamed site whose page the search misses, and a page out of date or one that gives a
   site's planned uses as current.
-- A use that only a plan's documents name, such as a PDF of its reasons: the agent reads no
-  plan PDFs.
+- A use that only a plan's documents name, such as a PDF of its reasons: the agent does not
+  read the PDFs that the plan's WFS data link, only PDFs that a search finds.
 - A plan replaced in part by another, and a plan whose state shows only on a page about one of
   its plots.
 - A plan's type from the uses on its land today rather than from what it allows (plan-2-56e).

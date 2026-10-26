@@ -343,10 +343,8 @@ report is an AI message with the stable ID `final-report`, added only after refe
 credits and translated text. Replaying that step replaces the message. The `report` field
 stays available to the CLI and evals; old saved `{role, text}` messages still load.
 
-The caller supplies the checkpointer: memory for the CLI and evals, PostgreSQL for the
-[Aegra demo](demo-architecture.md). A browser conversation uses one thread, with a separate
-execution run for its first message and each answer. The server builds the date and web
-search client for each invocation; they are never saved in the state or accepted from a browser.
+The caller supplies the checkpointer: memory for the CLI and evals; a server can supply a
+lasting one, such as PostgreSQL.
 
 `Address.source_id` points to the Nominatim response for this address. If the address is not
 found, or several places match it, code uses this response to build the question for the user.

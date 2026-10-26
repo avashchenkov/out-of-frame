@@ -60,8 +60,8 @@ results follow the edited data: in F1, the object ends unidentified even if its 
 known. Injection examples are generated,
 since no real page has the condition they need.
 
-Every model call of the research and the report has its own suite. Two calls added for the
-demo have code tests only: naming the user's language, and translating the texts that code
+Every model call of the research and the report has its own suite. Two calls added after the
+MVP have code tests only: naming the user's language, and translating the texts that code
 adds to the report. A call task starts from a written state, such as a search
 history, and only that call's output is graded. A call task grades the model's own output,
 before code acts on it: the grounding check, the fallback at the cap, the reference filling.
@@ -110,7 +110,7 @@ question.
 ## MVP
 
 The MVP builds the tasks in the MVP column of the
-[suite table](#two-levels-component-and-end-to-end), and the demo shows them. They are prepared
+[suite table](#two-levels-component-and-end-to-end). They are prepared
 in stages, before the behaviour each checks, in the order of the [roadmap](roadmap.md).
 The other tasks stay designed here and are built only if an observed failure shows a need.
 
@@ -474,8 +474,8 @@ the draft, so no report task covers them; code tests do.
 
 ### Left out
 
-As of less weight: all sources failing (R3 covers one failed source); paraphrase and
-language.
+Of less weight, and with no tasks: all sources failing at once (R3 covers one failed
+source), paraphrase and language.
 
 ### Labels left out of the MVP
 

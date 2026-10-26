@@ -288,7 +288,7 @@ Haiku 5.5 is medium. The judges stayed at their calibrated extra-high effort.
 
 | | Medium (default) | High | Extra-high |
 |---|---|---|---|
-| Finding F1–F14, trials passed | 41 of 42 | 42 of 42 | 38 of 42, three without a finding |
+| Finding F1, F2 and F4–F15, trials passed | 41 of 42 | 42 of 42 | 38 of 42, three without a finding |
 | Enough N1–N6, trials passed | 17 of 18 | 13 of 18 | 14 of 18 |
 | Report replay, statements flagged by the support judge | 23 of 259 | 22 of 265 | 14 of 202 |
 | Report replay, interpretation fails | 4, and 1 judge error, of 21 | 0 of 21 | 2 of 17 |

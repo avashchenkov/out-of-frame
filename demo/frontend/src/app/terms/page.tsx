@@ -64,10 +64,10 @@ export default async function Terms() {
         </p>
         <h2>Your input</h2>
         <p>
-          The demo is for users aged 18 or over and works in English. Use public
-          places and fictional travel plans. Do not enter names or sensitive
-          personal details. Do not try to bypass the limits or misuse the
-          service.
+          The demo is for users aged 18 or over. The pages are in English; the
+          agent answers in the language you write in. Use public places and
+          fictional travel plans. Do not enter names or sensitive personal
+          details. Do not try to bypass the limits or misuse the service.
         </p>
         <h2>Deletion</h2>
         <p>

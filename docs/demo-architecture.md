@@ -55,9 +55,6 @@ Aegra's replay buffer already expires
 the value is defined in [base_broker.py](https://github.com/aegra/aegra/blob/v0.10.8/libs/aegra-api/src/aegra_api/services/base_broker.py).
 Explicit chat deletion also removes its Redis data immediately after workers stop.
 
-The scripted dialogue runner and judge settings belong in `evals/`, with settings in
-`evals/config.py` and examples in `evals/.env.example`.
-Keep agent settings in `src/out_of_frame/config.py` and the root `.env.example`.
 Demo server code and settings live in `demo/backend/`, outside the reusable agent package;
 Next.js server settings use environment variables. All demo tests live in `tests/demo/`,
 with infrastructure checks in `tests/demo/integration/`. The agent imports neither demo nor
@@ -118,10 +115,10 @@ runs on that thread:
    The page and admission use the same server-side check. An idle thread or a draft in
    `report` alone does not mean completion.
 
-Use LangChain messages, keep `report` and loading of old saved runs, and let the caller supply
-the checkpointer. CLI and evals keep their memory checkpointer. Build the Berlin date and web
-search client on the server for each invocation; neither belongs in client input or saved
-state. Research rules and prompts stay the same.
+A browser conversation uses one thread, with a separate run for its first message and each
+answer. The server builds the Berlin date and the web search client for each run; neither
+comes from the browser or the saved state. The research rules and prompts are the agent's
+own; see the [agent architecture](architecture.md#the-state) for messages and checkpoints.
 
 Every run uses `on_disconnect=continue` and checkpoint `durability=sync`. Leaving the page
 does not cancel it; refresh reconnects. Aegra recovers crashed runs from their last checkpoint

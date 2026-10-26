@@ -25,8 +25,9 @@ You give it an address or a listing. It asks where you travel regularly and when
 It writes in the language you write in.
 
 It is a LangGraph agent on Claude Haiku 5.5, with Tavily for web search. Code decides what
-runs next, except when the model stops searching for one object, checks that every finding
-from a web search quotes its page word for word, and fills in the references. See the
+runs next; only the model decides when to stop searching for one object. Code also checks that
+every finding from a web search quotes its page word for word, and fills in the references. See
+the
 [vision](docs/vision.md) and the [architecture](docs/architecture.md).
 
 A language model writes the report, and it can be wrong: check what matters to you against
