@@ -221,3 +221,6 @@ __marimo__/
 
 # Local eval runs.
 evals/results/
+
+# Local Claude Code launch settings.
+.claude/launch.json
