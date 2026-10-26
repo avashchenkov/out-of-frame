@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Thread } from "./thread";
 import type { PrivateChat as Chat } from "../lib/private-chat";
 import { watchPrivateChat } from "../lib/watch-private-chat";
-import { ChatInput, StartNotice } from "./chat-input";
+import { ChatInput, StartNotice, chatsLeft } from "./chat-input";
 import {
   ChatSubmitError,
   IDENTITY_LIMIT_NOTICE,
@@ -220,7 +220,11 @@ export function PrivateChat({
                 </button>
               </section>
             )}
-            <StartNotice limits={limits} />
+            <StartNotice
+              limits={limits}
+              left={chatsLeft(chat, limits)}
+              renewsAt={chat.expiresAt}
+            />
           </>
         )
       }

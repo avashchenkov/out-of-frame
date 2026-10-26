@@ -5,6 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import type { PrivateChat } from "../lib/private-chat";
 import type { DemoLimits } from "../lib/chat-input";
 
+// Without an identity cookie the visitor still has every chat.
+export function chatsLeft(chat: PrivateChat, limits: DemoLimits) {
+  return chat.chatsRemaining ?? limits.identity_chats;
+}
+
 export function ChatInput({
   chat,
   limits,
@@ -51,7 +56,7 @@ export function ChatInput({
           disabled={disabled}
           onClick={() => setStarted(true)}
         >
-          Start chat
+          Start chat ({chatsLeft(chat, limits)} left)
         </button>
       </div>
     );
@@ -112,16 +117,37 @@ export function ChatInput({
   );
 }
 
-export function StartNotice({ limits }: { limits: DemoLimits }) {
+export function StartNotice({
+  limits,
+  left,
+  renewsAt,
+}: {
+  limits: DemoLimits;
+  left: number;
+  renewsAt?: string;
+}) {
+  // The chat count renews when the cookie expires, 30 days after the first
+  // message; before that message the date is not known yet.
+  const renewal = renewsAt
+    ? `renews on ${new Date(renewsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`
+    : `renews ${limits.lifetime_days} days after your first message`;
   return (
     <section className="start-notice" aria-labelledby="start-title">
       <h2 id="start-title" className="box-label">
         Before you start
       </h2>
-      <p className="start-limits">
-        {limits.identity_chats} chats · {limits.submissions} messages per chat ·{" "}
-        {limits.message_chars.toLocaleString("en-US")} characters per message
-      </p>
+      <ul className="start-limits">
+        <li>
+          <strong>
+            {left} of {limits.identity_chats} chats left
+          </strong>{" "}
+          · {renewal}
+        </li>
+        <li>
+          {limits.submissions} messages per chat ·{" "}
+          {limits.message_chars.toLocaleString("en-US")} characters per message
+        </li>
+      </ul>
       <p>
         An AI demo in English, for users aged 18 or over. Use public places and
         fictional travel plans. Start requests a free AI report under the{" "}

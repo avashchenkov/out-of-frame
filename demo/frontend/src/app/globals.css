@@ -270,8 +270,12 @@ fieldset:disabled .button {
 }
 .start-notice .start-limits {
   margin: 0.15rem 0 0.75rem;
+  padding: 0;
+  list-style: none;
   color: var(--ink);
-  font-weight: 500;
+}
+.start-limits strong {
+  font-weight: 600;
 }
 .start-notice p:last-child {
   color: var(--ink);
