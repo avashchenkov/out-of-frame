@@ -79,7 +79,7 @@ export function Thread({
   const quota = !quiet && submissionsRemaining !== undefined && (
     <p className="chat-quota">
       {submissionsRemaining}{" "}
-      {submissionsRemaining === 1 ? "submission" : "submissions"} left
+      {submissionsRemaining === 1 ? "message" : "messages"} left
     </p>
   );
   const failureList = failures.length > 0 && (

@@ -91,8 +91,10 @@ Use these refusal messages without quota numbers:
 
 - `identity_chats_exhausted`: "You have reached your usage limit. Contact the author for
   further access." Link to the author contact; do not suggest a daily reset for this limit.
-- `daily_chats_exhausted`: "Today's limit for new chats has been reached. Please try again
-  tomorrow." Show the next Berlin-midnight reset in the visitor's local time.
+- `daily_chats_exhausted`: "The service has reached today's limit for new chats across all
+  visitors. Please try again tomorrow. Thank you for understanding." Show the next
+  Berlin-midnight reset in the visitor's local time. Do not list this limit on the page or in
+  the service terms: it limits the service, not the visitor.
 
 Both limits apply to new conversations. Existing admitted conversations can continue within
 their submission limit. Keep examples, saved reports and deletion available.

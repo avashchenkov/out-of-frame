@@ -11,8 +11,8 @@ export const IDENTITY_LIMIT_NOTICE =
 const REFUSALS: Record<string, string> = {
   identity_chats_exhausted: IDENTITY_LIMIT_NOTICE,
   daily_chats_exhausted:
-    "Today's limit for new chats has been reached. Please try again tomorrow.",
-  submissions_exhausted: "The submission limit for this chat has been reached.",
+    "The service has reached today's limit for new chats across all visitors. Please try again tomorrow.",
+  submissions_exhausted: "This chat has reached its message limit.",
   live_unavailable: "Live chat is currently unavailable.",
   chat_exists: "A chat already exists in this browser. Reload chat to open it.",
   chat_complete: "This report is complete. This chat cannot be continued.",

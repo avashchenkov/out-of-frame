@@ -34,21 +34,20 @@ export default async function Terms() {
         <ul>
           <li>Up to {limits.identity_chats} chats per browser cookie.</li>
           <li>
-            Up to {limits.submissions} submissions per chat, including the first
-            message, answers and retries.
+            Up to {limits.submissions} messages per chat, including the first
+            message and your answers. A retry also counts as a message.
           </li>
           <li>Up to {limits.message_chars} characters per message.</li>
           <li>
             Access to the current chat for up to {limits.lifetime_days} days
             after your first message.
           </li>
-          <li>A daily limit for new chats across all visitors.</li>
         </ul>
       ) : (
         <p>
-          The service limits chats per browser, submissions per chat, message
-          length, access time and new chats per day. The page shows the current
-          values before your first message.
+          The service limits chats per browser, messages per chat, message
+          length and access time. The page shows the current values before your
+          first message.
         </p>
       )}
       <h2>Availability</h2>

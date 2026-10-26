@@ -97,7 +97,7 @@ export function ChatInput({
         <div className="box-footer">
           <p id="message-limit" className="box-meta">
             {length} / {limits.message_chars} characters
-            {!chat.threadId && ` · ${remaining} submissions in this chat`}
+            {!chat.threadId && ` · ${remaining} messages in this chat`}
           </p>
           <button
             type="submit"
@@ -119,8 +119,8 @@ export function StartNotice({ limits }: { limits: DemoLimits }) {
         Before you start
       </h2>
       <p className="start-limits">
-        {limits.submissions} submissions per chat · {limits.message_chars}{" "}
-        characters per message
+        {limits.identity_chats} chats · {limits.submissions} messages per chat ·{" "}
+        {limits.message_chars.toLocaleString("en-US")} characters per message
       </p>
       <p>
         An AI demo in English, for users aged 18 or over. Use public places and
