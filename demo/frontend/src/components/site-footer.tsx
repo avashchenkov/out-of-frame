@@ -4,11 +4,11 @@ export function SiteFooter() {
   return (
     <footer className="site-footer">
       <p>Out of Frame · a public demo for Berlin</p>
-      <nav aria-label="Legal and contact">
+      {/* The Impressum holds the contact email, so it needs no own link. */}
+      <nav aria-label="Legal">
         <Link href="/terms">Service terms</Link>
         <Link href="/privacy">Privacy notice</Link>
         <Link href="/impressum">Impressum</Link>
-        <Link href="/impressum#contact">Contact</Link>
       </nav>
     </footer>
   );
