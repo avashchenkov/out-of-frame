@@ -1,4 +1,4 @@
-# Out of Frame
+# <img src="docs/assets/logo.svg" alt="" width="40" align="center"> Out of Frame
 
 *The questions nobody showing you the home is obliged to ask.*
 

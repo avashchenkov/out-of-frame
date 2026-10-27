@@ -1,4 +1,5 @@
 // The logo: a frame with a dot outside it.
+// A static copy for the README is in docs/assets/logo.svg; change both together.
 export function BrandMark() {
   return (
     <svg
