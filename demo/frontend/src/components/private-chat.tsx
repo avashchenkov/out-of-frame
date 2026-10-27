@@ -23,6 +23,10 @@ export function PrivateChat({
 }) {
   const [chat, setChat] = useState<Chat | null>(null);
   const [notice, setNotice] = useState("Loading your chat…");
+  // A chat usually loads at once. The loading notice shows only after a
+  // second, so that it does not flash on every visit.
+  const [loading, setLoading] = useState(true);
+  const [slow, setSlow] = useState(false);
   const [reload, setReload] = useState(0);
   const [limits, setLimits] = useState<DemoLimits | null>(null);
   const [limitsFailed, setLimitsFailed] = useState(false);
@@ -167,6 +171,7 @@ export function PrivateChat({
     const watcher = watchPrivateChat((snapshot, status) => {
       setChat(snapshot);
       setNotice(status);
+      setLoading(false);
     });
     function visible() {
       if (document.visibilityState === "visible") void watcher.refresh();
@@ -179,6 +184,15 @@ export function PrivateChat({
       document.removeEventListener("visibilitychange", visible);
     };
   }, [reload]);
+
+  useEffect(() => {
+    if (!loading) return;
+    const timer = setTimeout(() => setSlow(true), 1000);
+    return () => {
+      clearTimeout(timer);
+      setSlow(false);
+    };
+  }, [loading]);
 
   const messages = replacement ? [] : (chat?.messages ?? []);
   const pending =
@@ -233,6 +247,7 @@ export function PrivateChat({
       }
       quiet={
         working !== null ||
+        (loading && !slow) ||
         (!!chat && !chat.threadId && !chat.deleting && !busy)
       }
       reloadable={!chat || limitsFailed || !!error || notice !== chat.status}
@@ -279,6 +294,7 @@ export function PrivateChat({
         setError(null);
         setChat(null);
         setNotice("Loading your chat…");
+        setLoading(true);
         setReload((value) => value + 1);
       }}
       busy={busy}
