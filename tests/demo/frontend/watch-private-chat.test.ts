@@ -119,3 +119,77 @@ test("expiry clears the view even while its next read remains pending", async (t
   assert.equal(views.at(-1), null);
   watcher.stop();
 });
+
+test("events during a state read do not cancel it and lead to one more read", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const second = { ...CHAT, status: "Researching objects on the web: 1 of 3…" };
+  const third = { ...CHAT, status: "Researching objects on the web: 2 of 3…" };
+  let reads = 0;
+  let handlers!: Parameters<typeof followRun>[3];
+  let resolve!: (chat: PrivateChat) => void;
+  const views: (PrivateChat | null)[] = [];
+  const watcher = watchPrivateChat((chat) => views.push(chat), {
+    read: async () => {
+      reads++;
+      if (reads === 1) return CHAT;
+      if (reads === 2)
+        return new Promise<PrivateChat>((done) => {
+          resolve = done;
+        });
+      return third;
+    },
+    follow: (_thread, _run, _expiry, callbacks) => {
+      handlers = callbacks;
+      return () => {};
+    },
+  });
+  await settle();
+  // Investigations end faster than a read takes.
+  handlers.refresh();
+  t.mock.timers.tick(100);
+  for (let i = 0; i < 3; i++) {
+    handlers.refresh();
+    t.mock.timers.tick(100);
+  }
+  await settle();
+  assert.equal(reads, 2);
+  resolve(second);
+  await settle();
+  await settle();
+  assert.deepEqual(
+    views.slice(1).map((chat) => chat?.status),
+    [second.status, third.status],
+  );
+  assert.equal(reads, 3);
+  watcher.stop();
+});
+
+test("counted investigations move the research status ahead of the saved state", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const researching = {
+    ...CHAT,
+    status: "Researching objects on the web: 0 of 3…",
+    research: { done: 0, total: 3 },
+  };
+  let handlers!: Parameters<typeof followRun>[3];
+  const views: [PrivateChat | null, string][] = [];
+  const watcher = watchPrivateChat(
+    (chat, notice) => views.push([chat, notice]),
+    {
+      read: async () => researching,
+      follow: (_thread, _run, _expiry, callbacks) => {
+        handlers = callbacks;
+        return () => {};
+      },
+    },
+  );
+  await settle();
+  handlers.research(2);
+  const [chat, notice] = views.at(-1)!;
+  assert.equal(notice, "Researching objects on the web: 2 of 3…");
+  // The chat's own status matches, so the page offers no reload.
+  assert.equal(chat?.status, notice);
+  handlers.research(5);
+  assert.equal(views.at(-1)![1], "Researching objects on the web: 3 of 3…");
+  watcher.stop();
+});

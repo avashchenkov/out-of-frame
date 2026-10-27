@@ -8,13 +8,19 @@ type RunConnection = Pick<
 type Handlers = {
   progress: (notice: string | null) => void;
   refresh: (reattach?: boolean) => void;
+  // The investigations that ended in this run, counted from its events.
+  research: (done: number) => void;
 };
 
 const PROGRESS = new Set([
+  "extract_input",
+  "detect_language",
+  "geocode_input",
   "get_map_objects",
   "get_plans",
   "plan_journeys",
   "triage_objects",
+  "get_addresses",
   "investigate_object",
   "write_report",
 ]);
@@ -35,6 +41,7 @@ export function followRun(
   );
   let closed = false;
   const listeners = new Map<string, EventListener>();
+  let researched = 0;
   function close() {
     if (closed) return;
     closed = true;
@@ -61,6 +68,7 @@ export function followRun(
   listen("updates", (event) => {
     try {
       const nodes = Object.keys(JSON.parse(event.data));
+      if (nodes.includes("investigate_object")) handlers.research(++researched);
       if (nodes.some((node) => PROGRESS.has(node))) handlers.refresh();
     } catch {
       handlers.refresh();

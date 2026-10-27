@@ -111,7 +111,18 @@ test("a running chat names its current step and counts the researched objects", 
   });
   for (const [state, notice] of [
     [{ ...STATE, next: [] }, "Working…"],
+    [{ ...STATE, next: ["extract_input"] }, "Reading your message…"],
+    [{ ...STATE, next: ["detect_language"] }, "Reading your message…"],
+    [{ ...STATE, next: ["geocode_input"] }, "Finding the address on the map…"],
+    [
+      { ...STATE, next: ["get_map_objects", "plan_journeys"] },
+      "Loading the map, development plans and journeys…",
+    ],
     [{ ...STATE, next: ["triage_objects"] }, "Checking the places nearby…"],
+    [
+      { ...STATE, next: ["get_addresses"] },
+      "Looking up the addresses of the places…",
+    ],
     [research(0), "Researching objects on the web: 0 of 3…"],
     [research(2), "Researching objects on the web: 2 of 3…"],
     [{ ...STATE, next: ["write_report"] }, "Writing the report…"],
@@ -121,6 +132,9 @@ test("a running chat names its current step and counts the researched objects", 
     const chat = await readPrivateChat(new AbortController().signal, fetchPage);
     assert.equal(chat.status, notice);
   }
+  const { fetchPage } = responses(running, research(2), running);
+  const chat = await readPrivateChat(new AbortController().signal, fetchPage);
+  assert.deepEqual(chat.research, { done: 2, total: 3 });
 });
 
 test("replacement or deletion in another tab discards the old snapshot", async () => {

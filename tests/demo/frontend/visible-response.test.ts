@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { visibleResponse } from "../../../demo/frontend/src/server/visible-response.ts";
+import {
+  visibleEvent,
+  visibleResponse,
+} from "../../../demo/frontend/src/server/visible-response.ts";
 
 const MARKER = "PRIVATE_SOURCE_TEXT_MUST_NOT_REACH_THE_BROWSER";
 const ID = "11111111-1111-4111-8111-111111111111";
@@ -77,7 +80,18 @@ test("state counts the research without exposing its tasks", () => {
     interrupts: [],
     research_total: 3,
   });
-  for (const node of ["triage_objects", "write_report", "fill_references"])
+  for (const node of [
+    "extract_input",
+    "detect_language",
+    "geocode_input",
+    "get_map_objects",
+    "get_plans",
+    "plan_journeys",
+    "triage_objects",
+    "get_addresses",
+    "write_report",
+    "fill_references",
+  ])
     assert.deepEqual(visibleResponse("state", { next: [node] }).next, [node]);
 });
 
@@ -127,4 +141,17 @@ test("every JSON read removes internal fields and rejects data in status fields"
     }),
     { thread_id: null, status: null, deleting: true },
   );
+});
+
+test("update events name every public step and nothing else", () => {
+  for (const node of [
+    "extract_input",
+    "detect_language",
+    "geocode_input",
+    "get_addresses",
+  ])
+    assert.deepEqual(visibleEvent("updates", { [node]: { secret: MARKER } }), {
+      [node]: { progress: node },
+    });
+  assert.equal(visibleEvent("updates", { private_node: MARKER }), null);
 });

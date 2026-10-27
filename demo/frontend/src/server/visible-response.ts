@@ -17,7 +17,14 @@ const FAILURES = new Set(["map", "plans", "transit", "web search"]);
 // object, so its remaining tasks stay in the list, one entry each.
 const NEXT = new Set([
   "wait_for_answer",
+  "extract_input",
+  "detect_language",
+  "geocode_input",
+  "get_map_objects",
+  "get_plans",
+  "plan_journeys",
   "triage_objects",
+  "get_addresses",
   "investigate_object",
   "write_report",
   "fill_references",
@@ -144,10 +151,14 @@ export function visibleResponse(kind: ReadKind, raw: unknown): ObjectValue {
 }
 
 const PROGRESS = new Set([
+  "extract_input",
+  "detect_language",
+  "geocode_input",
   "get_map_objects",
   "get_plans",
   "plan_journeys",
   "triage_objects",
+  "get_addresses",
   "investigate_object",
   "write_report",
 ]);

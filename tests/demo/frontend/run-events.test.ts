@@ -19,6 +19,7 @@ function fixture(expiresAt = EXPIRY) {
   const urls: string[] = [];
   const notices: (string | null)[] = [];
   const reattachments: boolean[] = [];
+  const researched: number[] = [];
   const stop = followRun(
     THREAD,
     RUN,
@@ -29,6 +30,7 @@ function fixture(expiresAt = EXPIRY) {
         reattachments.push(!!reattach);
       },
       progress: (notice) => notices.push(notice),
+      research: (done) => researched.push(done),
     },
     (url) => {
       urls.push(url);
@@ -39,6 +41,7 @@ function fixture(expiresAt = EXPIRY) {
     source,
     transport,
     reattachments,
+    researched,
     stop,
     urls,
     notices,
@@ -80,6 +83,10 @@ test("progress reads current state; private updates are ignored", () => {
   assert.equal(f.refreshes, 2);
   f.send("updates", { constructor: "PRIVATE_ERROR", unknown: {} });
   assert.equal(f.refreshes, 2);
+  // Every step of the run names the next one, so each finished step reads state.
+  for (const node of ["extract_input", "geocode_input", "get_addresses"])
+    f.send("updates", { [node]: { progress: node } });
+  assert.equal(f.refreshes, 5);
   assert.deepEqual(f.notices, []);
   f.stop();
 });
@@ -128,4 +135,15 @@ test("expiry and disposal discard all late stream events", (t) => {
   const expired = fixture();
   assert.deepEqual(expired.urls, []);
   assert.equal(expired.refreshes, 1);
+});
+
+test("each finished investigation counts, as the saved state lags behind", () => {
+  const f = fixture();
+  f.send("updates", { triage_objects: { progress: "triage_objects" } });
+  for (let i = 0; i < 3; i++)
+    f.send("updates", {
+      investigate_object: { progress: "investigate_object" },
+    });
+  assert.deepEqual(f.researched, [1, 2, 3]);
+  f.stop();
 });

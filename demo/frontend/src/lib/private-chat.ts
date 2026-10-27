@@ -17,6 +17,8 @@ export type PrivateChat = {
   submissionsRemaining?: number;
   chatsRemaining?: number;
   deleting?: boolean;
+  // The web research in progress, by the saved state.
+  research?: { done: number; total: number };
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -39,18 +41,45 @@ type Session = {
   chats_remaining?: number;
 };
 
-// The step that a working run is on, as the state's next steps show it. The
-// research runs one task per object, and each finished task leaves the list.
-function workingStatus(state: { next?: string[]; research_total?: number }) {
+export function researchStatus({
+  done,
+  total,
+}: {
+  done: number;
+  total: number;
+}) {
+  return `Researching objects on the web: ${done} of ${total}…`;
+}
+
+// The research runs one task per object, and each finished task leaves the
+// list, though the saved state shows it late.
+function findResearch(state: { next?: string[]; research_total?: number }) {
   const next = state.next ?? [];
   const total = state.research_total ?? 0;
-  if (next.includes("investigate_object") && total > 0) {
-    const left = next.filter((node) => node === "investigate_object").length;
-    return `Researching objects on the web: ${total - left} of ${total}…`;
-  }
-  if (next.includes("triage_objects")) return "Checking the places nearby…";
+  if (!next.includes("investigate_object") || total <= 0) return undefined;
+  const left = next.filter((node) => node === "investigate_object").length;
+  return { done: total - left, total };
+}
+
+// The step that a working run is on, as the state's next steps show it.
+function workingStatus(state: { next?: string[]; research_total?: number }) {
+  const next = state.next ?? [];
+  const research = findResearch(state);
+  if (research) return researchStatus(research);
   if (next.includes("write_report") || next.includes("fill_references"))
     return "Writing the report…";
+  if (next.includes("get_addresses"))
+    return "Looking up the addresses of the places…";
+  if (next.includes("triage_objects")) return "Checking the places nearby…";
+  if (
+    ["get_map_objects", "get_plans", "plan_journeys"].some((node) =>
+      next.includes(node),
+    )
+  )
+    return "Loading the map, development plans and journeys…";
+  if (next.includes("geocode_input")) return "Finding the address on the map…";
+  if (next.includes("extract_input") || next.includes("detect_language"))
+    return "Reading your message…";
   return "Working…";
 }
 
@@ -166,6 +195,9 @@ export async function readPrivateChat(
       expiresAt: current.expires_at,
       submissionsRemaining: current.submissions_remaining,
       chatsRemaining: current.chats_remaining,
+      ...(active && findResearch(state)
+        ? { research: findResearch(state) }
+        : {}),
     };
   }
   throw new ChatReadError(false);
