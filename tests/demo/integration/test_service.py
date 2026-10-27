@@ -336,21 +336,28 @@ def test_worker_crash_recovers_without_a_new_submission(server):
     assert sum(m["type"] == "human" for m in messages) == 1
 
 
-def test_deletion_waits_for_sync_work_then_clears_postgres_and_redis(server):
+def test_deleting_a_running_chat_frees_the_queue_then_clears_postgres_and_redis(server):
     import psycopg
     from redis import Redis
 
     url, _, _, folder = server
-    visitor = str(uuid4())
+    visitor, waiting = str(uuid4()), str(uuid4())
     (folder / "pause").touch()
     made = new(url, visitor, "Freiheit 22, 13597 Berlin").json()
     wait_for_file(folder / "pause.started")
+    queued = new(url, waiting).json()
+    queued_client = get_sync_client(url=url, headers=headers(waiting))
+    assert queued_client.runs.get(queued["thread_id"], queued["run_id"])["status"] == "pending"
     response = httpx.delete(url + "/demo/chat", headers=headers(visitor))
     assert response.status_code == 409 and "deletion_pending" in response.text
     assert (
         httpx.get(f"{url}/threads/{made['thread_id']}/state", headers=headers(visitor)).status_code
         == 404
     )
+    # The cancelled run frees the only worker slot while its synchronous node still runs.
+    queued_run = wait_run(queued_client, queued["thread_id"], queued["run_id"])
+    assert queued_run["status"] == "interrupted"
+    assert (folder / "pause").exists()
     (folder / "pause").unlink()
     for _ in range(100):
         info = httpx.get(url + "/demo/session", headers=headers(visitor)).json()
