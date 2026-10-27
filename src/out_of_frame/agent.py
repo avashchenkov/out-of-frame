@@ -71,6 +71,8 @@ def compile_graph(*, checkpointer=None, context_schema=Context, node_wrapper=Non
     """The agent with a caller-owned checkpointer, or memory for the CLI and evals."""
     if INVESTIGATIONS_AT_ONCE < 2:  # a stream with its subgraphs takes one, see config.py
         raise ValueError("OUT_OF_FRAME_INVESTIGATIONS_AT_ONCE must be at least 2")
+    if conversation.MAX_DESTINATIONS < 1:
+        raise ValueError("OUT_OF_FRAME_MAX_DESTINATIONS must be at least 1")
     builder = StateGraph(RunState, context_schema=context_schema)
     wrap = node_wrapper or (lambda node: node)
     builder.add_node(wrap(extract_input))
@@ -137,7 +139,9 @@ def detect_language(state: RunState) -> dict:
 def geocode_input(state: RunState) -> dict:
     """Every address geocoded again after each message, and each response kept, so that code
     can say why an address does not resolve. The property must be in Berlin; a destination may
-    be anywhere."""
+    be anywhere. An oversized destination list waits for the user's choice first."""
+    if conversation.too_many_destinations(state):
+        return {}
     numbers = itertools.count(1 + sum(source.kind == "geocoding" for source in state.sources))
     sources = []
 
@@ -204,6 +208,9 @@ def get_plans(state: RunState) -> dict:
 def plan_journeys(state: RunState, runtime: Runtime[Context]) -> dict:
     """The journeys there and back for each destination, none if the user travels nowhere. If
     Transitous fails, the journeys it could not plan are unavailable, and the others stay."""
+    # A saved run may resume here without passing through the current input checks.
+    if conversation.too_many_destinations(state):
+        raise ValueError("too many commute destinations")
     assert state.property is not None and state.property.coordinates is not None  # see check_input
     if not state.destinations:
         return {}

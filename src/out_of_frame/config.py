@@ -36,6 +36,9 @@ WEB_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_WEB_ATTEMPTS", "3"))
 # shown to the model unchecked, so after the last one the run stops.
 CHECK_ATTEMPTS = int(os.environ.get("OUT_OF_FRAME_CHECK_ATTEMPTS", "2"))
 
+# Commute destinations in one run. A longer list must be reduced before any source calls.
+MAX_DESTINATIONS = int(os.environ.get("OUT_OF_FRAME_MAX_DESTINATIONS", "2"))
+
 # The public Nominatim instance. Its usage policy asks each app to name itself in the User-Agent.
 NOMINATIM_URL = os.environ.get(
     "OUT_OF_FRAME_NOMINATIM_URL", "https://nominatim.openstreetmap.org/search"

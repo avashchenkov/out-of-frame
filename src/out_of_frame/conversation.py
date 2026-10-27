@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from out_of_frame import geocoding
 from out_of_frame.chat_model import build_chat_model
+from out_of_frame.config import MAX_DESTINATIONS
 from out_of_frame.finding import render
 from out_of_frame.state import Address, Destination, RunState
 
@@ -129,9 +130,20 @@ def detect_language(state: RunState) -> str | None:
     return answer["parsed"].language
 
 
+def too_many_destinations(state: RunState) -> bool:
+    """Count places even when their address or times are still missing."""
+    return len(state.destinations or []) > MAX_DESTINATIONS
+
+
 def find_missing(state: RunState) -> list[str]:
     """Everything missing or unclear in the input, for one question to the user; empty when the
     input is complete and research can start."""
+    if too_many_destinations(state):
+        # No address has been geocoded on this turn. Ask for a shorter list first.
+        return [
+            f"At most {MAX_DESTINATIONS} commute destinations are allowed. "
+            "Ask the user which ones to keep."
+        ]
     sources = {source.id: source for source in state.sources}
 
     def explain(address: Address, berlin_only: bool) -> str | None:

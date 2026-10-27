@@ -217,8 +217,8 @@ Provider retention is separate from deletion on our server.
 
 Admission and retention defaults belong in `demo/backend/config.py`; worker settings use
 Aegra's environment variables. Web proxy defaults live in `demo/frontend/src/server/traffic-limits.ts`
-and use the Web UI environment. This table is the source for numeric demo limits; the page and
-notices use the configured values.
+and use the Web UI environment. The commute cap is an agent setting in `src/out_of_frame/config.py`.
+This table is the source for numeric demo limits; the page and notices use the configured values.
 
 | Setting | Default |
 |---|---|
@@ -227,12 +227,18 @@ notices use the configured values.
 | Cookie and current-chat lifetime | 30 days from the identity's first admitted message, without renewal |
 | User submissions per conversation | 7 in total, including the first message, answers and manual retries |
 | User message length | 2,000 characters |
+| Commute destinations per conversation | 2 (`OUT_OF_FRAME_MAX_DESTINATIONS`) |
 | Active runs per conversation | 1 |
 | Executing runs across all visitors | 1 (`WORKER_COUNT=1`, `N_JOBS_PER_WORKER=1`) |
 | Open progress streams across all visitors | 10 (`OUT_OF_FRAME_DEMO_STREAMS`) |
 | Open progress streams per signed identity, across tabs | 2 (`OUT_OF_FRAME_DEMO_STREAMS_PER_IDENTITY`) |
 | Web proxy requests across all visitors | 20 per second, burst 40 (`OUT_OF_FRAME_DEMO_REQUESTS_PER_SECOND`, `OUT_OF_FRAME_DEMO_REQUEST_BURST`) |
 | Necessary security log metadata | Up to 24 hours |
+
+The agent counts destinations after each message. A longer list pauses input and asks the
+user which places to keep, before geocoding or research. It does not silently select places.
+The journey node checks the same cap when resuming a saved run. The setting also applies to
+the CLI; Compose passes agent overrides from the demo environment to the backend.
 
 The Web UI runs one Next.js process. In-memory counters, shared by all private API handlers,
 reserve stream slots before contacting Aegra. Disconnect, expiry, completion and upstream

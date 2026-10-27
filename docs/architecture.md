@@ -160,6 +160,8 @@ phases; separate conversations share no state. The flowchart does not show the s
    - Code, not the model, checks that the input is complete: the property is resolved and in
      Berlin, the user has said where they travel, and each destination is resolved and has
      both departure times. A destination may be outside Berlin.
+   - The user may name at most two destinations by default (`OUT_OF_FRAME_MAX_DESTINATIONS`).
+     A longer list makes code ask which to keep, before geocoding; code never drops one itself.
    - What is not known yet is not written. A vague time such as "in the morning" stays empty,
      and a destination announced but not described ("I will send the second one later") gets
      a name only. The model asks for what is missing or unclear, for example which of several

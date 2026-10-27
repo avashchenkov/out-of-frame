@@ -18,7 +18,7 @@ You give it an address or a listing. It asks where you travel regularly and when
 1. finds what is nearby on OpenStreetMap and in Berlin's development plans;
 2. settles what each object is and whether it is in use, from its map data or by searching
    the web for it, and leaves an object unidentified when no page settles it;
-3. plans your journeys there and back by public transport;
+3. plans your journeys there and back by public transport, for up to two destinations by default;
 4. writes a report: what each object is, how far it is, why it matters to someone living
    there, and the source of each fact.
 

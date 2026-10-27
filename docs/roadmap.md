@@ -485,16 +485,9 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
      [live sources instead of an index of our own](adr/0003-live-sources.md).
    - ✅ No MCP and no baseline: one line each, without an ADR.
    - ✅ The private live chat and the five recorded examples.
-10. **Bound demo connections and request traffic.** Limit progress streams to 10 across
-    visitors and 2 per signed identity, before contacting Aegra. Limit API requests to
-    20 per second with a burst of 40. Refusals leave runs and quotas unchanged and tell
-    the browser to wait before retrying. First add offline tests for concurrent admission,
-    disconnects, expiry, upstream failures, request bursts and browser retry delays.
-    Check that saved-chat reads still work when stream slots are full, that every exit
-    releases its slot once, and that reconnection never submits a run. Keep examples
-    outside these limits. Validate the starting limits on the VPS before increasing them.
-
-    Implemented, not committed: 80 frontend checks, type checks, lint, formatting and the
-    production build pass. A local production Next.js check with a fake HTTP backend also
-    confirms the 10/2 stream limits, slot release on disconnect, burst refusals and access
-    to saved chats and examples. VPS load validation remains.
+10. **Bound demo connections and request traffic.**
+    - ✅ At most 10 progress streams across visitors and 2 per identity; at most 20 API
+      requests per second, with a burst of 40. Refusals change no runs or quotas.
+    - Validate these limits under load on the VPS before raising them.
+11. ✅ **At most two commute destinations by default.** For a longer list, code asks the user
+    which to keep, before any source calls.

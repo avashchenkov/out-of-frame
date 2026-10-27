@@ -282,7 +282,8 @@ def test_a_resolved_property_and_no_places_complete_the_input():
     assert conversation.find_missing(state) == []
 
 
-def test_everything_missing_about_the_places_is_found_at_once():
+def test_everything_missing_about_the_places_is_found_at_once(monkeypatch):
+    monkeypatch.setattr(conversation, "MAX_DESTINATIONS", 3)
     street, street_source = geocoded("Freiheit, Berlin", "nominatim-2", "freiheit-street.json")
     # Four buildings in Berlin: a place may be anywhere, so the reason does not say "in Berlin".
     several, several_source = geocoded("Hauptstraße 1", "nominatim-3", "hauptstrasse-1.json")
