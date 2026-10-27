@@ -234,3 +234,33 @@ test("an answer in another tab reloads even when both runs end interrupted", asy
   assert.equal(chat.submissionsRemaining, 5);
   assert.equal(chat.status, "Waiting for your answer.");
 });
+test("busy reads expose a retry delay without losing access or leaking errors", async () => {
+  for (const [header, expected] of [
+    ["7", 7000],
+    ["invalid", 5000],
+    [null, 5000],
+  ] as const) {
+    let calls = 0;
+    await assert.rejects(
+      readPrivateChat(new AbortController().signal, async () => {
+        calls++;
+        return Response.json(
+          { error: "demo_busy", private: "PRIVATE_ERROR" },
+          {
+            status: 429,
+            headers: header ? { "Retry-After": header } : {},
+          },
+        );
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof ChatReadError);
+        assert.equal(error.inaccessible, false);
+        assert.equal(error.retryAfterMs, expected);
+        assert.match(error.message, /busy/);
+        assert.ok(!error.message.includes("PRIVATE"));
+        return true;
+      },
+    );
+    assert.equal(calls, 1);
+  }
+});

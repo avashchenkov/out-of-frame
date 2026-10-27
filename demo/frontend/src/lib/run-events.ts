@@ -7,7 +7,7 @@ type RunConnection = Pick<
 };
 type Handlers = {
   progress: (notice: string | null) => void;
-  refresh: (reattach?: boolean) => void;
+  refresh: (reattach?: boolean, delayMs?: number) => void;
   // The investigations that ended in this run, counted from its events.
   research: (done: number) => void;
 };
@@ -90,8 +90,16 @@ export function followRun(
     }
     const reattach = !failed && connection.readyState === 2;
     if (failed || reattach) close();
-    handlers.progress(failed ? null : "Connection lost. Reconnecting…");
-    handlers.refresh(reattach);
+    handlers.progress(
+      failed
+        ? null
+        : reattach
+          ? "Live updates are temporarily unavailable. Retrying shortly."
+          : "Connection lost. Reconnecting…",
+    );
+    // EventSource cannot expose an HTTP 429 or Retry-After. A refused stream
+    // is CLOSED: wait five seconds before asking the watcher to attach again.
+    handlers.refresh(reattach, reattach ? 5000 : undefined);
   });
   return close;
 }

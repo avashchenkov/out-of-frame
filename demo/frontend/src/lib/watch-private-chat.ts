@@ -26,6 +26,7 @@ export function watchPrivateChat(
   // The investigations that the run's events report as ended. The saved state
   // shows them only once the last ones start, so the page counts them itself.
   let researched = 0;
+  let retryAt = 0;
 
   function counted(snapshot: PrivateChat): PrivateChat {
     const research = snapshot.research;
@@ -37,7 +38,7 @@ export function watchPrivateChat(
   function schedule(delay: number) {
     if (disposed) return;
     clearTimeout(refreshTimer);
-    refreshTimer = setTimeout(refresh, delay);
+    refreshTimer = setTimeout(refresh, Math.max(delay, retryAt - Date.now()));
   }
 
   function watch(snapshot: PrivateChat) {
@@ -49,6 +50,7 @@ export function watchPrivateChat(
         ? `${snapshot.threadId}/${snapshot.runId}`
         : undefined;
     if (key === streamKey) return;
+    if (key && Date.now() < retryAt) return;
     stopStream?.();
     streamKey = key;
     progress = null;
@@ -59,9 +61,13 @@ export function watchPrivateChat(
         snapshot.runId!,
         snapshot.expiresAt!,
         {
-          refresh(reattach) {
-            if (reattach) streamKey = undefined;
-            schedule(100);
+          refresh(reattach, delayMs = 100) {
+            if (disposed) return;
+            if (reattach) {
+              streamKey = undefined;
+              retryAt = Math.max(retryAt, Date.now() + delayMs);
+            }
+            schedule(delayMs);
           },
           progress(notice) {
             if (disposed) return;
@@ -83,6 +89,10 @@ export function watchPrivateChat(
 
   async function refresh() {
     if (disposed) return;
+    if (Date.now() < retryAt) {
+      schedule(0);
+      return;
+    }
     clearTimeout(refreshTimer);
     if (reading) {
       again = true;
@@ -116,6 +126,13 @@ export function watchPrivateChat(
       }
     } catch (error) {
       if (connection.signal.aborted || disposed) return;
+      if (error instanceof ChatReadError && error.retryAfterMs) {
+        retryAt = Date.now() + error.retryAfterMs;
+        stopStream?.();
+        stopStream = undefined;
+        streamKey = undefined;
+        again = false;
+      }
       clearTimeout(expiryTimer);
       current = null;
       progress = null;

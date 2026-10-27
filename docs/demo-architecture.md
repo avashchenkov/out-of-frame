@@ -215,8 +215,9 @@ Provider retention is separate from deletion on our server.
 
 ## Demo limits
 
-Configurable demo defaults belong in `demo/backend/config.py`; worker settings use Aegra's
-environment variables. This table is the source for numeric demo limits; the page and
+Admission and retention defaults belong in `demo/backend/config.py`; worker settings use
+Aegra's environment variables. Web proxy defaults live in `demo/frontend/src/server/traffic-limits.ts`
+and use the Web UI environment. This table is the source for numeric demo limits; the page and
 notices use the configured values.
 
 | Setting | Default |
@@ -228,7 +229,22 @@ notices use the configured values.
 | User message length | 2,000 characters |
 | Active runs per conversation | 1 |
 | Executing runs across all visitors | 1 (`WORKER_COUNT=1`, `N_JOBS_PER_WORKER=1`) |
+| Open progress streams across all visitors | 10 (`OUT_OF_FRAME_DEMO_STREAMS`) |
+| Open progress streams per signed identity, across tabs | 2 (`OUT_OF_FRAME_DEMO_STREAMS_PER_IDENTITY`) |
+| Web proxy requests across all visitors | 20 per second, burst 40 (`OUT_OF_FRAME_DEMO_REQUESTS_PER_SECOND`, `OUT_OF_FRAME_DEMO_REQUEST_BURST`) |
 | Necessary security log metadata | Up to 24 hours |
+
+The Web UI runs one Next.js process. In-memory counters, shared by all private API handlers,
+reserve stream slots before contacting Aegra. Disconnect, expiry, completion and upstream
+failure release them; saved chats do not occupy slots. The request budget also covers
+anonymous requests, stream reconnects and server-side reads of limits for notice pages.
+Refusals return `429 demo_busy` with `Retry-After: 5`, without changing runs, cookies or
+admission quotas. The browser waits before reading or reconnecting and never resubmits a
+message automatically. EventSource cannot read refusal headers, so it waits five seconds
+after a refused connection. Notice pages fall back to text without limit numbers when the
+budget is exhausted; recorded examples need no backend and stay outside these limits.
+Counters reset with the Web UI process. Restart it after changing these settings; replicas
+would need a shared limiter. These are starting limits for the small VPS, to validate under load.
 
 Use Aegra's existing Redis queue for other admitted runs. They stay `pending` until the
 worker is free, then start automatically. Completion, an error or an input interrupt releases
@@ -271,6 +287,7 @@ answer through the SDK, and a finished report. Further checks cover:
 - disconnection and worker crash during research, recovery and duplicate final-message prevention;
 - visitor isolation, spoofed identity/execution parameters, CSRF and filtered browser responses;
 - concurrent admissions and tabs, exhausted input, overlong messages and quota persistence;
+- offline proxy tests for stream caps, request bursts, slot release and delayed browser retries;
 - a busy worker, queued runs starting after completion or input interruption, reconnect
   without resubmission and deletion while queued;
 - replacement, expiry and deletion during a run, cancellation timeout, delayed writes and retries;

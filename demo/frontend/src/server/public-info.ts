@@ -1,4 +1,6 @@
 import { proxyConfig } from "./read-proxy.ts";
+import { demoTraffic } from "./traffic-limits.ts";
+import type { TrafficLimits } from "./traffic-limits.ts";
 
 export type Operator = {
   name?: string;
@@ -48,8 +50,10 @@ export function operatorDetails(env: NodeJS.ProcessEnv): Operator {
 export async function publicLimits(
   env: NodeJS.ProcessEnv,
   fetchBackend: typeof fetch = fetch,
+  traffic?: TrafficLimits,
 ): Promise<PublicLimits | null> {
   try {
+    if (!(traffic ?? demoTraffic()).allowRequest()) return null;
     const config = proxyConfig(env);
     const response = await fetchBackend(
       new URL("/demo/limits", config.backend),

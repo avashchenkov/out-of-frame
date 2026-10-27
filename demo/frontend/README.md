@@ -73,6 +73,21 @@ session read returns an empty session. Reads never issue or renew cookies.
 `Last-Event-ID` to replay missed events. The cursor must belong to that run. This uses Aegra's
 existing stream and replay buffer; attaching never submits another run.
 
+One Web UI process permits 10 open progress streams in total and 2 per signed browser
+identity, across tabs and run URLs. Short API requests share a budget of 20 requests per
+second, with a burst of 40; stream connection attempts count too. Server-side reads of
+limits for notice pages use the same budget. Refusals happen before backend work and return
+`429 demo_busy` with `Retry-After: 5`. They neither cancel work nor consume chat quotas.
+The browser delays read retries and waits five seconds before reopening a refused stream;
+messages are never resubmitted automatically. Saved chats do not occupy stream slots, and
+recorded examples stay available without the backend.
+
+The four `OUT_OF_FRAME_DEMO_STREAMS*` and `OUT_OF_FRAME_DEMO_REQUEST*` settings in
+[.env.example](.env.example) change these limits. Restart the Web UI after a change.
+Counters live in memory in one Next.js process, as the Compose deployment runs it; adding
+replicas would require shared counters. Validate these starting values on the target VPS
+before raising them.
+
 The proxy constructs backend credentials, checks request origins and filters JSON and SSE.
 Streams expose visible messages, fixed progress names, failures, IDs and terminal status.
 Comments become fixed keepalives. Disconnect closes only the stream connection; it does

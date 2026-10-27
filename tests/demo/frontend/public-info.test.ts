@@ -5,6 +5,10 @@ import {
   operatorDetails,
   publicLimits,
 } from "../../../demo/frontend/src/server/public-info.ts";
+import {
+  TrafficLimits,
+  trafficConfig,
+} from "../../../demo/frontend/src/server/traffic-limits.ts";
 
 const ENV = {
   OUT_OF_FRAME_DEMO_ORIGIN: "https://demo.example.com",
@@ -17,6 +21,26 @@ const LIMITS = {
   submissions: 7,
   message_chars: 2000,
 };
+
+test("notice pages cannot bypass the shared backend request budget", async () => {
+  const traffic = new TrafficLimits(trafficConfig({}), () => 0);
+  while (traffic.allowRequest()) {
+    /* exhaust the shared budget */
+  }
+  let calls = 0;
+  assert.equal(
+    await publicLimits(
+      ENV,
+      async () => {
+        calls++;
+        return Response.json(LIMITS);
+      },
+      traffic,
+    ),
+    null,
+  );
+  assert.equal(calls, 0);
+});
 
 test("operator details come from the environment and reject markup", () => {
   assert.deepEqual(

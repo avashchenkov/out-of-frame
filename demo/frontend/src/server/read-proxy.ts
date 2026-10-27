@@ -2,6 +2,7 @@ import { readIdentity, UUID } from "./identity.ts";
 import { visibleResponse } from "./visible-response.ts";
 import type { ReadKind } from "./visible-response.ts";
 import { eventStream, validEventId } from "./event-stream.ts";
+import type { TrafficLimits } from "./traffic-limits.ts";
 
 export type ProxyConfig = {
   origin: string;
@@ -76,11 +77,18 @@ export function disabledRoute() {
   return json({ error: "route_disabled" }, 405);
 }
 
+export function busyResponse() {
+  const response = json({ error: "demo_busy" }, 429);
+  response.headers.set("Retry-After", "5");
+  return response;
+}
+
 export async function readProxy(
   request: Request,
   path: string[],
   config: ProxyConfig,
   fetchBackend: typeof fetch = fetch,
+  traffic?: TrafficLimits,
 ) {
   if (request.method !== "GET") return disabledRoute();
   const target = route(path);
@@ -109,16 +117,29 @@ export async function readProxy(
     !validEventId(lastEventId, path[3])
   )
     return json({ error: "invalid_event_id" }, 422);
+  const release =
+    target.kind === "stream"
+      ? traffic?.openStream(identity!.identity)
+      : undefined;
+  if (release === null) return busyResponse();
   const connection = new AbortController();
-  const headerTimer = setTimeout(() => connection.abort(), 10_000);
+  const signal = AbortSignal.any([request.signal, connection.signal]);
+  const headerTimer = setTimeout(() => disconnect(), 10_000);
   let expiryTimer: ReturnType<typeof setTimeout> | undefined;
+  let disconnected = false;
   const disconnect = () => {
+    if (disconnected) return;
+    disconnected = true;
     clearTimeout(headerTimer);
     clearTimeout(expiryTimer);
+    signal.removeEventListener("abort", disconnect);
     connection.abort();
+    release?.();
   };
+  signal.addEventListener("abort", disconnect, { once: true });
   let streaming = false;
   try {
+    signal.throwIfAborted();
     const headers = new Headers({ "x-demo-key": config.secret });
     if (identity && target.kind !== "limits")
       headers.set("x-demo-identity", identity.identity);
@@ -126,7 +147,6 @@ export async function readProxy(
       headers.set("accept", "text/event-stream");
       if (lastEventId !== null) headers.set("last-event-id", lastEventId);
     }
-    const signal = AbortSignal.any([request.signal, connection.signal]);
     const response = await fetchBackend(
       new URL(target.upstream, config.backend),
       {
@@ -162,12 +182,11 @@ export async function readProxy(
         return json({ error: "invalid_identity" }, 401);
       }
       expiryTimer = setTimeout(
-        () => connection.abort(),
+        disconnect,
         Math.min(Math.max(0, lifetime), 2_147_483_647),
       );
       expiryTimer.unref();
-      streaming = true;
-      return new Response(
+      const result = new Response(
         eventStream(
           response.body,
           path[3],
@@ -183,6 +202,8 @@ export async function readProxy(
           },
         },
       );
+      streaming = true;
+      return result;
     }
     const data: unknown = await response.json();
     if (

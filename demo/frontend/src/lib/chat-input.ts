@@ -9,6 +9,7 @@ export type DemoLimits = {
 export const IDENTITY_LIMIT_NOTICE =
   "You have reached your usage limit. Contact the author for further access.";
 const REFUSALS: Record<string, string> = {
+  demo_busy: "The demo is busy. Please wait a moment and try again.",
   identity_chats_exhausted: IDENTITY_LIMIT_NOTICE,
   daily_chats_exhausted:
     "The service has reached today's limit for new chats across all visitors. Please try again tomorrow.",

@@ -19,15 +19,17 @@ function fixture(expiresAt = EXPIRY) {
   const urls: string[] = [];
   const notices: (string | null)[] = [];
   const reattachments: boolean[] = [];
+  const delays: (number | undefined)[] = [];
   const researched: number[] = [];
   const stop = followRun(
     THREAD,
     RUN,
     expiresAt,
     {
-      refresh: (reattach) => {
+      refresh: (reattach, delay) => {
         refreshes++;
         reattachments.push(!!reattach);
+        delays.push(delay);
       },
       progress: (notice) => notices.push(notice),
       research: (done) => researched.push(done),
@@ -41,6 +43,7 @@ function fixture(expiresAt = EXPIRY) {
     source,
     transport,
     reattachments,
+    delays,
     researched,
     stop,
     urls,
@@ -97,6 +100,8 @@ test("a permanently closed transport requests a new attachment after recovery", 
   f.source.dispatchEvent(new Event("error"));
   assert.equal(f.closes, 1);
   assert.deepEqual(f.reattachments, [true]);
+  assert.deepEqual(f.delays, [5000]);
+  assert.match(f.notices.at(-1)!, /temporarily unavailable/);
 });
 
 test("end closes only the attachment and delegates completion to a state read", () => {

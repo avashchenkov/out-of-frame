@@ -136,6 +136,7 @@ test("quota refusals stay distinct without exposing backend text", async () => {
     "identity_chats_exhausted",
     "daily_chats_exhausted",
     "submissions_exhausted",
+    "demo_busy",
   ]) {
     let calls = 0;
     await assert.rejects(
@@ -155,6 +156,7 @@ test("quota refusals stay distinct without exposing backend text", async () => {
           assert.match(error.message, /Contact the author/);
         if (code === "daily_chats_exhausted")
           assert.match(error.message, /try again tomorrow/);
+        if (code === "demo_busy") assert.match(error.message, /busy/);
         return true;
       },
     );

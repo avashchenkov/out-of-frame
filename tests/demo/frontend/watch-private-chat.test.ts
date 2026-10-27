@@ -19,8 +19,77 @@ async function settle() {
   for (let i = 0; i < 5; i++) await Promise.resolve();
 }
 
+test("refused streams wait before reattaching, even after focus or periodic refresh", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 1000 });
+  let reads = 0;
+  let attachments = 0;
+  let handlers!: Parameters<typeof followRun>[3];
+  const watcher = watchPrivateChat(() => {}, {
+    read: async () => {
+      reads++;
+      return CHAT;
+    },
+    follow: (_thread, _run, _expiry, callbacks) => {
+      handlers = callbacks;
+      attachments++;
+      return () => {};
+    },
+  });
+  await settle();
+  handlers.refresh(true, 5000);
+  await watcher.refresh();
+  t.mock.timers.tick(4999);
+  await settle();
+  assert.equal(reads, 1);
+  assert.equal(attachments, 1);
+  t.mock.timers.tick(1);
+  await settle();
+  assert.equal(reads, 2);
+  assert.equal(attachments, 2);
+  handlers.refresh(true, 5000);
+  watcher.stop();
+  t.mock.timers.tick(10000);
+  await settle();
+  assert.equal(reads, 2);
+});
+
+test("rate-limited reads pause queued refreshes and release their stream", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 1000 });
+  let reads = 0;
+  let stops = 0;
+  let handlers!: Parameters<typeof followRun>[3];
+  const notices: string[] = [];
+  const watcher = watchPrivateChat((_chat, notice) => notices.push(notice), {
+    read: async () => {
+      if (++reads === 2) {
+        handlers.refresh();
+        throw new ChatReadError(false, 7000);
+      }
+      return CHAT;
+    },
+    follow: (_thread, _run, _expiry, callbacks) => {
+      handlers = callbacks;
+      return () => {
+        stops++;
+      };
+    },
+  });
+  await settle();
+  await watcher.refresh();
+  assert.match(notices.at(-1)!, /busy/);
+  assert.equal(stops, 1);
+  await watcher.refresh();
+  t.mock.timers.tick(6999);
+  await settle();
+  assert.equal(reads, 2);
+  t.mock.timers.tick(1);
+  await settle();
+  assert.equal(reads, 3);
+  watcher.stop();
+});
+
 test("a disconnect followed by a transient read failure recovers without submission", async (t) => {
-  t.mock.timers.enable({ apis: ["setTimeout"] });
+  t.mock.timers.enable({ apis: ["setTimeout", "Date"] });
   let reads = 0;
   let attachments = 0;
   let handlers!: Parameters<typeof followRun>[3];

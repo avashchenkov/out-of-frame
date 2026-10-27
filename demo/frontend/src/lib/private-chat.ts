@@ -85,13 +85,17 @@ function workingStatus(state: { next?: string[]; research_total?: number }) {
 
 export class ChatReadError extends Error {
   readonly inaccessible: boolean;
-  constructor(inaccessible: boolean) {
+  readonly retryAfterMs?: number;
+  constructor(inaccessible: boolean, retryAfterMs?: number) {
     super(
       inaccessible
         ? "This chat is no longer available in this browser."
-        : "The chat could not be loaded. Please try again.",
+        : retryAfterMs
+          ? "The demo is busy. Retrying shortly."
+          : "The chat could not be loaded. Please try again.",
     );
     this.inaccessible = inaccessible;
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -106,6 +110,15 @@ export async function readPrivateChat(
       cache: "no-store",
       signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]),
     });
+    if (response.status === 429) {
+      const seconds = Number(response.headers.get("Retry-After"));
+      throw new ChatReadError(
+        false,
+        Number.isFinite(seconds) && seconds > 0
+          ? Math.min(60, Math.max(1, seconds)) * 1000
+          : 5000,
+      );
+    }
     if (!response.ok)
       throw new ChatReadError([401, 404].includes(response.status));
     return response.json();
