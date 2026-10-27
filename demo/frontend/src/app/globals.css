@@ -231,22 +231,29 @@ fieldset:disabled .button {
 /* Start screen */
 
 .hero {
-  padding-top: clamp(0rem, 6vh, 3.5rem);
+  text-align: center;
+}
+.hero .brand-mark {
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: 1rem;
 }
 .hero h1 {
   margin: 0;
   font-family: var(--font-serif, Georgia), serif;
-  font-size: clamp(2rem, 5.5vw, 3.5rem);
+  font-size: clamp(1.875rem, 4.5vw, 2.75rem);
   font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 .lead {
-  max-width: 34rem;
-  margin: 1rem 0 0;
+  max-width: 36rem;
+  margin: 0.75rem auto 0;
   color: var(--muted);
   font-size: clamp(1.0625rem, 2vw, 1.125rem);
   line-height: 1.6;
+  text-wrap: balance;
 }
 /* Input box */
 
@@ -433,6 +440,21 @@ fieldset:disabled .button {
   pointer-events: none;
 }
 .composer-area:empty {
+  display: none;
+}
+/* Before the first message, the welcome and the input box sit together in
+   the middle of the screen, a little above the centre. */
+.chat-welcome {
+  justify-content: center;
+  padding-bottom: 8vh;
+}
+.chat-welcome .conversation {
+  flex: 0 1 auto;
+}
+.chat-welcome .conversation-content {
+  padding-bottom: 0.5rem;
+}
+.chat-welcome .composer-area::before {
   display: none;
 }
 .messages {
@@ -639,8 +661,8 @@ fieldset:disabled .button {
     gap: 1.5rem;
     padding-top: 1.5rem;
   }
-  .hero {
-    padding-top: 0;
+  .chat-welcome {
+    padding-bottom: 0;
   }
   .lead {
     font-size: 1rem;

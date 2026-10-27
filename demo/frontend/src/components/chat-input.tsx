@@ -58,7 +58,9 @@ export function ChatInput({
       onSubmit={async (event) => {
         event.preventDefault();
         if (disabled || !text.trim() || length > limits.message_chars) return;
-        if (await onSend(text)) setText("");
+        // The sent text shows in the conversation; it comes back on failure.
+        setText("");
+        if (!(await onSend(text))) setText(text);
       }}
     >
       <fieldset className="input-box composer" disabled={disabled}>

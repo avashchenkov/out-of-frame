@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Thread } from "./thread";
-import type { PrivateChat as Chat } from "../lib/private-chat";
+import type { ChatMessage, PrivateChat as Chat } from "../lib/private-chat";
 import { watchPrivateChat } from "../lib/watch-private-chat";
 import { ChatInput } from "./chat-input";
 import {
@@ -34,6 +34,8 @@ export function PrivateChat({
   const [locked, setLocked] = useState(false);
   const [error, setError] = useState<ChatSubmitError | null>(null);
   const [dailyReset, setDailyReset] = useState<string | null>(null);
+  // The first message of a new chat shows at once, until the chat holds it.
+  const [sent, setSent] = useState<string | null>(null);
   const submission = useRef<AbortController | null>(null);
 
   useEffect(() => () => submission.current?.abort(), []);
@@ -87,7 +89,9 @@ export function PrivateChat({
       (!text.trim() || Array.from(text).length > limits.message_chars)
     )
       return false;
-    return performChange((signal) =>
+    const fresh = replacement || !chat.threadId;
+    if (fresh && !retry) setSent(text);
+    const done = await performChange((signal) =>
       submitChat(
         replacement
           ? "replace"
@@ -101,11 +105,14 @@ export function PrivateChat({
         signal,
       ),
     );
+    if (!done) setSent(null);
+    return done;
   }
 
   async function remove() {
     if (!chat || (!chat.threadId && !chat.deleting)) return;
     setConfirmDelete(false);
+    setSent(null);
     await performChange((signal) => deleteChat(signal), true);
   }
 
@@ -173,6 +180,16 @@ export function PrivateChat({
     };
   }, [reload]);
 
+  const messages = replacement ? [] : (chat?.messages ?? []);
+  const pending =
+    sent !== null &&
+    messages.length === 0 &&
+    (operation === "submit" || !chat || (!!chat.threadId && !replacement));
+  const shown: ChatMessage[] = pending
+    ? [{ id: "sent", type: "human", content: sent }]
+    : messages;
+  const started = !!chat && (!!chat.threadId || !!chat.deleting);
+
   const contact = contactEmail && (
     <>
       {" "}
@@ -184,7 +201,8 @@ export function PrivateChat({
 
   return (
     <Thread
-      messages={replacement ? [] : (chat?.messages ?? [])}
+      messages={shown}
+      welcome={shown.length === 0 && (replacement || !started)}
       notice={
         operation === "delete"
           ? "Deleting your chat…"

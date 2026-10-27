@@ -1,6 +1,7 @@
 "use client";
 
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
+import { BrandMark } from "../brand-mark";
 import { ConversationMessages } from "./messages";
 import type { ChatMessage } from "../../lib/private-chat";
 import type { ReactNode } from "react";
@@ -52,6 +53,7 @@ function Status({
 
 export function Thread({
   messages,
+  welcome,
   notice,
   quiet,
   failures,
@@ -63,6 +65,7 @@ export function Thread({
   children,
 }: {
   messages: ChatMessage[];
+  welcome: boolean;
   notice: string;
   quiet: boolean;
   failures: string[];
@@ -91,7 +94,8 @@ export function Thread({
   );
 
   // The chat fills the screen between the header and footer: only the
-  // conversation scrolls, and the input box stays below it.
+  // conversation scrolls, and the input box stays below it. Before the first
+  // message, the welcome and the input box sit together in the middle.
   return (
     <div className="chat-shell">
       {quiet && !actions ? (
@@ -104,17 +108,20 @@ export function Thread({
         </div>
       )}
 
-      <main className="chat-main">
+      <main className={welcome ? "chat-main chat-welcome" : "chat-main"}>
         {messages.length === 0 ? (
           <div className="conversation">
             <div className="conversation-content">
-              <section className="hero" aria-labelledby="welcome-title">
-                <h1 id="welcome-title">See what is outside the frame.</h1>
-                <p className="lead">
-                  Enter a Berlin address. Find out what is nearby, what will be
-                  built and how long your daily trips take.
-                </p>
-              </section>
+              {welcome && (
+                <section className="hero" aria-labelledby="welcome-title">
+                  <BrandMark />
+                  <h1 id="welcome-title">See what is outside the frame</h1>
+                  <p className="lead">
+                    The factory next door, the building site to come, your way
+                    to work.
+                  </p>
+                </section>
+              )}
               {intro}
               {failureList}
             </div>
