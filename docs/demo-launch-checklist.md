@@ -16,7 +16,7 @@ Public contact: Artur Vashchenkov,
   [German media regulators' guidance](https://www.die-medienanstalten.de/aufgaben/aufsicht/impressumspflicht/).
   Configure the public email through the page's server environment and keep it working for
   any question, including data requests. A contact form is not needed.
-- Show short service terms before Start: the operator provides a free, limited AI
+- Link short service terms next to `Start chat`: the operator provides a free, limited AI
   report and return access for the configured period. Explain availability, quotas, deletion
   and that the report gives facts, not advice to buy or rent. Make the terms accessible later
   from the footer; they can be a short section, without another dedicated page.
@@ -95,23 +95,15 @@ flow against outgoing requests:
 
 ## Before the first message
 
-Place this short notice above `Start chat`, with the service terms, Privacy
-notice, Impressum and author contact accessible. Insert the configured values from
-[Demo limits](demo-architecture.md#demo-limits); this text is only the first information layer.
+Place this short notice next to `Start chat`, with the service terms, Privacy
+notice, Impressum and author contact accessible. It is only the first information layer:
+the service terms and Privacy notice hold the limits, cookie, retention and deletion details.
+Show the visitor's chats left on `Start chat` and the message-length limit in the input box.
 `View examples` stays available without live input.
 
-> An AI demo in English, for users aged 18 or over. Use public places and fictional travel plans.
-> Start requests a free AI report under the displayed service terms and limits.
-> We process your messages, addresses and journey times using Anthropic and the services
-> listed in our Privacy notice. Other visitors cannot see your chat or report.
-> An essential cookie keeps access and allows up to {chats_per_identity} chats.
-> We keep your current chat on our server for up to {identity_lifetime} after your first message.
-> Starting another chat does not extend this period.
-> New chat or Delete chat removes its content earlier. Clearing cookies loses access;
-> it does not delete server data, which is still removed by the original deadline.
-> Minimal quota records remain until the cookie expires. Provider retention differs;
-> see our Privacy notice. Avoid names and sensitive personal details.
-> AI results can be wrong: check the sources.
+> AI demo for adults. Avoid personal details. Starting a chat accepts the service terms;
+> the Privacy notice explains how Anthropic and others process your messages.
+> AI can be wrong: check the sources.
 
 When admission is refused, use the [quota messages](demo-architecture.md#visitor-and-access):
 the identity limit directs visitors to the author; the daily limit asks them to try tomorrow

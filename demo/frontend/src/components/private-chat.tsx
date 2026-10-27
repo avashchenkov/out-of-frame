@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Thread } from "./thread";
 import type { PrivateChat as Chat } from "../lib/private-chat";
 import { watchPrivateChat } from "../lib/watch-private-chat";
-import { ChatInput, StartNotice, chatsLeft } from "./chat-input";
+import { ChatInput } from "./chat-input";
 import {
   ChatSubmitError,
   IDENTITY_LIMIT_NOTICE,
@@ -197,35 +197,25 @@ export function PrivateChat({
       intro={
         liveEnabled &&
         limits &&
-        chat &&
-        (!chat.threadId || replacement) && (
-          <>
-            {replacement && (
-              <section
-                aria-label="New chat replaces the current chat"
-                className="confirm-box"
-              >
-                <p>
-                  Sending the first message of the new chat deletes the current
-                  chat and report and stops any running work. A limit refusal
-                  keeps the current chat.
-                </p>
-                <button
-                  type="button"
-                  className="button button-secondary"
-                  disabled={busy}
-                  onClick={() => setReplaceFor(null)}
-                >
-                  Cancel new chat
-                </button>
-              </section>
-            )}
-            <StartNotice
-              limits={limits}
-              left={chatsLeft(chat, limits)}
-              renewsAt={chat.expiresAt}
-            />
-          </>
+        replacement && (
+          <section
+            aria-label="New chat replaces the current chat"
+            className="confirm-box"
+          >
+            <p>
+              Sending the first message of the new chat deletes the current chat
+              and report and stops any running work. A limit refusal keeps the
+              current chat.
+            </p>
+            <button
+              type="button"
+              className="button button-secondary"
+              disabled={busy}
+              onClick={() => setReplaceFor(null)}
+            >
+              Cancel new chat
+            </button>
+          </section>
         )
       }
       submissionsRemaining={

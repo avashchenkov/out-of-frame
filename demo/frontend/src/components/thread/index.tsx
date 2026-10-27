@@ -109,12 +109,10 @@ export function Thread({
           <div className="conversation">
             <div className="conversation-content">
               <section className="hero" aria-labelledby="welcome-title">
-                <p className="eyebrow">Beyond the listing</p>
                 <h1 id="welcome-title">See what is outside the frame.</h1>
                 <p className="lead">
-                  Check a Berlin address for nearby sites, planned construction
-                  and your regular journeys. Get a report with links to its
-                  sources.
+                  Enter a Berlin address. Find out what is nearby, what will be
+                  built and how long your daily trips take.
                 </p>
               </section>
               {intro}

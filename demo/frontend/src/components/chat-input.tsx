@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { PrivateChat } from "../lib/private-chat";
 import type { DemoLimits } from "../lib/chat-input";
 
 // Without an identity cookie the visitor still has every chat.
-export function chatsLeft(chat: PrivateChat, limits: DemoLimits) {
+function chatsLeft(chat: PrivateChat, limits: DemoLimits) {
   return chat.chatsRemaining ?? limits.identity_chats;
 }
 
@@ -25,9 +25,7 @@ export function ChatInput({
   onSend: (text: string) => Promise<boolean>;
   onRetry: () => void;
 }) {
-  const [started, setStarted] = useState(false);
   const [text, setText] = useState("");
-  const field = useRef<HTMLTextAreaElement>(null);
   const length = Array.from(text).length;
   const remaining = chat.threadId
     ? (chat.submissionsRemaining ?? 0)
@@ -38,28 +36,6 @@ export function ChatInput({
     chat.active ||
     remaining === 0 ||
     (!chat.threadId && chat.chatsRemaining === 0);
-
-  // After Start, the message box takes the button's place and gets the focus.
-  useEffect(() => {
-    if (started) field.current?.focus();
-  }, [started]);
-
-  if (!chat.threadId && !started)
-    return (
-      <div className="input-box start-bar">
-        <p className="start-placeholder" aria-hidden="true">
-          Enter a Berlin address or paste a listing…
-        </p>
-        <button
-          type="button"
-          className="button button-primary"
-          disabled={disabled}
-          onClick={() => setStarted(true)}
-        >
-          Start chat ({chatsLeft(chat, limits)} left)
-        </button>
-      </div>
-    );
 
   if (chat.canRetry)
     return (
@@ -74,6 +50,9 @@ export function ChatInput({
     );
   if (chat.threadId && !chat.canAnswer) return null;
 
+  // A new chat starts with the first message: the box is ready at once, and
+  // the short notice below it is the first layer of the terms and Privacy
+  // notice.
   return (
     <form
       onSubmit={async (event) => {
@@ -83,16 +62,17 @@ export function ChatInput({
       }}
     >
       <fieldset className="input-box composer" disabled={disabled}>
-        <label htmlFor="message" className="box-label">
+        <label htmlFor="message" className="visually-hidden">
           {chat.threadId ? "Your answer" : "Address or listing"}
         </label>
         <textarea
           id="message"
-          ref={field}
           value={text}
           onChange={(event) => setText(event.target.value)}
-          aria-describedby="message-limit"
-          rows={3}
+          aria-describedby={
+            chat.threadId ? "message-limit" : "message-limit start-notice"
+          }
+          rows={2}
           placeholder={
             chat.threadId
               ? "Type your answer…"
@@ -101,77 +81,27 @@ export function ChatInput({
         />
         <div className="box-footer">
           <p id="message-limit" className="box-meta">
-            {length} / {limits.message_chars} characters
-            {!chat.threadId && ` · ${remaining} messages in this chat`}
+            {length} / {limits.message_chars.toLocaleString("en-US")}
           </p>
           <button
             type="submit"
             className="button button-primary"
             disabled={!text.trim() || length > limits.message_chars}
           >
-            Send
+            {chat.threadId
+              ? "Send"
+              : `Start chat (${chatsLeft(chat, limits)} left)`}
           </button>
         </div>
       </fieldset>
+      {!chat.threadId && (
+        <p id="start-notice" className="start-notice">
+          AI demo for adults. Avoid personal details. Starting a chat accepts
+          the <Link href="/terms">service terms</Link>; the{" "}
+          <Link href="/privacy">Privacy notice</Link> explains how Anthropic and
+          others process your messages. AI can be wrong: check the sources.
+        </p>
+      )}
     </form>
-  );
-}
-
-export function StartNotice({
-  limits,
-  left,
-  renewsAt,
-}: {
-  limits: DemoLimits;
-  left: number;
-  renewsAt?: string;
-}) {
-  // The chat count renews when the cookie expires, 30 days after the first
-  // message; before that message the date is not known yet.
-  const renewal = renewsAt
-    ? `renews on ${new Date(renewsAt).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`
-    : `renews ${limits.lifetime_days} days after your first message`;
-  return (
-    <section className="start-notice" aria-labelledby="start-title">
-      <h2 id="start-title" className="box-label">
-        Before you start
-      </h2>
-      <ul className="start-limits">
-        <li>
-          <strong>
-            {left} of {limits.identity_chats} chats left
-          </strong>{" "}
-          · {renewal}
-        </li>
-        <li>
-          {limits.submissions} messages per chat ·{" "}
-          {limits.message_chars.toLocaleString("en-US")} characters per message
-        </li>
-      </ul>
-      <p>
-        An AI demo in English, for users aged 18 or over. Use public places and
-        fictional travel plans. Start requests a free AI report under the{" "}
-        <Link href="/terms">service terms</Link> and the limits shown here.
-        Availability is not guaranteed. Reports give facts, not advice to buy or
-        rent.
-      </p>
-      <p>
-        We process your messages, addresses and journey times using Anthropic
-        and the services listed in our{" "}
-        <Link href="/privacy">Privacy notice</Link>. Other visitors cannot see
-        your chat or report.
-      </p>
-      <p>
-        An essential cookie keeps access and allows up to{" "}
-        {limits.identity_chats} chats. Access to your current chat ends{" "}
-        {limits.lifetime_days} days after your first message, and automatic
-        cleanup then deletes it from our server. Starting another chat does not
-        extend this period. Clearing cookies loses access but does not delete
-        server data. Minimal quota records remain until the cookie expires.
-        Provider retention differs. Avoid names and sensitive personal details.
-        New chat or Delete chat removes the current chat and report earlier.
-      </p>
-      <p>AI results can be wrong: check the sources.</p>
-    </section>
   );
 }

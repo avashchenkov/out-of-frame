@@ -256,33 +256,7 @@ fieldset:disabled .button {
   font-size: clamp(1.0625rem, 2vw, 1.125rem);
   line-height: 1.6;
 }
-.start-notice {
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 0.8125rem;
-  line-height: 1.6;
-}
-.start-notice p {
-  margin: 0.5rem 0 0;
-}
-.start-notice .start-limits {
-  margin: 0.15rem 0 0.75rem;
-  padding: 0;
-  list-style: none;
-  color: var(--ink);
-}
-.start-limits strong {
-  font-weight: 600;
-}
-.start-notice p:last-child {
-  color: var(--ink);
-  font-weight: 500;
-}
-
-/* Input box: the start button and the message box share one shape */
+/* Input box */
 
 .input-box {
   min-width: 0;
@@ -295,15 +269,6 @@ fieldset:disabled .button {
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
-}
-.box-label {
-  display: block;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 .box-footer {
   display: flex;
@@ -318,30 +283,21 @@ fieldset:disabled .button {
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
-.start-bar {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.6rem 0.6rem 0.6rem 1rem;
-}
-.start-placeholder {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  color: var(--faint);
-  font-size: 1.0625rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.start-bar .button {
-  flex: none;
-}
 .composer .box-footer {
   flex-wrap: nowrap;
 }
 .composer .box-meta {
   min-width: 0;
+}
+.start-notice {
+  margin: 0.6rem 0.25rem 0;
+  color: var(--faint);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+}
+.start-notice a {
+  color: var(--muted);
 }
 .composer .button {
   flex: none;
@@ -355,7 +311,7 @@ fieldset:disabled .button {
   width: 100%;
   min-height: 3rem;
   max-height: 40dvh;
-  margin: 0.35rem 0 0.5rem;
+  margin: 0 0 0.5rem;
   padding: 0;
   field-sizing: content;
   resize: none;
@@ -653,16 +609,6 @@ fieldset:disabled .button {
   }
   .composer textarea {
     font-size: 1rem;
-  }
-  .start-placeholder {
-    display: none;
-  }
-  .start-bar {
-    padding: 0.5rem;
-  }
-  .start-bar .button {
-    flex: 1;
-    min-height: 2.75rem;
   }
   .site-header {
     padding-block: 0.7rem;
