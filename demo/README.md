@@ -52,14 +52,13 @@ Do not use the disposable [test Compose](testing.md) for stored conversations.
 ### Deployment on a server
 
 The server only runs the images; it never builds them. The images are built on a
-development machine and copied over SSH, so a host with 1 GB of memory and a small disk is
-enough. At rest the services use about 400 MB of memory.
+development machine and copied over SSH, so the server needs no source code or build tools.
 
 [`deploy/bootstrap-host.sh`](deploy/bootstrap-host.sh) prepares a Debian or Ubuntu host once.
 Run it as root after adding an SSH key. It creates a `deploy` user with the same keys, turns
 off password and root login, allows only SSH, HTTP and HTTPS through the firewall, enables
-automatic security updates, installs Docker unless it is already there and adds 3 GB of swap
-unless swap exists. Container logs go to the system journal, which keeps them for up to
+automatic security updates, installs Docker unless it is already there and adds swap unless
+swap exists. Container logs go to the system journal, which keeps them for up to
 24 hours.
 
 Point the domain's DNS record to the server. Create `~/out-of-frame/demo/.env` on the server

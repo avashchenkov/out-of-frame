@@ -99,7 +99,7 @@ for unit in rsyslog.service snapd.service snapd.socket ModemManager.service udis
   fi
 done
 
-# Swap: the services use about 400 MB at rest and more during a run.
+# Swap: the services use more memory during a run.
 if ! swapon --show | grep -q .; then
   fallocate -l "$swap_size" /swapfile
   chmod 600 /swapfile

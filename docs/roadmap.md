@@ -467,9 +467,8 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
 
    - ✅ The Web UI image, Caddy as the HTTPS reverse proxy, host setup and release scripts,
      checked locally.
-     Images are built locally and copied to the server, which has 1 GB of memory.
-   - ✅ The server prepared; the recorded examples served over HTTPS at
-     <https://outofframe.hooraytalk.com>, with live input off.
+     Images are built locally and copied to the server.
+   - ✅ The server prepared; the recorded examples served over HTTPS, with live input off.
    - ✅ Transfer safeguards in the Privacy notice: Anthropic's DPA with the EU Standard
      Contractual Clauses; Tavily receives no visitor identifiers. A
      [legitimate interest record](demo-legitimate-interest.md) for quotas and security logs.
