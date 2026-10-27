@@ -134,8 +134,8 @@ server-selected checkpoint within the limits. Fixed source-failure notices come 
 The Next.js proxy filters data before it reaches the browser. Agent Chat UI normally
 requests [state values and subgraphs](https://github.com/langchain-ai/agent-chat-ui/blob/main/src/components/thread/index.tsx).
 The demo sets stream modes on the server: top-level `values` and `updates`, with subgraph
-streaming off. Forward only visible user messages, questions, the final report, failure codes
-and progress node names. Include only the status, interrupt and identifier fields needed to
+streaming off. Forward only visible user messages, questions, the final report, failure codes,
+progress node names and the number of objects in the web research. Include only the status, interrupt and identifier fields needed to
 resume and reconnect; filter message fields too.
 
 Apply the same allowlist to streams, replay, thread/run reads and any exposed state/history

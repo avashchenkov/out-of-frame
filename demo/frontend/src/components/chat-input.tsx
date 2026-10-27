@@ -71,6 +71,23 @@ export function ChatInput({
           id="message"
           value={text}
           onChange={(event) => setText(event.target.value)}
+          // Enter sends, as in other chats; Ctrl+Enter or Shift+Enter starts
+          // a new line.
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+            if (event.shiftKey) return;
+            event.preventDefault();
+            if (event.ctrlKey || event.metaKey) {
+              const box = event.currentTarget;
+              box.setRangeText(
+                "\n",
+                box.selectionStart,
+                box.selectionEnd,
+                "end",
+              );
+              setText(box.value);
+            } else event.currentTarget.form?.requestSubmit();
+          }}
           aria-describedby={
             chat.threadId ? "message-limit" : "message-limit start-notice"
           }
@@ -83,7 +100,8 @@ export function ChatInput({
         />
         <div className="box-footer">
           <p id="message-limit" className="box-meta">
-            {length} / {limits.message_chars.toLocaleString("en-US")}
+            {length} / {limits.message_chars.toLocaleString("en-US")} ·
+            Ctrl+Enter for a new line
           </p>
           <button
             type="submit"

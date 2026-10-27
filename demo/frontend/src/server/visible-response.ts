@@ -13,6 +13,15 @@ const STATUSES = new Set([
   "interrupted",
 ]);
 const FAILURES = new Set(["map", "plans", "transit", "web search"]);
+// The steps that the page names while a run works. The research runs one task per
+// object, so its remaining tasks stay in the list, one entry each.
+const NEXT = new Set([
+  "wait_for_answer",
+  "triage_objects",
+  "investigate_object",
+  "write_report",
+  "fill_references",
+]);
 
 function object(value: unknown): ObjectValue {
   return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -77,15 +86,22 @@ function values(data: ObjectValue) {
 export function visibleResponse(kind: ReadKind, raw: unknown): ObjectValue {
   const data = object(raw);
   if (kind === "state") {
+    // Only the number of research tasks leaves the server, never the tasks.
+    const research = list(data.tasks).filter(
+      (task) => object(task).name === "investigate_object",
+    ).length;
     return {
       values: values(object(data.values)),
-      next: list(data.next).filter((node) => node === "wait_for_answer"),
+      next: list(data.next).filter(
+        (node) => typeof node === "string" && NEXT.has(node),
+      ),
       interrupts: list(data.interrupts).flatMap((raw) => {
         const item = object(raw);
         return typeof item.id === "string" && typeof item.value === "string"
           ? [{ id: item.id, value: item.value }]
           : [];
       }),
+      ...(research > 0 ? { research_total: research } : {}),
     };
   }
   if (kind === "limits") {

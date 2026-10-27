@@ -8,7 +8,9 @@ export function BrandMark() {
       focusable="false"
     >
       <rect x="2.5" y="5.5" width="13" height="13" rx="1" />
-      <circle cx="20" cy="5" r="2.25" />
+      <g className="brand-dot">
+        <circle cx="20" cy="5" r="2.25" />
+      </g>
     </svg>
   );
 }

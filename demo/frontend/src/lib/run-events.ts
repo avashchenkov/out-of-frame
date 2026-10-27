@@ -10,14 +10,14 @@ type Handlers = {
   refresh: (reattach?: boolean) => void;
 };
 
-const PROGRESS: Record<string, string> = {
-  get_map_objects: "Fetched the map.",
-  get_plans: "Fetched the development plans.",
-  plan_journeys: "Planned the journeys.",
-  triage_objects: "Checked the objects that the map makes clear.",
-  investigate_object: "Investigated an object on the web.",
-  write_report: "Wrote the report.",
-};
+const PROGRESS = new Set([
+  "get_map_objects",
+  "get_plans",
+  "plan_journeys",
+  "triage_objects",
+  "investigate_object",
+  "write_report",
+]);
 
 export function followRun(
   threadId: string,
@@ -56,11 +56,12 @@ export function followRun(
     connection.addEventListener(type, listener);
   }
   listen("open", () => handlers.progress(null));
+  // The state names the current step and counts the research, so a finished
+  // step only asks for a fresh read.
   listen("updates", (event) => {
     try {
-      for (const node of Object.keys(JSON.parse(event.data))) {
-        if (Object.hasOwn(PROGRESS, node)) handlers.progress(PROGRESS[node]);
-      }
+      const nodes = Object.keys(JSON.parse(event.data));
+      if (nodes.some((node) => PROGRESS.has(node))) handlers.refresh();
     } catch {
       handlers.refresh();
     }

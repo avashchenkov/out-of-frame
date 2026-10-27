@@ -59,6 +59,28 @@ test("state exposes only conversation, failures and input interrupts", () => {
   assert.ok(!JSON.stringify(state).includes(MARKER));
 });
 
+test("state counts the research without exposing its tasks", () => {
+  const task = (name: string) => ({ name, result: MARKER, state: MARKER });
+  const state = visibleResponse("state", {
+    values: {},
+    next: ["investigate_object", "investigate_object", MARKER],
+    tasks: [
+      task("investigate_object"),
+      task("investigate_object"),
+      task("investigate_object"),
+      task(MARKER),
+    ],
+  });
+  assert.deepEqual(state, {
+    values: { messages: [], failures: [] },
+    next: ["investigate_object", "investigate_object"],
+    interrupts: [],
+    research_total: 3,
+  });
+  for (const node of ["triage_objects", "write_report", "fill_references"])
+    assert.deepEqual(visibleResponse("state", { next: [node] }).next, [node]);
+});
+
 test("every JSON read removes internal fields and rejects data in status fields", () => {
   for (const kind of ["thread", "run", "session", "limits"] as const) {
     const result = visibleResponse(kind, {

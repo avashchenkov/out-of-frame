@@ -23,21 +23,24 @@ function ScrollToBottom() {
 function Status({
   notice,
   quiet,
+  reloadable,
   busy,
   onReload,
 }: {
   notice: string;
   quiet: boolean;
+  reloadable: boolean;
   busy: boolean;
   onReload: () => void;
 }) {
-  // The idle notice stays for screen readers only; problems are shown.
+  // The idle notice stays for screen readers only; problems are shown, and
+  // only a problem offers a reload.
   return (
     <div className={quiet ? "visually-hidden" : "chat-status"}>
       <p id="chat-availability" role="status">
         {notice}
       </p>
-      {!quiet && (
+      {!quiet && reloadable && (
         <button
           type="button"
           className="button button-link"
@@ -54,8 +57,10 @@ function Status({
 export function Thread({
   messages,
   welcome,
+  working,
   notice,
   quiet,
+  reloadable,
   failures,
   submissionsRemaining,
   actions,
@@ -66,8 +71,10 @@ export function Thread({
 }: {
   messages: ChatMessage[];
   welcome: boolean;
+  working: string | null;
   notice: string;
   quiet: boolean;
+  reloadable: boolean;
   failures: string[];
   submissionsRemaining?: number;
   actions?: ReactNode;
@@ -77,7 +84,13 @@ export function Thread({
   children: ReactNode;
 }) {
   const status = (
-    <Status notice={notice} quiet={quiet} busy={busy} onReload={onReload} />
+    <Status
+      notice={notice}
+      quiet={quiet}
+      reloadable={reloadable}
+      busy={busy}
+      onReload={onReload}
+    />
   );
   const quota = !quiet && submissionsRemaining !== undefined && (
     <p className="chat-quota">
@@ -93,18 +106,24 @@ export function Thread({
     </aside>
   );
 
+  // Once the chat has messages, its status follows the last of them. The chat
+  // actions sit below, with the input box.
+  const inline = messages.length > 0;
+  const reported = messages.some((message) =>
+    message.id.startsWith("final-report"),
+  );
+
   // The chat fills the screen between the header and footer: only the
   // conversation scrolls, and the input box stays below it. Before the first
   // message, the welcome and the input box sit together in the middle.
   return (
     <div className="chat-shell">
-      {quiet && !actions ? (
+      {inline ? null : quiet ? (
         status
       ) : (
         <div className="chat-bar">
           {status}
           {quota}
-          {actions}
         </div>
       )}
 
@@ -128,23 +147,44 @@ export function Thread({
           </div>
         ) : (
           <StickToBottom
-            className="conversation"
+            className="conversation conversation-stick"
             initial="instant"
             resize="instant"
           >
             <StickToBottom.Content className="conversation-content">
               <ConversationMessages messages={messages} />
+              {/* What the agent does now, under the last message as in other
+                  AI chats. The status below tells screen readers. */}
+              {working && (
+                <p className="working" aria-hidden="true">
+                  <BrandMark />
+                  {working}
+                </p>
+              )}
               {failureList}
-              <p className="meta-note">
-                Reports describe facts. They do not recommend whether to buy or
-                rent.
-              </p>
+              {quiet ? (
+                status
+              ) : (
+                <div className="chat-status-row">
+                  {status}
+                  {quota}
+                </div>
+              )}
+              {reported && (
+                <p className="meta-note">
+                  Reports describe facts. They do not recommend whether to buy
+                  or rent.
+                </p>
+              )}
             </StickToBottom.Content>
             <ScrollToBottom />
           </StickToBottom>
         )}
 
-        <div className="composer-area">{children}</div>
+        <div className="composer-area">
+          {children}
+          {actions}
+        </div>
       </main>
     </div>
   );

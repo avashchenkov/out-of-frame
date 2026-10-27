@@ -189,6 +189,26 @@ export function PrivateChat({
     ? [{ id: "sent", type: "human", content: sent }]
     : messages;
   const started = !!chat && (!!chat.threadId || !!chat.deleting);
+  // Without an input box, the chat actions sit in a card of their own, with a
+  // hint about what comes next.
+  const ended =
+    !!chat?.threadId && !replacement && !chat.canAnswer && !chat.canRetry;
+  const hint = !ended
+    ? null
+    : chat.active && !chat.deleting
+      ? "You can close this page. The check keeps running."
+      : chat.messages.some((message) => message.id.startsWith("final-report"))
+        ? "To check another address, start a new chat."
+        : null;
+  const working =
+    !replacement &&
+    operation !== "delete" &&
+    !chat?.deleting &&
+    (pending || !!chat?.active)
+      ? busy
+        ? "Working…"
+        : notice
+      : null;
 
   const contact = contactEmail && (
     <>
@@ -203,6 +223,7 @@ export function PrivateChat({
     <Thread
       messages={shown}
       welcome={shown.length === 0 && (replacement || !started)}
+      working={working}
       notice={
         operation === "delete"
           ? "Deleting your chat…"
@@ -210,7 +231,11 @@ export function PrivateChat({
             ? "Submitting your request…"
             : notice
       }
-      quiet={!!chat && !chat.threadId && !chat.deleting && !busy}
+      quiet={
+        working !== null ||
+        (!!chat && !chat.threadId && !chat.deleting && !busy)
+      }
+      reloadable={!chat || limitsFailed || !!error || notice !== chat.status}
       failures={replacement ? [] : (chat?.failures ?? [])}
       intro={
         liveEnabled &&
@@ -238,7 +263,9 @@ export function PrivateChat({
       }
       submissionsRemaining={
         chat?.threadId && !replacement
-          ? chat.submissionsRemaining
+          ? chat.canAnswer
+            ? chat.submissionsRemaining
+            : undefined
           : chat && !chat.deleting && chat.chatsRemaining !== 0
             ? limits?.submissions
             : undefined
@@ -258,32 +285,35 @@ export function PrivateChat({
       actions={
         chat &&
         (chat.threadId || chat.deleting) && (
-          <div className="chat-actions">
-            <button
-              type="button"
-              className="button button-secondary button-small"
-              disabled={
-                busy ||
-                locked ||
-                !liveEnabled ||
-                chat.deleting ||
-                !chat.chatsRemaining
-              }
-              onClick={() => {
-                setConfirmDelete(false);
-                setReplaceFor(chat.threadId);
-              }}
-            >
-              New chat
-            </button>
-            <button
-              type="button"
-              className="button button-secondary button-small"
-              disabled={busy}
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete chat
-            </button>
+          <div className={ended ? "chat-actions chat-end" : "chat-actions"}>
+            {hint && <p>{hint}</p>}
+            <div className="chat-buttons">
+              <button
+                type="button"
+                className="button button-secondary button-small"
+                disabled={
+                  busy ||
+                  locked ||
+                  !liveEnabled ||
+                  chat.deleting ||
+                  !chat.chatsRemaining
+                }
+                onClick={() => {
+                  setConfirmDelete(false);
+                  setReplaceFor(chat.threadId);
+                }}
+              >
+                New chat
+              </button>
+              <button
+                type="button"
+                className="button button-secondary button-small button-delete"
+                disabled={busy}
+                onClick={() => setConfirmDelete(true)}
+              >
+                Delete chat
+              </button>
+            </div>
           </div>
         )
       }

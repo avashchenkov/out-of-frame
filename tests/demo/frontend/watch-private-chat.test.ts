@@ -10,7 +10,7 @@ const CHAT: PrivateChat = {
   runId: "22222222-2222-4222-8222-222222222222",
   messages: [{ id: "question", type: "ai", content: "Saved question" }],
   failures: [],
-  status: "The agent is working on your request.",
+  status: "Working…",
   active: true,
   expiresAt: "2100-01-01T00:00:00Z",
 };

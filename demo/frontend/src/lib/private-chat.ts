@@ -39,6 +39,21 @@ type Session = {
   chats_remaining?: number;
 };
 
+// The step that a working run is on, as the state's next steps show it. The
+// research runs one task per object, and each finished task leaves the list.
+function workingStatus(state: { next?: string[]; research_total?: number }) {
+  const next = state.next ?? [];
+  const total = state.research_total ?? 0;
+  if (next.includes("investigate_object") && total > 0) {
+    const left = next.filter((node) => node === "investigate_object").length;
+    return `Researching objects on the web: ${total - left} of ${total}…`;
+  }
+  if (next.includes("triage_objects")) return "Checking the places nearby…";
+  if (next.includes("write_report") || next.includes("fill_references"))
+    return "Writing the report…";
+  return "Working…";
+}
+
 export class ChatReadError extends Error {
   readonly inaccessible: boolean;
   constructor(inaccessible: boolean) {
@@ -116,7 +131,7 @@ export async function readPrivateChat(
     else if (current.status === "pending")
       status =
         "Service is busy. Your request is queued and will start automatically.";
-    else if (active) status = "The agent is working on your request.";
+    else if (active) status = workingStatus(state);
     else if (["error", "timeout"].includes(current.status ?? ""))
       status = "The run stopped. Your conversation has been saved.";
     else if (

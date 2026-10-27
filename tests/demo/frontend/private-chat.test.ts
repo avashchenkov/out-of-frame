@@ -87,7 +87,7 @@ test("a different latest run discards a snapshot even with unchanged counters", 
 test("queued, running, failed and completed chats use server completion", async () => {
   for (const [status, complete, active, notice] of [
     ["pending", false, true, /queued and will start automatically/],
-    ["running", false, true, /working on your request/],
+    ["running", false, true, /^Working…$/],
     ["error", false, false, /run stopped/],
     ["success", false, false, /Waiting for your answer/],
     ["success", true, false, /Report complete/],
@@ -99,6 +99,27 @@ test("queued, running, failed and completed chats use server completion", async 
     assert.match(chat.status, notice);
     assert.equal(chat.canRetry, status === "error" && !complete);
     assert.equal(chat.canAnswer, !active && !complete && status !== "error");
+  }
+});
+
+test("a running chat names its current step and counts the researched objects", async () => {
+  const running = { ...SESSION, status: "running" };
+  const research = (done: number) => ({
+    ...STATE,
+    next: Array(3 - done).fill("investigate_object"),
+    research_total: 3,
+  });
+  for (const [state, notice] of [
+    [{ ...STATE, next: [] }, "Working…"],
+    [{ ...STATE, next: ["triage_objects"] }, "Checking the places nearby…"],
+    [research(0), "Researching objects on the web: 0 of 3…"],
+    [research(2), "Researching objects on the web: 2 of 3…"],
+    [{ ...STATE, next: ["write_report"] }, "Writing the report…"],
+    [{ ...STATE, next: ["fill_references"] }, "Writing the report…"],
+  ] as const) {
+    const { fetchPage } = responses(running, state, running);
+    const chat = await readPrivateChat(new AbortController().signal, fetchPage);
+    assert.equal(chat.status, notice);
   }
 });
 

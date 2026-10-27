@@ -69,18 +69,18 @@ test("an existing run uses one native EventSource through connection loss", () =
   f.stop();
 });
 
-test("progress uses fixed notices; replayed values request current state", () => {
+test("progress reads current state; private updates are ignored", () => {
   const f = fixture();
   f.send("updates", {
-    get_map_objects: {},
+    investigate_object: { progress: "investigate_object" },
     private_node: "PRIVATE_SOURCE_TEXT",
   });
-  assert.deepEqual(f.notices, ["Fetched the map."]);
-  f.send("values", { messages: [{ content: "OLD_REPLAYED_QUESTION" }] });
   assert.equal(f.refreshes, 1);
-  assert.deepEqual(f.notices, ["Fetched the map."]);
+  f.send("values", { messages: [{ content: "OLD_REPLAYED_QUESTION" }] });
+  assert.equal(f.refreshes, 2);
   f.send("updates", { constructor: "PRIVATE_ERROR", unknown: {} });
-  assert.equal(f.notices.length, 1);
+  assert.equal(f.refreshes, 2);
+  assert.deepEqual(f.notices, []);
   f.stop();
 });
 
