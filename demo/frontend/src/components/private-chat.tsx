@@ -5,6 +5,7 @@ import { Thread } from "./thread";
 import type { ChatMessage, PrivateChat as Chat } from "../lib/private-chat";
 import { watchPrivateChat } from "../lib/watch-private-chat";
 import { ChatInput } from "./chat-input";
+import { ConfirmDialog } from "./confirm-dialog";
 import {
   ChatSubmitError,
   IDENTITY_LIMIT_NOTICE,
@@ -32,9 +33,7 @@ export function PrivateChat({
   const [limitsFailed, setLimitsFailed] = useState(false);
   const [operation, setOperation] = useState<"submit" | "delete" | null>(null);
   const busy = operation !== null;
-  const [replaceFor, setReplaceFor] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const replacement = !!chat?.threadId && replaceFor === chat.threadId;
+  const [confirm, setConfirm] = useState<"new" | "delete" | null>(null);
   const [locked, setLocked] = useState(false);
   const [error, setError] = useState<ChatSubmitError | null>(null);
   const [dailyReset, setDailyReset] = useState<string | null>(null);
@@ -77,33 +76,21 @@ export function PrivateChat({
   async function send(text: string, retry = false): Promise<boolean> {
     if (!liveEnabled || !limits || !chat || submission.current || locked)
       return false;
-    if (replacement) {
-      if (!(chat.chatsRemaining && chat.chatsRemaining > 0)) return false;
-    } else {
-      if (chat.active) return false;
-      if (
-        chat.threadId &&
-        (!(retry ? chat.canRetry : chat.canAnswer) ||
-          !chat.submissionsRemaining)
-      )
-        return false;
-    }
+    if (chat.active) return false;
+    if (
+      chat.threadId &&
+      (!(retry ? chat.canRetry : chat.canAnswer) || !chat.submissionsRemaining)
+    )
+      return false;
     if (
       !retry &&
       (!text.trim() || Array.from(text).length > limits.message_chars)
     )
       return false;
-    const fresh = replacement || !chat.threadId;
-    if (fresh && !retry) setSent(text);
+    if (!chat.threadId && !retry) setSent(text);
     const done = await performChange((signal) =>
       submitChat(
-        replacement
-          ? "replace"
-          : retry
-            ? "retry"
-            : chat.threadId
-              ? "answer"
-              : "new",
+        retry ? "retry" : chat.threadId ? "answer" : "new",
         text,
         chat.threadId,
         signal,
@@ -115,7 +102,7 @@ export function PrivateChat({
 
   async function remove() {
     if (!chat || (!chat.threadId && !chat.deleting)) return;
-    setConfirmDelete(false);
+    setConfirm(null);
     setSent(null);
     await performChange((signal) => deleteChat(signal), true);
   }
@@ -134,8 +121,7 @@ export function PrivateChat({
       await action(controller.signal);
       if (controller.signal.aborted) return false;
       setLocked(false);
-      setReplaceFor(null);
-      setConfirmDelete(false);
+      setConfirm(null);
       setChat(null);
       setNotice("Loading your chat…");
       setReload((value) => value + 1);
@@ -156,7 +142,6 @@ export function PrivateChat({
         );
       }
       if (failed.code === "deletion_pending") {
-        setReplaceFor(null);
         setChat(null);
         setReload((value) => value + 1);
       }
@@ -194,19 +179,18 @@ export function PrivateChat({
     };
   }, [loading]);
 
-  const messages = replacement ? [] : (chat?.messages ?? []);
+  const messages = chat?.messages ?? [];
   const pending =
     sent !== null &&
     messages.length === 0 &&
-    (operation === "submit" || !chat || (!!chat.threadId && !replacement));
+    (operation === "submit" || !chat || !!chat.threadId);
   const shown: ChatMessage[] = pending
     ? [{ id: "sent", type: "human", content: sent }]
     : messages;
   const started = !!chat && (!!chat.threadId || !!chat.deleting);
   // Without an input box, the chat actions sit in a card of their own, with a
   // hint about what comes next.
-  const ended =
-    !!chat?.threadId && !replacement && !chat.canAnswer && !chat.canRetry;
+  const ended = !!chat?.threadId && !chat.canAnswer && !chat.canRetry;
   const hint = !ended
     ? null
     : chat.active && !chat.deleting
@@ -215,10 +199,7 @@ export function PrivateChat({
         ? "To check another address, start a new chat."
         : null;
   const working =
-    !replacement &&
-    operation !== "delete" &&
-    !chat?.deleting &&
-    (pending || !!chat?.active)
+    operation !== "delete" && !chat?.deleting && (pending || !!chat?.active)
       ? busy
         ? "Working…"
         : notice
@@ -236,7 +217,7 @@ export function PrivateChat({
   return (
     <Thread
       messages={shown}
-      welcome={shown.length === 0 && (replacement || !started)}
+      welcome={shown.length === 0 && !started}
       working={working}
       notice={
         operation === "delete"
@@ -251,33 +232,9 @@ export function PrivateChat({
         (!!chat && !chat.threadId && !chat.deleting && !busy)
       }
       reloadable={!chat || limitsFailed || !!error || notice !== chat.status}
-      failures={replacement ? [] : (chat?.failures ?? [])}
-      intro={
-        liveEnabled &&
-        limits &&
-        replacement && (
-          <section
-            aria-label="New chat replaces the current chat"
-            className="confirm-box"
-          >
-            <p>
-              Sending the first message of the new chat deletes the current chat
-              and report and stops any running work. A limit refusal keeps the
-              current chat.
-            </p>
-            <button
-              type="button"
-              className="button button-secondary"
-              disabled={busy}
-              onClick={() => setReplaceFor(null)}
-            >
-              Cancel new chat
-            </button>
-          </section>
-        )
-      }
+      failures={chat?.failures ?? []}
       submissionsRemaining={
-        chat?.threadId && !replacement
+        chat?.threadId
           ? chat.canAnswer
             ? chat.submissionsRemaining
             : undefined
@@ -287,8 +244,7 @@ export function PrivateChat({
       }
       onReload={() => {
         if (submission.current) return;
-        setReplaceFor(null);
-        setConfirmDelete(false);
+        setConfirm(null);
         setLocked(false);
         setLimitsFailed(false);
         setError(null);
@@ -307,17 +263,12 @@ export function PrivateChat({
               <button
                 type="button"
                 className="button button-secondary button-small"
+                // New chat deletes the current chat first, so like Delete chat it
+                // works after an uncertain request too.
                 disabled={
-                  busy ||
-                  locked ||
-                  !liveEnabled ||
-                  chat.deleting ||
-                  !chat.chatsRemaining
+                  busy || !liveEnabled || chat.deleting || !chat.chatsRemaining
                 }
-                onClick={() => {
-                  setConfirmDelete(false);
-                  setReplaceFor(chat.threadId);
-                }}
+                onClick={() => setConfirm("new")}
               >
                 New chat
               </button>
@@ -325,7 +276,7 @@ export function PrivateChat({
                 type="button"
                 className="button button-secondary button-small button-delete"
                 disabled={busy}
-                onClick={() => setConfirmDelete(true)}
+                onClick={() => setConfirm("delete")}
               >
                 Delete chat
               </button>
@@ -334,34 +285,38 @@ export function PrivateChat({
         )
       }
     >
-      {confirmDelete && chat && (chat.threadId || chat.deleting) && (
-        <section aria-label="Confirm chat deletion" className="confirm-box">
+      {confirm === "new" && chat?.threadId && (
+        <ConfirmDialog
+          title="Start a new chat?"
+          confirmLabel="Start new chat"
+          busy={busy}
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => {
+            void remove();
+          }}
+        >
           <p>
-            Delete this browser&apos;s current chat and report? Running work
-            will stop. This cannot be undone. Usage limits and the access cookie
-            remain.
+            This deletes the current chat and its report, and any running check
+            stops. You cannot open them again.
           </p>
-          <div className="confirm-actions">
-            <button
-              type="button"
-              className="button button-danger"
-              disabled={busy}
-              onClick={() => {
-                void remove();
-              }}
-            >
-              Confirm delete
-            </button>
-            <button
-              type="button"
-              className="button button-secondary"
-              disabled={busy}
-              onClick={() => setConfirmDelete(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </section>
+        </ConfirmDialog>
+      )}
+      {confirm === "delete" && chat && (chat.threadId || chat.deleting) && (
+        <ConfirmDialog
+          title="Delete this chat?"
+          confirmLabel="Delete chat"
+          busy={busy}
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => {
+            void remove();
+          }}
+        >
+          <p>
+            The chat and its report will be deleted, and any running check
+            stops. You cannot open them again. Usage limits and the access
+            cookie remain.
+          </p>
+        </ConfirmDialog>
       )}
       {chat && !chat.threadId && chat.chatsRemaining === 0 && (
         <p role="status" className="callout">
@@ -380,21 +335,10 @@ export function PrivateChat({
       )}
       {liveEnabled && limits && chat ? (
         <ChatInput
-          key={replacement ? "replacement" : (chat.threadId ?? "new")}
-          chat={
-            replacement
-              ? {
-                  ...chat,
-                  threadId: null,
-                  active: false,
-                  canRetry: false,
-                  canAnswer: false,
-                  submissionsRemaining: undefined,
-                }
-              : chat
-          }
+          key={chat.threadId ?? "new"}
+          chat={chat}
           limits={limits}
-          busy={busy || confirmDelete}
+          busy={busy || confirm !== null}
           locked={locked}
           onSend={send}
           onRetry={() => {

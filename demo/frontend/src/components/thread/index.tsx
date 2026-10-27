@@ -64,7 +64,6 @@ export function Thread({
   failures,
   submissionsRemaining,
   actions,
-  intro,
   onReload,
   busy,
   children,
@@ -78,7 +77,6 @@ export function Thread({
   failures: string[];
   submissionsRemaining?: number;
   actions?: ReactNode;
-  intro?: ReactNode;
   onReload: () => void;
   busy: boolean;
   children: ReactNode;
@@ -141,7 +139,6 @@ export function Thread({
                   </p>
                 </section>
               )}
-              {intro}
               {failureList}
             </div>
           </div>

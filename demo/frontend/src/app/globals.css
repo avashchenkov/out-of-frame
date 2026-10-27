@@ -411,15 +411,27 @@ fieldset:disabled .button {
 .callout-error {
   border-left-color: var(--danger);
 }
-.confirm-box {
-  padding: 1rem 1.1rem;
+.confirm-dialog {
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 1.25rem 1.25rem 1rem;
   border: 1px solid var(--line);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   background: var(--surface);
-  font-size: 0.875rem;
+  color: var(--ink);
+  font-size: 0.9375rem;
 }
-.confirm-box p {
-  margin: 0 0 0.75rem;
+.confirm-dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+.confirm-dialog h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+}
+.confirm-dialog p {
+  margin: 0 0 1.25rem;
+}
+.confirm-dialog .confirm-actions {
+  justify-content: flex-end;
 }
 .confirm-actions,
 .chat-actions {
