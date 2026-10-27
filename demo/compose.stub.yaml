@@ -1,0 +1,109 @@
+# The local UI stack: the real Web UI, Aegra, PostgreSQL and Redis, with the stub agent of
+# demo/stub/ in place of the real one. No model, Tavily or map calls, no keys and no .env.
+# The runtime image holds no stub code: it is mounted here, with its own Aegra config.
+# See demo/README.md.
+#   docker compose --file demo/compose.stub.yaml up --build --wait
+# Then open http://localhost:3000. The settings below are fixed local values, not secrets.
+name: out-of-frame-stub
+
+x-database: &database
+  DATABASE_URL: postgresql://out_of_frame:local-stub@postgres:5432/out_of_frame
+  REDIS_URL: redis://redis:6379/0
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: out_of_frame
+      POSTGRES_DB: out_of_frame
+      POSTGRES_PASSWORD: local-stub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U out_of_frame -d out_of_frame"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  # The database steps of demo/db/README.md, before the backend starts. Both are safe to repeat.
+  migrate:
+    image: out-of-frame-backend:local
+    build:
+      context: ..
+      dockerfile: demo/Dockerfile
+    command: ["aegra", "db", "upgrade"]
+    environment: *database
+    depends_on:
+      postgres:
+        condition: service_healthy
+  schema:
+    image: postgres:17-alpine
+    command: ["psql", "-h", "postgres", "-U", "out_of_frame", "-d", "out_of_frame",
+              "--set", "ON_ERROR_STOP=1", "--single-transaction", "-f", "/schema.sql"]
+    environment:
+      PGPASSWORD: local-stub
+    volumes:
+      - ./db/schema.sql:/schema.sql:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  backend:
+    image: out-of-frame-backend:local
+    environment:
+      <<: *database
+      AEGRA_CONFIG: /app/demo/stub/aegra.json
+      OUT_OF_FRAME_DEMO_STUB_DELAY: ${OUT_OF_FRAME_DEMO_STUB_DELAY:-1}
+      OUT_OF_FRAME_DEMO_PROXY_SECRET: local-stub-secret-not-used-anywhere-0000
+      # Higher limits than the public demo, so that the UI can be tried many times.
+      OUT_OF_FRAME_DEMO_DAILY_CHATS: ${OUT_OF_FRAME_DEMO_DAILY_CHATS:-100}
+      OUT_OF_FRAME_DEMO_IDENTITY_CHATS: ${OUT_OF_FRAME_DEMO_IDENTITY_CHATS:-20}
+      RUN_MIGRATIONS_ON_STARTUP: "false"
+      REDIS_BROKER_ENABLED: "true"
+      WORKER_COUNT: "1"
+      N_JOBS_PER_WORKER: "1"
+      CRON_ENABLED: "false"
+      LANGSMITH_TRACING: "false"
+      OTEL_TARGETS: ""
+    volumes:
+      - ./stub:/app/demo/stub:ro
+      # The stub's reports are the recorded examples.
+      - ./frontend/src/data/recorded-examples.json:/app/demo/frontend/src/data/recorded-examples.json:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      schema:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:2026/ready', timeout=3).close()"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  web:
+    image: out-of-frame-web:local
+    build:
+      context: frontend
+    environment:
+      OUT_OF_FRAME_DEMO_ORIGIN: http://localhost:3000
+      OUT_OF_FRAME_DEMO_BACKEND_URL: http://backend:2026
+      OUT_OF_FRAME_DEMO_PROXY_SECRET: local-stub-secret-not-used-anywhere-0000
+      OUT_OF_FRAME_DEMO_LIVE_ENABLED: "true"
+      OUT_OF_FRAME_DEMO_CONTACT_EMAIL: outofframe.contact@proton.me
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/examples').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+volumes:
+  postgres_data:

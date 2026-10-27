@@ -78,6 +78,37 @@ keeps serving the examples while the backend is stopped. Caddy's access log hold
 client IP, time, request line and status, without headers or cookies. Read it on the server
 with `docker compose logs caddy` from `~/out-of-frame/demo`.
 
+### Local UI stack with a stub agent
+
+To try the Web UI without paid calls, run the real Web UI, Aegra, PostgreSQL and Redis with a
+stub agent in place of the real one. It needs no keys and no `.env`. From the repository root:
+
+```sh
+docker compose --file demo/compose.stub.yaml up --build --wait
+```
+
+Then open <http://localhost:3000>. The stub, in [`stub/agent.py`](stub/agent.py), has the
+real graph's steps and the same ownership checks, so the page shows the same progress,
+question, retry and report. A run takes about 40 seconds; set
+`OUT_OF_FRAME_DEMO_STUB_DELAY=0.3` for faster runs, or `0` for instant ones. The report is a
+full recorded example under your address: Teutonenstraße 10, with journeys, if you travel
+somewhere, or Corinthstraße 60 if not. The address of a recorded example gets its own report.
+
+- It asks one question at most, and any answer leads on to the report. Without any number in
+  the message, it asks for the address; without a word about trips, such as "nowhere" or
+  "work", it asks where you travel.
+- "fail" in a message adds the transit and web search failure notices.
+- "crash" in a message stops the first run with an error, so that Retry can be tried.
+
+The stub has its own Aegra config, [`stub/aegra.json`](stub/aegra.json); Compose mounts
+`stub/` into the backend container and points `AEGRA_CONFIG` to it. The runtime image, its
+config and `backend/` never include or name the stub.
+
+A visitor gets 20 chats, set with `OUT_OF_FRAME_DEMO_IDENTITY_CHATS`. Chats stay in a Docker
+volume between restarts. Stop the stack with
+`docker compose --file demo/compose.stub.yaml down`; add `--volumes` to delete all chats and
+quotas.
+
 ### Local Python process
 
 Install with `uv sync --locked --extra demo`. Provide PostgreSQL and Redis, without Redis

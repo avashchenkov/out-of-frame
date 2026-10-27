@@ -69,5 +69,7 @@ Python 3.14 with uv. Add dependencies with `uv add` and run commands with `uv ru
   `evals/config.py`, with their example environment in `evals/.env.example`.
 - Keep demo-only code and settings in `demo/backend/`, outside `src/out_of_frame/`.
   Keep all demo tests in `tests/demo/`, with infrastructure checks in its `integration/` folder.
+- Keep the stub agent of the local UI stack in `demo/stub/`. Runtime code, its config and the
+  runtime image never include or import it.
 - Hand work to another agent or model, such as Codex or Grok, only when the user asks. It works
   read-only and does not hand the work on.
