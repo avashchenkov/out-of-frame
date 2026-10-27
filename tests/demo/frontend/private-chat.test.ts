@@ -123,8 +123,9 @@ test("a running chat names its current step and counts the researched objects", 
       { ...STATE, next: ["get_addresses"] },
       "Looking up the addresses of the places…",
     ],
-    [research(0), "Researching objects on the web: 0 of 3…"],
-    [research(2), "Researching objects on the web: 2 of 3…"],
+    // The count names the object in progress, from 1.
+    [research(0), "Researching objects on the web: 1 of 3…"],
+    [research(2), "Researching objects on the web: 3 of 3…"],
     [{ ...STATE, next: ["write_report"] }, "Writing the report…"],
     [{ ...STATE, next: ["fill_references"] }, "Writing the report…"],
   ] as const) {

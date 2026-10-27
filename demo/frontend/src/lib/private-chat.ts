@@ -41,6 +41,7 @@ type Session = {
   chats_remaining?: number;
 };
 
+// The count names the object in progress, from 1, not the finished ones.
 export function researchStatus({
   done,
   total,
@@ -48,7 +49,8 @@ export function researchStatus({
   done: number;
   total: number;
 }) {
-  return `Researching objects on the web: ${done} of ${total}…`;
+  const current = Math.min(done + 1, total);
+  return `Researching objects on the web: ${current} of ${total}…`;
 }
 
 // The research runs one task per object, and each finished task leaves the

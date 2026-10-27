@@ -237,7 +237,7 @@ test("counted investigations move the research status ahead of the saved state",
   t.mock.timers.enable({ apis: ["setTimeout"] });
   const researching = {
     ...CHAT,
-    status: "Researching objects on the web: 0 of 3…",
+    status: "Researching objects on the web: 1 of 3…",
     research: { done: 0, total: 3 },
   };
   let handlers!: Parameters<typeof followRun>[3];
@@ -253,7 +253,7 @@ test("counted investigations move the research status ahead of the saved state",
     },
   );
   await settle();
-  handlers.research(2);
+  handlers.research(1);
   const [chat, notice] = views.at(-1)!;
   assert.equal(notice, "Researching objects on the web: 2 of 3…");
   // The chat's own status matches, so the page offers no reload.
