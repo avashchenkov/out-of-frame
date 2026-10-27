@@ -23,14 +23,16 @@ export default async function Example({
       <Link href="/examples" className="back-link">
         ← All examples
       </Link>
-      <p className="eyebrow">Recorded example</p>
       <h1>{example.title}</h1>
       <p className="example-note">
-        Research:{" "}
-        <time dateTime={example.recorded_on}>{example.recorded_on}</time>. The
-        report was regenerated from these saved findings, without new research.
-        This prepared example cannot be continued.{" "}
-        <Link href="/">Try a live chat</Link>.
+        Recorded example from{" "}
+        <time dateTime={example.recorded_on}>
+          {new Date(`${example.recorded_on}T12:00:00Z`).toLocaleDateString(
+            "en-GB",
+            { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" },
+          )}
+        </time>
+        . <Link href="/">Try a live chat</Link>
       </p>
       <ConversationMessages messages={example.messages} />
       {example.failures.length > 0 && (
