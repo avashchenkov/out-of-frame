@@ -1,3 +1,4 @@
+import { BrandMark } from "../brand-mark";
 import { MarkdownText } from "./markdown-text";
 import type { ChatMessage } from "../../lib/private-chat";
 
@@ -19,7 +20,13 @@ export function ConversationMessages({
           {message.type === "human" ? (
             <p className="human-text">{message.content}</p>
           ) : (
-            <MarkdownText>{message.content}</MarkdownText>
+            <>
+              <p className="message-author" aria-hidden="true">
+                <BrandMark />
+                Out of Frame
+              </p>
+              <MarkdownText>{message.content}</MarkdownText>
+            </>
           )}
         </article>
       ))}

@@ -452,6 +452,36 @@ fieldset:disabled .button {
   border-radius: 1rem 1rem 0.25rem 1rem;
   background: var(--accent-soft);
 }
+/* Agent replies sit in a card, so a report reads as an answer in the chat. */
+.message-ai {
+  padding: 1rem 1.25rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem 1rem 1rem 0.25rem;
+  background: var(--surface);
+}
+.message-author {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.message-author .brand-mark {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.message-ai .markdown-content h1 {
+  font-size: 1.5rem;
+}
+.message-ai .markdown-content h2 {
+  font-size: 1.25rem;
+}
+.message-ai .markdown-content h3 {
+  font-size: 1.05rem;
+}
 .human-text {
   margin: 0;
   white-space: pre-wrap;
@@ -631,6 +661,9 @@ fieldset:disabled .button {
   }
   .message-human {
     max-width: 92%;
+  }
+  .message-ai {
+    padding: 0.9rem 1rem 1rem;
   }
   .chat-bar {
     padding-block: 0.5rem;
