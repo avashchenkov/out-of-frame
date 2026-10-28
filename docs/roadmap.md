@@ -39,10 +39,3 @@ rejected findings.
 | 11 | ✅ | **Commute limit:** at most two destinations by default; ask the user which to keep before calling sources. |
 | 12 | ✅ | **Input recovery:** the extraction also takes an earlier answer that the input missed; input loop cases I4–I7. |
 | 13 | ✅ | **Recorded-example review:** a visible note explains the known stale Philip Morris claim in the Neuköllnische Allee example, preserving the original report. |
-
-## Scope
-
-Further eval tasks are added when an observed failure needs them; there is no planned phase
-to expand every designed suite. Deeper search, a stronger model and multiple sources per finding
-remain outside the MVP. A separate Docker image for the CLI was dropped; the CLI uses `uv`,
-and Docker is used for the demo.
