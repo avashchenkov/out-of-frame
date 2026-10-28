@@ -1,5 +1,5 @@
 """The input phase: the model picks out the property's address and the places the user travels
-to from the user's last message, code applies and checks them, and the model asks for what is
+to from the user's messages, code applies and checks them, and the model asks for what is
 missing, see docs/architecture.md#one-run."""
 
 import datetime as dt
@@ -27,7 +27,7 @@ class ConversationError(Exception):
 
 
 class ExtractedDestination(BaseModel):
-    """A place that the user travels to regularly, as the user's last message leaves it."""
+    """A place that the user travels to regularly, as the user's latest answers leave it."""
 
     id: str | None = Field(
         description="Its ID among the places so far, if it is one of them; null for a new one."
@@ -37,18 +37,18 @@ class ExtractedDestination(BaseModel):
         "address."
     )
     address: str | None = Field(
-        description="Its address, if the user's last message gives it or changes it; null if "
-        "it does not."
+        description="Its address, if the user gives it or changes it and the place so far "
+        "does not have it yet; null if not."
     )
     leave_home: str | None = Field(
         pattern=CLOCK_TIME,
         description="The clock time when the user leaves home for the place, as HH:MM, if the "
-        "user's last message gives it or changes it; null if it does not.",
+        "user gives it or changes it and the place so far does not have it yet; null if not.",
     )
     leave_place: str | None = Field(
         pattern=CLOCK_TIME,
         description="The clock time when the user leaves the place for home, as HH:MM, if the "
-        "user's last message gives it or changes it; null if it does not.",
+        "user gives it or changes it and the place so far does not have it yet; null if not.",
     )
 
 
@@ -61,21 +61,22 @@ class UserLanguage(BaseModel):
 
 
 class Change(BaseModel):
-    """What the user's last message adds to the input or changes in it."""
+    """What the user's messages add to the input so far or change in it."""
 
     property_address: str | None = Field(
-        description="The property's address if the user's last message gives it or changes "
-        "it; null if it does not."
+        description="The property's address if the user gives it or changes it and the input "
+        "so far does not have it yet; null if not."
     )
     destinations: list[ExtractedDestination] | None = Field(
         description="The places the user travels to regularly, the whole list as the user's "
-        "last message leaves it, if that message adds, changes or drops one: an empty list if "
-        "the user travels nowhere; null if the message changes none of them."
+        "latest answers leave it, if they add, change or drop one, or say that the user travels "
+        "nowhere, and the input so far does not show it yet: an empty list if the user travels "
+        "nowhere; null if the input so far shows all that the user said, or they have not said."
     )
 
 
 def extract(state: RunState) -> Change:
-    """What the user's last message gives or changes in the input."""
+    """What the user's messages give or change that the input so far does not have yet."""
     system = SystemMessage(
         render("extract.md.j2", property=state.property, destinations=state.destinations)
     )

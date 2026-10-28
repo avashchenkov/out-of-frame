@@ -125,8 +125,8 @@ def compile_graph(*, checkpointer=None, context_schema=Context, node_wrapper=Non
 
 
 def extract_input(state: RunState) -> dict:
-    """The changes that the user's last message makes, see conversation.apply; everything else
-    stays as it was."""
+    """The changes that the user's messages make to the input so far, see conversation.apply;
+    everything else stays as it was."""
     return conversation.apply(conversation.extract(state), state)
 
 

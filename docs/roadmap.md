@@ -490,3 +490,6 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
     - Validate these limits under load on the VPS before raising them.
 11. ✅ **At most two commute destinations by default.** For a longer list, code asks the user
     which to keep, before any source calls.
+12. **Input that does not stall.** The extraction also takes an earlier answer that the input
+    missed, and the question never says that the agent is ready. I4–I7 cover the extraction,
+    with I1–I3 as controls; A5 is designed for the question.

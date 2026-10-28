@@ -237,6 +237,7 @@ def test_the_question_is_about_what_code_found_missing(monkeypatch):
     [(system, *chat)] = requests
     assert "ask which one is meant" in system.content and f"- {missing[0]}" in system.content
     assert "say that they may travel nowhere" in system.content
+    assert "never ask whether to start" in system.content  # code starts the check
     assert chat == CHAT
 
 

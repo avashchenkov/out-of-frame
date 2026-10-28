@@ -1,0 +1,26 @@
+# I4, input loop: the input phase runs until the input is complete, on recorded Nominatim
+# responses. See docs/eval-architecture.md#input-loop.
+id: I4
+suite: input loop
+covers: >-
+  One reply resolves the property address and says the user travels nowhere. Both answers
+  must be saved on that turn, with no readiness message or request to start.
+date: 2026-10-27
+input:
+  messages:
+    - Please check Hauptstraße 1, Berlin.
+    - The one in Staaken. I travel nowhere regularly.
+  sources:
+    - id: nominatim-1
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Hauptstraße 1, Berlin
+      fixture: nominatim/hauptstrasse-1.json
+    - id: nominatim-2
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Hauptstraße 1, 13591 Berlin
+      fixture: nominatim/hauptstrasse-1-staaken.json
+expected:
+  property: {lat: 52.5288998, lon: 13.1443516}
+  destinations: []

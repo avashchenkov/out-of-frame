@@ -2,6 +2,7 @@
 
 import datetime as dt
 
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 
@@ -21,13 +22,18 @@ def run(
     web_search: WebSearch,
     input_only: bool = False,
     config: RunnableConfig | None = None,
+    initial_state: RunState | None = None,
 ) -> RunState:
     """A run without a person: the first message starts it, and each next one answers the
     agent's next question, as in the evals. With input_only, the run stops once the input is
     complete, before research starts, as in the input loop suite. A caller that gives the
-    run's thread can read the state where the run stopped, even after an error."""
+    run's thread can read the state where the run stopped, even after an error. An initial
+    state supplies a fixed earlier conversation and input; the run works on its own copy."""
     graph, config = build_graph(), config or start_thread()
     command: RunState | Command = start(messages[0])
+    if initial_state is not None:
+        command = initial_state.model_copy(deep=True)
+        command.messages.append(HumanMessage(messages[0]))
     stop = RESEARCH_STARTS if input_only else None
     for reply in [*messages[1:], None]:
         graph.invoke(command, config, context=Context(date, web_search), interrupt_before=stop)

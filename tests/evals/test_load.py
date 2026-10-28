@@ -6,7 +6,7 @@ import yaml
 
 from evals.graders.end_to_end import ExpectedRun
 from evals.load import STATES, TASKS, Conversation, TaskFormatError, load
-from out_of_frame.state import InvestigationState
+from out_of_frame.state import InvestigationState, RunState
 
 
 def read(path):
@@ -275,3 +275,14 @@ def test_an_input_loop_task_gives_no_journeys(tmp_path):
     task["expected"]["destinations"][0]["there"] = "found"
     with pytest.raises(TaskFormatError, match="there and back"):
         load(write(tmp_path / "broken.yaml", task))
+
+
+def test_an_input_task_can_start_with_an_earlier_conversation(tmp_path):
+    state = RunState(messages=[{"role": "user", "text": "An earlier answer."}])
+    path = tmp_path / "initial.yaml"
+    write(path, state.model_dump(mode="json"))
+    task = read(TASKS / "i2.yaml")
+    task["input"]["state"] = str(path)
+    inputs = load(write(tmp_path / "resume.yaml", task)).inputs
+    assert isinstance(inputs, Conversation)
+    assert inputs.initial_state == state

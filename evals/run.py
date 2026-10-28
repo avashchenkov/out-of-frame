@@ -222,7 +222,14 @@ def run_input_loop(inputs: Inputs, date: dt.date, web_search: WebSearch) -> Tria
     failure = None
     with mock.patch.object(geocoding, "call_nominatim", replay):
         try:
-            dialogue.run(inputs.messages, date, web_search, input_only=True, config=config)
+            dialogue.run(
+                inputs.messages,
+                date,
+                web_search,
+                input_only=True,
+                config=config,
+                initial_state=inputs.initial_state,
+            )
         except (dialogue.UnansweredQuestionError, UnrecordedRequestError) as error:  # its failure
             failure = repr(error)
     state = RunState.model_validate(graph.get_state(config).values)

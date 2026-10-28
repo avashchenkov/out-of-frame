@@ -1,0 +1,44 @@
+# I7, input loop: the input phase runs until the input is complete, on recorded Nominatim
+# responses. See docs/eval-architecture.md#input-loop.
+id: I7
+suite: input loop
+covers: >-
+  A place that the user did not keep stays dropped. Three places exceed the default cap of two,
+  so the agent asks which to keep; the next question asks for the times. A gym brought back from
+  the first message exceeds the cap again, so the agent asks after the last reply and fails.
+date: 2026-10-27
+input:
+  messages:
+    - >-
+      Please check Freiheit 22, 13597 Berlin. I go to work at Karl-Marx-Allee 3, 10178 Berlin,
+      to the library at Am Kanal 47, 14467 Potsdam, and to the gym at Schönhauser Allee 80,
+      10439 Berlin.
+    - Keep work and the library.
+    - >-
+      For work I leave home at 7:40 and leave work at 18:10. For the library I leave home at
+      8:15 and leave the library at 16:45.
+  sources:
+    - id: nominatim-1
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Freiheit 22, 13597 Berlin
+      fixture: nominatim/freiheit-22.json
+    - id: nominatim-2
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Karl-Marx-Allee 3, 10178 Berlin
+      fixture: nominatim/karl-marx-allee-3.json
+    - id: nominatim-3
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Am Kanal 47, 14467 Potsdam
+      fixture: nominatim/am-kanal-47-potsdam.json
+expected:
+  property: {lat: 52.5292863, lon: 13.2357896}
+  destinations:
+    - coordinates: {lat: 52.5222886, lon: 13.4189853}
+      leave_home: "07:40"
+      leave_place: "18:10"
+    - coordinates: {lat: 52.3971923, lon: 13.0592866}
+      leave_home: "08:15"
+      leave_place: "16:45"

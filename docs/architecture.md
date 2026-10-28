@@ -144,8 +144,9 @@ phases; separate conversations share no state. The flowchart does not show the s
 
 1. **Input** is one loop for any first message: a greeting, an address alone or a full
    request.
-   - The model picks out only what the user added or changed in this message, never
-     coordinates. Code applies these changes; everything else stays as it was, destination
+   - The model picks out only what the user's messages add to the input so far or change in
+     it, never coordinates: usually the last message, but also an earlier answer that the
+     input misses. Code applies these changes; everything else stays as it was, destination
      IDs included.
    - After each message, a model call reads all of the user's messages, without the agent's
      questions, and names the language the user wants the answers in: later messages count

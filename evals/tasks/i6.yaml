@@ -1,0 +1,31 @@
+# I6, input loop: the input phase runs until the input is complete, on recorded Nominatim
+# responses. See docs/eval-architecture.md#input-loop.
+id: I6
+suite: input loop
+covers: >-
+  A request to start is not an answer. The user gives only the property, then asks to start:
+  the agent must ask about travel again, and the input ends with the place of the last reply.
+  An empty list worked out from "Start then" completes the input early, so the grade fails.
+date: 2026-10-27
+input:
+  messages:
+    - Please check Freiheit 22, 13597 Berlin.
+    - Start then.
+    - I go to Am Kanal 47, 14467 Potsdam. I leave home at 8:15 and leave there at 16:45.
+  sources:
+    - id: nominatim-1
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Freiheit 22, 13597 Berlin
+      fixture: nominatim/freiheit-22.json
+    - id: nominatim-2
+      kind: geocoding
+      url: https://nominatim.openstreetmap.org/search
+      request: Am Kanal 47, 14467 Potsdam
+      fixture: nominatim/am-kanal-47-potsdam.json
+expected:
+  property: {lat: 52.5292863, lon: 13.2357896}
+  destinations:
+    - coordinates: {lat: 52.3971923, lon: 13.0592866}
+      leave_home: "08:15"
+      leave_place: "16:45"

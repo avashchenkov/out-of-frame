@@ -11,7 +11,7 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
-from evals import judge
+from evals import dialogue, judge
 from evals.config import JUDGE_MAX_TOKENS
 from evals.graders.end_to_end import AddressLabel, ExpectedRun
 from evals.graders.finding import Expected
@@ -37,7 +37,15 @@ from evals.run import (
     triage_object,
     trust_every_page,
 )
-from out_of_frame import conversation, finding, investigation, prices, prompt_injection, report
+from out_of_frame import (
+    agent,
+    conversation,
+    finding,
+    investigation,
+    prices,
+    prompt_injection,
+    report,
+)
 from out_of_frame.config import (
     EFFORT,
     INJECTION_EFFORT,
@@ -46,6 +54,7 @@ from out_of_frame.config import (
     MAX_TOKENS,
     MODEL,
 )
+from out_of_frame.conversation import Change
 from out_of_frame.prices import ModelPrice
 from out_of_frame.state import (
     Address,
@@ -61,6 +70,7 @@ from out_of_frame.web_search import PageText, WebSearchAccessError
 from tests.evals.test_judge import ANSWERS, StoppingWebSearch, stub_the_judges
 from tests.evals.test_judges import INTERPRETED, answer
 from tests.test_agent import (
+    DATE,
     FREIHEIT_22,
     read_fixture,
     stub_the_conversation,
@@ -484,6 +494,41 @@ def test_an_error_of_the_code_in_the_input_loop_is_an_error_of_the_part(monkeypa
     monkeypatch.setattr(conversation, "extract", fail)
     with pytest.raises(KeyError):
         run_input_loop(load(TASKS / "i2.yaml").inputs, dt.date(2026, 10, 14), NoWebSearch())
+
+
+def test_an_input_replay_keeps_earlier_answers_and_reaches_research_without_another_question(
+    monkeypatch,
+):
+    stub_the_sources(monkeypatch)
+    initial = agent.start(f"{FREIHEIT_22}. I travel nowhere regularly.")
+    initial.messages.append(AIMessage("I am ready to start."))
+    original = initial.model_dump_json()
+    seen = []
+
+    def extract(state):
+        seen.extend(state.messages)
+        return Change(property_address=FREIHEIT_22, destinations=[])
+
+    monkeypatch.setattr(conversation, "extract", extract)
+    monkeypatch.setattr(conversation, "detect_language", lambda state: "English")
+
+    def unexpected_question(*args):
+        pytest.fail("complete input must go straight to research")
+
+    monkeypatch.setattr(conversation, "ask", unexpected_question)
+    config = agent.start_thread()
+    state = dialogue.run(
+        ["Start then."],
+        DATE,
+        FakeWebSearch(),
+        input_only=True,
+        config=config,
+        initial_state=initial,
+    )
+    assert [m.text for m in seen] == [*(m.text for m in initial.messages), "Start then."]
+    assert initial.model_dump_json() == original  # Each trial has its own messages and IDs.
+    assert state.destinations == [] and state.property.coordinates is not None
+    assert set(agent.build_graph().get_state(config).next) == set(agent.RESEARCH_STARTS)
 
 
 def test_the_input_loop_passes_only_at_the_expected_building():

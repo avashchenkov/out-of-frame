@@ -52,6 +52,7 @@ class Conversation(Record):
 
     messages: list[str]
     sources: list[RecordedSource]
+    initial_state: RunState | None = None  # fixed earlier input and conversation, for recovery
 
 
 class Label(Record):
@@ -184,7 +185,7 @@ def load(path: Path) -> Task:
 
     try:
         task = TaskFile.model_validate(read_yaml(path))
-        state_model = RunState if task.suite == "report" else InvestigationState
+        state_model = RunState if task.suite in ("report", "input loop") else InvestigationState
         state = (
             state_model.model_validate(read_yaml(STATES / task.input.state))
             if task.input.state
@@ -221,10 +222,12 @@ def load(path: Path) -> Task:
             inputs = state
         case "injection check", None, None, PageText() as page:
             inputs = page
-        case "input loop", None, None, None:
+        case "input loop", None, RunState() | None, None:
             if any(source.kind != "geocoding" for source in task.input.sources):
                 fail("an input loop task replays only geocoding responses")
-            inputs = Conversation(messages=task.input.messages, sources=task.input.sources)
+            inputs = Conversation(
+                messages=task.input.messages, sources=task.input.sources, initial_state=state
+            )
         case "end-to-end", None, None, None:
             if len(task.input.messages) != 1 or task.input.sources:
                 fail("an end-to-end task gives one first message and runs on live sources")

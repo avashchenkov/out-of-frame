@@ -1,0 +1,15 @@
+# Synthetic failure: the last extraction missed both answers. This is not a visitor run.
+messages:
+  - role: user
+    text: Please check Hauptstraße 1, Berlin.
+  - role: agent
+    text: >-
+      Which address do you mean: 1. Hauptstraße 1, 13591 Berlin (Staaken);
+      2. Hauptstraße 1, 10317 Berlin (Rummelsburg)? Where do you travel regularly, if anywhere?
+  - role: user
+    text: The first one. I do not travel anywhere regularly.
+  - role: agent
+    text: I have everything needed and am ready to start.
+property:
+  text: Hauptstraße 1, Berlin
+destinations: null
