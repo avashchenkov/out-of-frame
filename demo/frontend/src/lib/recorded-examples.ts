@@ -5,6 +5,7 @@ export type RecordedExample = {
   id: string;
   title: string;
   recorded_on: string;
+  review_note?: string;
   messages: ChatMessage[];
   failures: string[];
 };

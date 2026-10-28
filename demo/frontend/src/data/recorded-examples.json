@@ -3,6 +3,7 @@
     "id": "neukoellnische-allee-52",
     "title": "Neuköllnische Allee 52",
     "recorded_on": "2026-10-21",
+    "review_note": "Known limitation: the Philip Morris site 74 m away is no longer a factory. Philip Morris ended production there in 2025, and the site is now a campus. The agent's search is greedy to keep the cost low: it stops at the first page that settles a site, here an undated list of the company's sites, and does not look for newer sources.",
     "messages": [
       {
         "id": "request",

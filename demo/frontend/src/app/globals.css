@@ -709,6 +709,13 @@ fieldset:disabled .button {
   line-height: 1.7;
   margin-bottom: 2.5rem;
 }
+.review-note {
+  margin: -1.5rem 0 2.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--signal);
+  background: var(--surface);
+  line-height: 1.6;
+}
 .example-list {
   list-style: none;
   padding: 0;

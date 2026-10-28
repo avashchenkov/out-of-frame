@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { reportMarkdownComponents } from "../../../demo/frontend/src/lib/report-markdown.ts";
+import { reviewNote } from "../../../demo/frontend/src/lib/review-note.ts";
 
 const require = createRequire(
   new URL("../../../demo/frontend/package.json", import.meta.url),
@@ -69,13 +70,16 @@ test("five exports contain only visible dated requests and complete reports", ()
     5,
   );
   for (const example of examples) {
-    assert.deepEqual(Object.keys(example).sort(), [
-      "failures",
-      "id",
-      "messages",
-      "recorded_on",
-      "title",
-    ]);
+    assert.deepEqual(
+      Object.keys(example)
+        .filter((key) => key !== "review_note")
+        .sort(),
+      ["failures", "id", "messages", "recorded_on", "title"],
+    );
+    if ("review_note" in example) {
+      assert.equal(typeof example.review_note, "string");
+      assert.ok(example.review_note.length);
+    }
     assert.match(example.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     assert.match(example.recorded_on, /^2026-10-2[12]$/);
     assert.deepEqual(example.failures, []);
@@ -100,4 +104,31 @@ test("five exports contain only visible dated requests and complete reports", ()
       assert.match(html, /href="https:\/\/transitous.org\/sources\/"/);
     }
   }
+});
+
+test("a recorded report that shows a known limitation has a reviewer's note", () => {
+  const examples = JSON.parse(
+    readFileSync(
+      new URL(
+        "../../../demo/frontend/src/data/recorded-examples.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  const example = examples.find(
+    (item: { id: string }) => item.id === "neukoellnische-allee-52",
+  );
+  const report = example.messages.find(
+    (message: { id: string }) => message.id === "final-report",
+  ).content;
+  assert.match(report, /Philip Morris, 74 m away, is in use/);
+  assert.match(
+    example.review_note,
+    /Philip Morris site 74 m away is no longer a factory/,
+  );
+  assert.match(example.review_note, /ended production there in 2025/);
+  const html = renderToStaticMarkup(reviewNote(example.review_note));
+  assert.match(html, /^<p class="review-note">Known limitation: /);
+  assert.equal(reviewNote(undefined), null);
 });

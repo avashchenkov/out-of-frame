@@ -23,6 +23,7 @@ requested again; the page does not report success before the server confirms it.
 
 The Examples link opens five recorded requests and reports at `/examples`. Each report shows
 its original research date; it was regenerated from archived findings without new research.
+A report that shows a known limitation keeps it and has a reviewer's note under the date line.
 These static pages do not read a private session or call the backend and remain available
 with live input disabled. The reviewed visible messages are in
 `src/data/recorded-examples.json`, without graph state or source-page bodies.

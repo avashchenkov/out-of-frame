@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConversationMessages } from "../../../components/thread/messages";
 import { recordedExamples } from "../../../lib/recorded-examples";
+import { reviewNote } from "../../../lib/review-note";
 
 export const dynamicParams = false;
 
@@ -34,6 +35,7 @@ export default async function Example({
         </time>
         . <Link href="/">Try a live chat</Link>
       </p>
+      {reviewNote(example.review_note)}
       <ConversationMessages messages={example.messages} />
       {example.failures.length > 0 && (
         <aside aria-label="Unavailable sources">

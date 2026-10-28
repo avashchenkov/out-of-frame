@@ -493,3 +493,7 @@ around the existing agent, using Aegra and Agent Chat UI. Keep the implementatio
 12. **Input that does not stall.** The extraction also takes an earlier answer that the input
     missed, and the question never says that the agent is ready. I4–I7 cover the extraction,
     with I1–I3 as controls; A5 is designed for the question.
+13. **A note on a known limitation in a recorded example.** The report for Neuköllnische
+    Allee 52 calls the former Philip Morris factory in use, from an undated page. The example
+    keeps the agent's report as it was and adds a reviewer's note; the simplification behind it
+    is in the [known limitations](evals/2026-10-21-mvp-eval-results.md#known-limitations).

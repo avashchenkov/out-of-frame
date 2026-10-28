@@ -163,8 +163,16 @@ The failures after:
   wastewater plant: triage takes it for a sewage works (T4, which still fails).
 - A site that several businesses share: the search by address finds some of them, not always
   the one that affects people nearby the most.
-- An unnamed site whose page the search misses, and a page out of date or one that gives a
-  site's planned uses as current.
+- An unnamed site whose page the search misses, and a page that gives a site's planned uses
+  as current.
+- A page out of date. This is a deliberate simplification for the MVP's cost. The agent
+  compares the dates that its pages give, and an old document alone does not show that a site
+  is in use today. But its search is greedy: it stops at the first page that settles the
+  object and does not look for newer sources. A wider search would need more searches for
+  each object and a status rule for old evidence (row 6 of the
+  [audit](2026-10-19-agent-quality-audit.md#readiness-and-proposed-priorities)). Example: the
+  former Philip Morris factory (nlnd-campus, E2). The recorded demo example for
+  Neuköllnische Allee 52 calls it in use, and a note says so.
 - A use that only a plan's documents name, such as a PDF of its reasons: the agent does not
   read the PDFs that the plan's WFS data link, only PDFs that a search finds.
 - A plan replaced in part by another, and a plan whose state shows only on a page about one of
