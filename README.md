@@ -73,16 +73,19 @@ Redis, Next.js, Caddy and Docker Compose; GitHub Actions.
 
 ## Results
 
-At five Berlin addresses, each nearby object has a checked label: what it is and whether it
-is in use, 32 objects in all. A model's answers vary from run to run, so the agent ran three
-times at each address, on live data. An object counts as right when the agent got it right in
-two runs of three at least. Details: [MVP eval results](docs/evals/2026-10-21-mvp-eval-results.md).
+At five Berlin addresses, 68 nearby objects have a checked label: what it is and whether it
+is in use. 32 of them are scored. The other 36 are left out, each with its reason: 14 have no
+page within the agent's reach, and 22 are left out of the MVP
+([labels left out](docs/evals/2026-10-21-mvp-eval-results.md#labels-left-out)). A model's
+answers vary from run to run, so the agent ran three times at each address, on live data. An
+object counts as right when the agent got it right in two runs of three at least.
+Details: [MVP eval results](docs/evals/2026-10-21-mvp-eval-results.md).
 
 | | Before the fixes | After the fixes |
 |---|---|---|
 | Objects right | 27 of 32 | 32 of 32 |
 | Wrong claims, in 96 answers (32 objects, 3 runs) | 9 | 1 |
-| False alarms: a problem that is not there | 0 | 0 |
+| False alarms: a finding that matches no label | 0 | 0 |
 
 The one wrong claim left is about plan 2-56E. The plan only says "business area", which does
 not show what may be built, so the right answer is "kind unknown". In one run of three, the
@@ -91,8 +94,9 @@ it production. The model applied the plan rule wrongly; the search was not the c
 
 What the fixes changed:
 
-- **Railways.** The agent took two railway lines for in use from their map tags. No web page
-  shows reliably whether trains run on a line, so code now leaves a railway's status unknown.
+- **Railways.** The agent took two railway lines for in use from their map tags. No page that
+  the agent's search finds shows reliably whether trains run on a line, so code now leaves a
+  railway's status unknown.
 - **Development plans.** Five plans got a wrong kind or none. Written rules for each kind of
   planned area, such as housing, mixed use or a core area, fixed all five.
 
