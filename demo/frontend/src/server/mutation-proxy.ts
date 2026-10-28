@@ -179,13 +179,13 @@ export async function mutationProxy(
     );
     const data: Input = await response.json();
     if (!response.ok) {
-      const code = typeof data?.error === "string" ? data.error : data?.detail;
-      if (
-        response.status >= 400 &&
-        response.status < 500 &&
-        typeof code === "string" &&
-        ERRORS.has(code)
-      )
+      // Aegra's HTTPException handler puts the code in `message`; our own
+      // handlers use `error`, and plain FastAPI uses `detail`.
+      const code = [data?.error, data?.message, data?.detail].find(
+        (value): value is string =>
+          typeof value === "string" && ERRORS.has(value),
+      );
+      if (response.status >= 400 && response.status < 500 && code)
         return privateJson({ error: code }, response.status);
       if (response.status === 404)
         return privateJson({ error: "chat_not_found" }, 404);

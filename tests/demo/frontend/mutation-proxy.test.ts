@@ -401,23 +401,30 @@ test("backend refusals preserve fixed codes, never set cookies and never retry",
     [409, "run_active"],
     [422, "message_too_long"],
   ] as const) {
-    let calls = 0;
-    const response = await mutationProxy(
-      request(["chat"], { text: "Hi" }, { cookie: "" }),
-      ["chat"],
-      CONFIG,
-      async () => {
-        calls++;
-        return Response.json(
-          { detail: code, source: MARKER },
-          { status, headers: { "set-cookie": MARKER } },
-        );
-      },
-    );
-    assert.equal(response.status, status);
-    assert.deepEqual(await response.json(), { error: code });
-    assert.equal(response.headers.get("set-cookie"), null);
-    assert.equal(calls, 1);
+    // Aegra turns HTTPException into its Agent Protocol error body, with the
+    // code in `message`; plain FastAPI puts it in `detail`.
+    for (const body of [
+      { error: "unknown_error", message: code, details: MARKER },
+      { detail: code, source: MARKER },
+    ]) {
+      let calls = 0;
+      const response = await mutationProxy(
+        request(["chat"], { text: "Hi" }, { cookie: "" }),
+        ["chat"],
+        CONFIG,
+        async () => {
+          calls++;
+          return Response.json(body, {
+            status,
+            headers: { "set-cookie": MARKER },
+          });
+        },
+      );
+      assert.equal(response.status, status);
+      assert.deepEqual(await response.json(), { error: code });
+      assert.equal(response.headers.get("set-cookie"), null);
+      assert.equal(calls, 1);
+    }
   }
   for (const fetchBackend of [
     async () => Response.json({ detail: MARKER }, { status: 500 }),

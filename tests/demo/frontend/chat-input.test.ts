@@ -154,8 +154,11 @@ test("quota refusals stay distinct without exposing backend text", async () => {
         assert.ok(!error.message.includes("PRIVATE"));
         if (code === "identity_chats_exhausted")
           assert.match(error.message, /Contact the author/);
-        if (code === "daily_chats_exhausted")
-          assert.match(error.message, /try again tomorrow/);
+        if (code === "daily_chats_exhausted") {
+          assert.match(error.message, /demo service/);
+          assert.match(error.message, /across all visitors/);
+          assert.match(error.message, /contact the author/);
+        }
         if (code === "demo_busy") assert.match(error.message, /busy/);
         return true;
       },

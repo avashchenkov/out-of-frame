@@ -330,7 +330,9 @@ export function PrivateChat({
           {error.code === "daily_chats_exhausted" &&
             dailyReset &&
             ` Next reset: ${dailyReset}.`}
-          {error.code === "identity_chats_exhausted" && contact}
+          {(error.code === "identity_chats_exhausted" ||
+            error.code === "daily_chats_exhausted") &&
+            contact}
         </p>
       )}
       {liveEnabled && limits && chat ? (

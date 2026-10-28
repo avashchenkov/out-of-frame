@@ -12,7 +12,7 @@ const REFUSALS: Record<string, string> = {
   demo_busy: "The demo is busy. Please wait a moment and try again.",
   identity_chats_exhausted: IDENTITY_LIMIT_NOTICE,
   daily_chats_exhausted:
-    "The service has reached today's limit for new chats across all visitors. Please try again tomorrow.",
+    "This is a demo service, so new chats are limited per day across all visitors. Today's limit has been reached. Please try again tomorrow or contact the author.",
   submissions_exhausted: "This chat has reached its message limit.",
   live_unavailable: "Live chat is currently unavailable.",
   chat_exists: "A chat already exists in this browser. Reload chat to open it.",
