@@ -375,7 +375,7 @@ Code links show the checkout's version; the execution review used `7005abe`.
 - [Report rules](../../src/out_of_frame/prompts/report.md.j2)
 - [Report checks and rendering](../../src/out_of_frame/report.py)
 - [Evaluation architecture](../eval-architecture.md)
-- [Roadmap and completed 10.8 changes](../roadmap.md)
+- [Roadmap and completed 10.8 changes](https://github.com/avashchenkov/out-of-frame/blob/27a451ca74a0191048b98fe7021945f888037d82/docs/roadmap.md)
 - Baseline prompts were inspected with
   `git show a7cea3b:src/out_of_frame/prompts/...`.
 
