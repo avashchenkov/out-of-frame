@@ -103,11 +103,13 @@ What the fixes changed:
 Other checks:
 
 - **Held-out addresses.** The fixes were tuned on the five addresses above. Two more, E6 and
-  E7, were added after the fixes and never used for tuning, like a test set. There every object
-  was right in every run where the map loaded: 23 of 23 answers, with no false alarms. Two
-  addresses are too few for an accuracy rate across Berlin.
+  E7, were added after the fixes and never used for tuning, like a test set. There all 23
+  answers that the agent gave were right, with no false alarms. 4 more answers are missing,
+  because the public map server failed in two runs of E7. A second run of E7, where every
+  source answered, got 9 of 9 right. Two addresses are too few for an accuracy rate across
+  Berlin.
 - **Each statement against its source.** An LLM judge, first checked against human grades,
-  compares each statement of a report with the source it cites: 187 of 199 were backed. Of the
+  compares each statement of a report with the source it cites: 188 of 199 were backed. Of the
   11 it flagged, 3 are its own known mistake: it takes railway land in a plan for a running
   railway. The other 8 say more than their source shows, such as a site in use, from a page
   that does not give its address.
